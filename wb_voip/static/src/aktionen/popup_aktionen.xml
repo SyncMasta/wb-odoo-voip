@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="wb_voip.PopupAktionen">
+        <div t-if="lokal.aktionen.length" class="o_wb_voip_popup_aktionen_leiste d-flex flex-wrap gap-2 px-3 py-2">
+            <AktionsLeiste aktionen="lokal.aktionen" ort="ort" itemKlasse="'o_wb_voip_popup_aktion'"
+                           onAusfuehren.bind="aktionAusfuehren"/>
+        </div>
+    </t>
+</templates>

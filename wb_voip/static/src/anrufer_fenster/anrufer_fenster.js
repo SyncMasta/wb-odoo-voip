@@ -1,21 +1,27 @@
 import { Component, onWillUnmount, useEffect, useRef, useState } from "@odoo/owl";
-import { _t } from "@web/core/l10n/translation";
 import { deserializeDateTime, formatDateTime } from "@web/core/l10n/dates";
 import { registry } from "@web/core/registry";
 import { useBus, useService } from "@web/core/utils/hooks";
 import { session } from "@web/session";
 
+import { AktionsLeiste, ORT_FENSTER, fehlertext, useAktionAusfuehren } from "../aktionen/aktions_leiste";
 import { MAX_NOTIZ } from "../dienste/telefon_dienst";
 import { formatDauer } from "../softphone/waehlen_hilfe";
 
 /** Nach dem Anrufende bleibt das Fenster so lange offen (Einstellung je Benutzer später). */
 export const SCHLIESSEN_NACH_MS = 10_000;
 export const BUS_KONTEXT = "wb_voip/kontext";
-const FARBEN = new Set(["primary", "secondary", "success", "warning", "danger"]);
-const ICON = /^fa-[a-z0-9-]{1,40}$/;
 
-function fehlertext(fehler) {
-    return fehler?.data?.message || fehler?.message || _t("Unbekannter Fehler");
+/** True, wenn ``el`` ein Eingabefeld oder editierbarer Bereich ist (dort nie Fokus wegnehmen). */
+export function tipptGerade(el) {
+    if (!el || el === document.body) {
+        return false;
+    }
+    return (
+        ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName) ||
+        el.isContentEditable === true ||
+        el.getAttribute?.("contenteditable") === "true"
+    );
 }
 
 /**
@@ -25,13 +31,15 @@ function fehlertext(fehler) {
  */
 export class AnruferFenster extends Component {
     static template = "wb_voip.AnruferFenster";
+    static components = { AktionsLeiste };
     static props = {};
 
     setup() {
         this.telefon = useService("wb_voip_telefon");
         this.orm = useService("orm");
         this.action = useService("action");
-        this.notification = useService("notification");
+        this._ausfuehren = useAktionAusfuehren();
+        this.ort = ORT_FENSTER;
         this.busService = useService("bus_service");
         this.state = useState(this.telefon.state);
         this.fenster = useState({
@@ -46,6 +54,9 @@ export class AnruferFenster extends Component {
         this._ladeNr = 0;
         this._timer = null;
         this._vorher = null;
+        // Zeiger über dem Panel oder Fokus auf einem Element darin: nicht automatisch schließen
+        this._zeiger = false;
+        this._fokusInnen = false;
 
         useBus(this.telefon.bus, "anruf-aktiv", ({ detail }) => this._aktiv(detail));
         useBus(this.telefon.bus, "anruf-beendet", ({ detail }) => this._beendet(detail));
@@ -65,7 +76,10 @@ export class AnruferFenster extends Component {
                 if (!offen) {
                     return;
                 }
-                this.panel.el?.focus();
+                // Fokus nur holen, wenn niemand gerade tippt
+                if (!tipptGerade(document.activeElement)) {
+                    this.panel.el?.focus();
+                }
                 document.body.classList.add("o_wb_voip_af_offen");
                 return () => document.body.classList.remove("o_wb_voip_af_offen");
             },
@@ -107,11 +121,48 @@ export class AnruferFenster extends Component {
             return;
         }
         this.fenster.beendet = true;
+        this._schliessenPlanen();
+    }
+
+    /** Startet die Frist bis zum automatischen Schließen, sofern niemand das Panel benutzt. */
+    _schliessenPlanen() {
         this._timerStoppen();
+        if (!this.fenster.offen || !this.fenster.beendet || this._zeiger || this._fokusInnen) {
+            return;
+        }
         this._timer = this.telefon.uhr.setTimeout(() => {
             this._timer = null;
             this.schliessen();
         }, SCHLIESSEN_NACH_MS);
+    }
+
+    onZeigerEin() {
+        this._zeiger = true;
+        this._timerStoppen();
+    }
+
+    onZeigerAus() {
+        this._zeiger = false;
+        this._schliessenPlanen();
+    }
+
+    /** Fokus auf einem Element im Panel (nicht das Panel selbst, das ist nur der Anker). */
+    onFokusEin(ev) {
+        if (ev.target === this.panel.el) {
+            return;
+        }
+        this._fokusInnen = true;
+        this._timerStoppen();
+    }
+
+    onFokusAus(ev) {
+        const ziel = ev.relatedTarget;
+        const panel = this.panel.el;
+        if (ziel && panel?.contains(ziel) && ziel !== panel) {
+            return;
+        }
+        this._fokusInnen = false;
+        this._schliessenPlanen();
     }
 
     _timerStoppen() {
@@ -123,6 +174,8 @@ export class AnruferFenster extends Component {
 
     schliessen() {
         this._timerStoppen();
+        this._zeiger = false;
+        this._fokusInnen = false;
         this._ladeNr++;
         Object.assign(this.fenster, { offen: false, anrufId: false, daten: null, fehler: null });
         const vorher = this._vorher;
@@ -199,32 +252,14 @@ export class AnruferFenster extends Component {
         return this.daten?.aufgaben || [];
     }
 
+    /** Buttons für das Fenster; „Neuer Kontakt“ nur ohne bekannten Kontakt. */
     get aktionen() {
-        return (this.daten?.aktionen || [])
-            .filter((a) => Array.isArray(a.orte) && a.orte.includes("anrufer_fenster"))
-            .filter((a) => !(this.kontakt && a.art === "neuer_kontakt"))
-            .map((a) => ({
-                id: a.id,
-                name: a.name || "",
-                klasse: `btn-${FARBEN.has(a.farbe) ? a.farbe : "secondary"}`,
-                icon: typeof a.icon === "string" && ICON.test(a.icon) ? a.icon : false,
-            }));
+        return (this.daten?.aktionen || []).filter(
+            (a) => !(this.kontakt && a.art === "neuer_kontakt")
+        );
     }
 
     // --- Bedienung --------------------------------------------------------------------
-
-    async _ausfuehren(aufruf) {
-        let aktion;
-        try {
-            aktion = await aufruf();
-        } catch (fehler) {
-            this.notification.add(fehlertext(fehler), { type: "danger" });
-            return;
-        }
-        if (aktion && typeof aktion === "object") {
-            await this.action.doAction(aktion);
-        }
-    }
 
     aktionAusfuehren(aktionId) {
         const id = this.fenster.anrufId;

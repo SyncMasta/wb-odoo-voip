@@ -43,10 +43,16 @@ $wb-voip-af-breite: unquote("min(720px, 100vw)");
         outline: none;
     }
 
+    // Fokusrahmen im Inhalt: Navy auf Weiß (Kontrast > 10:1); Cyan nur auf dem Navy-Kopf
     .btn:focus-visible,
-    .form-control:focus-visible {
-        outline: 2px solid $wb-voip-af-cyan;
+    .form-control:focus-visible,
+    a:focus-visible {
+        outline: 2px solid $wb-voip-af-navy;
         outline-offset: 1px;
+    }
+
+    .o_wb_voip_af_kopf .btn:focus-visible {
+        outline-color: $wb-voip-af-cyan;
     }
 
     // unter 576 px: Vollbild

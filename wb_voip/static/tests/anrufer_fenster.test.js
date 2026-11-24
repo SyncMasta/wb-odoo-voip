@@ -1,5 +1,5 @@
 import { describe, expect, test } from "@odoo/hoot";
-import { click, edit, press, queryOne, queryRect } from "@odoo/hoot-dom";
+import { click, edit, hover, leave, press, queryOne, queryRect } from "@odoo/hoot-dom";
 import { animationFrame } from "@odoo/hoot-mock";
 import { Component, xml } from "@odoo/owl";
 import { defineMailModels } from "@mail/../tests/mail_test_helpers";
@@ -102,7 +102,7 @@ function welt() {
 }
 
 class Huelle extends Component {
-    static template = xml`<button class="o_test_vorher">vorher</button><AnruferFenster/>`;
+    static template = xml`<button class="o_test_vorher">vorher</button><input class="o_test_eingabe" type="text"/><div class="o_test_editierbar" contenteditable="true">x</div><AnruferFenster/>`;
     static components = { AnruferFenster };
     static props = ["*"];
 }
@@ -182,7 +182,7 @@ test("öffnet bei anruf-aktiv im Telefon-Tab, Fokus und Escape", async () => {
     expect.verifySteps(["kontext 10"]);
     expect(".o_wb_voip_anrufer_fenster").toHaveCount(1);
     expect(".o_wb_voip_anrufer_fenster").toHaveAttribute("role", "dialog");
-    expect(".o_wb_voip_anrufer_fenster").toHaveAttribute("aria-label");
+    expect(".o_wb_voip_anrufer_fenster").toHaveAttribute("aria-label", "Anrufer-Fenster");
     expect(".o_wb_voip_anrufer_fenster").toBeFocused();
     expect(".o_wb_voip_af_name").toHaveText("Erika Muster");
     expect(".o_wb_voip_af_firma").toHaveText("Muster GmbH");
@@ -421,5 +421,132 @@ test("Notiz ist dieselbe wie in der Anrufansicht", async () => {
     dienst.state.anruf.notiz = "Aus der Anrufansicht";
     await animationFrame();
     expect(".o_wb_voip_af_notiz").toHaveValue("Aus der Anrufansicht");
+    w.aufraeumen();
+});
+
+// --- Barrierefreiheit ----------------------------------------------------------------------
+
+async function fokusTest(wahl) {
+    onRpc("wb.voip.anruf", "wb_voip_kontext", ({ args }) => kontext(args[0][0]));
+    const w = welt();
+    const dienst = await verbunden(w);
+    await fensterMit(dienst);
+    queryOne(wahl).focus();
+    w.fabrik.letzterAgent.eingehend("0170 5555");
+    await weiter(w.uhr);
+    expect(".o_wb_voip_anrufer_fenster").toHaveCount(1);
+    expect(wahl).toBeFocused();
+    w.aufraeumen();
+}
+
+test("neuer Anruf stiehlt den Fokus nicht aus einem Eingabefeld", async () => {
+    await fokusTest(".o_test_eingabe");
+});
+
+test("neuer Anruf stiehlt den Fokus nicht aus einem editierbaren Bereich", async () => {
+    await fokusTest(".o_test_editierbar");
+});
+
+test("ohne Eingabefokus zieht das Fenster den Fokus an sich", async () => {
+    onRpc("wb.voip.anruf", "wb_voip_kontext", ({ args }) => kontext(args[0][0]));
+    const w = welt();
+    const dienst = await verbunden(w);
+    await fensterMit(dienst);
+    w.fabrik.letzterAgent.eingehend("0170 5555");
+    await weiter(w.uhr);
+    expect(".o_wb_voip_anrufer_fenster").toBeFocused();
+    w.aufraeumen();
+});
+
+test("Kopf-Status steht in einem Live-Bereich", async () => {
+    let fertig;
+    const gesperrt = new Promise((r) => (fertig = r));
+    onRpc("wb.voip.anruf", "wb_voip_kontext", async ({ args }) => {
+        await gesperrt;
+        return kontext(args[0][0]);
+    });
+    const w = welt();
+    const dienst = await verbunden(w);
+    await fensterMit(dienst);
+    const sitzung = w.fabrik.letzterAgent.eingehend("0170 5555");
+    await weiter(w.uhr);
+    expect(".o_wb_voip_af_kopf [role=status]").toHaveCount(1);
+    expect(".o_wb_voip_af_kopf [role=status]").toHaveText(/Lädt/);
+    fertig();
+    await weiter(w.uhr);
+    sitzung.gegenstelleLegtAuf("487");
+    await weiter(w.uhr);
+    expect(".o_wb_voip_af_kopf [role=status]").toHaveCount(1);
+    expect(".o_wb_voip_af_kopf [role=status]").toHaveText(/Anruf beendet/);
+    w.aufraeumen();
+});
+
+test("Zeitgeber pausiert, solange der Fokus im Panel ist, und läuft danach neu", async () => {
+    onRpc("wb.voip.anruf", "wb_voip_kontext", ({ args }) =>
+        kontext(args[0][0], { kontakt: erika() })
+    );
+    const w = welt();
+    const dienst = await verbunden(w);
+    await fensterMit(dienst);
+    const sitzung = w.fabrik.letzterAgent.eingehend("0170 5555");
+    await weiter(w.uhr);
+    sitzung.gegenstelleLegtAuf("487");
+    await weiter(w.uhr);
+    queryOne(".o_wb_voip_af_kontakt_oeffnen").focus();
+    await animationFrame();
+    await weiter(w.uhr, 30_000);
+    expect(".o_wb_voip_anrufer_fenster").toHaveCount(1);
+    queryOne(".o_test_vorher").focus();
+    await animationFrame();
+    await weiter(w.uhr, 9999);
+    expect(".o_wb_voip_anrufer_fenster").toHaveCount(1);
+    await weiter(w.uhr, 1);
+    expect(".o_wb_voip_anrufer_fenster").toHaveCount(0);
+    w.aufraeumen();
+});
+
+test("Zeitgeber pausiert, solange der Zeiger über dem Panel steht", async () => {
+    onRpc("wb.voip.anruf", "wb_voip_kontext", ({ args }) => kontext(args[0][0]));
+    const w = welt();
+    const dienst = await verbunden(w);
+    await fensterMit(dienst);
+    const sitzung = w.fabrik.letzterAgent.eingehend("0170 5555");
+    await weiter(w.uhr);
+    await hover(".o_wb_voip_anrufer_fenster");
+    sitzung.gegenstelleLegtAuf("487");
+    await weiter(w.uhr);
+    await weiter(w.uhr, 30_000);
+    expect(".o_wb_voip_anrufer_fenster").toHaveCount(1);
+    await leave();
+    await animationFrame();
+    await weiter(w.uhr, 9999);
+    expect(".o_wb_voip_anrufer_fenster").toHaveCount(1);
+    await weiter(w.uhr, 1);
+    expect(".o_wb_voip_anrufer_fenster").toHaveCount(0);
+    w.aufraeumen();
+});
+
+test("Buttons nutzen die gemeinsame Leiste, „Mehr“ erst ab dem fünften", async () => {
+    onRpc("wb.voip.anruf", "wb_voip_kontext", ({ args }) =>
+        kontext(args[0][0], {
+            kontakt: erika(),
+            aktionen: [1, 2, 3, 4, 5, 6].map((id) => ({
+                id,
+                name: `Taste ${id}`,
+                icon: false,
+                farbe: "secondary",
+                art: "serveraktion",
+                orte: ["anrufer_fenster"],
+            })),
+        })
+    );
+    const w = welt();
+    const dienst = await verbunden(w);
+    await fensterMit(dienst);
+    w.fabrik.letzterAgent.eingehend("0170 5555");
+    await weiter(w.uhr);
+    // im Anrufer-Fenster ist Platz: alle Buttons sichtbar, kein „Mehr“
+    expect(".o_wb_voip_af_aktion").toHaveCount(6);
+    expect(".o_wb_voip_aktion_mehr").toHaveCount(0);
     w.aufraeumen();
 });

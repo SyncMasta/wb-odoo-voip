@@ -3,7 +3,9 @@
     <t t-name="wb_voip.AnruferFenster">
         <section t-if="fenster.offen" t-ref="panel"
                  class="o_wb_voip_anrufer_fenster position-fixed d-flex flex-column bg-view shadow-lg"
-                 role="dialog" aria-label="Anrufer" tabindex="-1" t-on-keydown="onKeydown">
+                 role="dialog" aria-label="Anrufer-Fenster" tabindex="-1" t-on-keydown="onKeydown"
+                 t-on-mouseenter="onZeigerEin" t-on-mouseleave="onZeigerAus"
+                 t-on-focusin="onFokusEin" t-on-focusout="onFokusAus">
             <header class="o_wb_voip_af_kopf d-flex align-items-center gap-3 p-3">
                 <img t-if="bildUrl" class="o_wb_voip_af_bild rounded" t-att-src="bildUrl"
                      alt="" width="64" height="64"/>
@@ -16,11 +18,14 @@
                         <div t-if="kontakt.firma" class="o_wb_voip_af_firma text-truncate" t-esc="kontakt.firma"/>
                     </t>
                     <div t-elif="daten" class="o_wb_voip_af_name fs-4 fw-bold">Unbekannte Nummer</div>
-                    <div t-else="" class="o_wb_voip_af_laedt text-truncate">
-                        <i class="fa fa-spinner fa-spin me-1" aria-hidden="true"/>Lädt …
-                    </div>
                     <div t-if="nummer" class="o_wb_voip_af_nummer small text-truncate" t-esc="nummer"/>
-                    <div t-if="fenster.beendet" class="o_wb_voip_af_beendet small">Anruf beendet</div>
+                    <!-- Live-Bereich: Statuswechsel („Lädt …“, „Anruf beendet“) liest ein Screenreader vor -->
+                    <div class="o_wb_voip_af_status" role="status">
+                        <div t-if="!kontakt and !daten" class="o_wb_voip_af_laedt text-truncate">
+                            <i class="fa fa-spinner fa-spin me-1" aria-hidden="true"/>Lädt …
+                        </div>
+                        <div t-if="fenster.beendet" class="o_wb_voip_af_beendet small">Anruf beendet</div>
+                    </div>
                 </div>
                 <button type="button" class="o_wb_voip_af_schliessen btn btn-sm"
                         title="Anrufer-Fenster schließen" aria-label="Anrufer-Fenster schließen"
@@ -52,13 +57,8 @@
                             t-on-click="zuordnen">
                         <i class="fa fa-link me-1" aria-hidden="true"/>Zuordnen
                     </button>
-                    <t t-foreach="aktionen" t-as="aktion" t-key="aktion.id">
-                        <button type="button" class="o_wb_voip_af_aktion btn" t-att-class="aktion.klasse"
-                                t-on-click="() => this.aktionAusfuehren(aktion.id)">
-                            <i t-if="aktion.icon" class="fa me-1" t-att-class="aktion.icon" aria-hidden="true"/>
-                            <t t-esc="aktion.name"/>
-                        </button>
-                    </t>
+                    <AktionsLeiste aktionen="aktionen" ort="ort" itemKlasse="'o_wb_voip_af_aktion'"
+                                   onAusfuehren.bind="aktionAusfuehren"/>
                 </div>
 
                 <t t-if="laufenderAnruf">

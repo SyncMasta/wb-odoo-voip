@@ -668,6 +668,10 @@ export class TelefonDienst {
         } catch (fehler) {
             this.state.fehler = fehlertext(fehler);
         }
+        // Buttons mit Zustand „Während des Gesprächs“ erst jetzt vom Server holen lassen
+        if (!kontext.beendet) {
+            this.bus.trigger("anruf-angenommen", { anrufId: id });
+        }
         await this._lebenszeichen(kontext);
     }
 

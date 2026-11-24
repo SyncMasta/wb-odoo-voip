@@ -61,6 +61,11 @@
                 </div>
             </t>
 
+            <div t-if="lokal.aktionen.length" class="o_wb_voip_aktionen d-flex flex-wrap gap-2 mb-3">
+                <AktionsLeiste aktionen="lokal.aktionen" ort="ort" max="4"
+                               onAusfuehren.bind="aktionAusfuehren"/>
+            </div>
+
             <label class="form-label small text-muted mb-1" for="wb_voip_notiz">Notiz</label>
             <textarea id="wb_voip_notiz" class="o_wb_voip_notiz form-control mb-3" rows="3"
                       t-att-maxlength="maxNotiz" placeholder="Notiz zum Gespräch"

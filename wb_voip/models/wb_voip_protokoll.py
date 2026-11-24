@@ -1,4 +1,5 @@
 from odoo import api, fields, models
+from odoo.exceptions import AccessError
 
 from ..tools import serverfelder
 from ..tools.rechte import nur_voip_benutzer
@@ -98,6 +99,23 @@ class WbVoipProtokoll(models.Model):
             ergebnis=(ergebnisse.get(self.ergebnis) or '').lower(),
             dauer='%d:%02d' % (sek // 60, sek % 60),
         )
+
+    @nur_voip_benutzer
+    def wb_voip_popup_aktionen(self):
+        """Return the call buttons for the popup of this log entry (client data).
+
+        Only the caller's own entry; the buttons are those shown in the popup that
+        apply to the finished call. Running one goes through
+        ``wb.voip.anruf.wb_voip_aktion_ausfuehren`` on the linked call.
+        """
+        self.ensure_one()
+        self.check_access('read')
+        if self.user_id != self.env.user:
+            raise AccessError(self.env._("Dies ist nicht Ihr Anrufprotokoll."))
+        anruf = self.sudo().anruf_id
+        if not anruf:
+            return []
+        return anruf.with_user(self.env.user)._wb_voip_aktionen(ort='protokoll_popup')
 
     @nur_voip_benutzer
     def action_wb_voip_folgeaktivitaet(self):

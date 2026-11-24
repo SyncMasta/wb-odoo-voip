@@ -1,7 +1,9 @@
-import { Component, onMounted, onWillUnmount, useState } from "@odoo/owl";
+import { Component, onMounted, onWillUnmount, useEffect, useState } from "@odoo/owl";
 import { browser } from "@web/core/browser/browser";
 import { _t } from "@web/core/l10n/translation";
-import { useService } from "@web/core/utils/hooks";
+import { useBus, useService } from "@web/core/utils/hooks";
+
+import { AktionsLeiste, ORT_SOFTPHONE, useAktionAusfuehren } from "../aktionen/aktions_leiste";
 
 import { MAX_NOTIZ } from "../dienste/telefon_dienst";
 import { formatDauer } from "./waehlen_hilfe";
@@ -10,18 +12,36 @@ import { Tastenfeld } from "./waehltastatur";
 /** Laufender oder klingelnder Anruf: Gegenüber, Dauer, Bedienung und Notiz. */
 export class Anrufansicht extends Component {
     static template = "wb_voip.Anrufansicht";
-    static components = { Tastenfeld };
+    static components = { Tastenfeld, AktionsLeiste };
     static props = {};
 
     setup() {
         this.telefon = useService("wb_voip_telefon");
         this.notification = useService("notification");
+        this.orm = useService("orm");
+        this._aktionAusfuehren = useAktionAusfuehren();
+        this.ort = ORT_SOFTPHONE;
         this.state = useState(this.telefon.state);
         this.lokal = useState({
             tastatur: false,
             weiterleiten: false,
             ziel: "",
             jetzt: this.telefon.uhr.jetzt(),
+            aktionen: [],
+        });
+        this._aktionenNr = 0;
+        // Buttons einmal je Anruf laden (kein Polling) und nach der Annahme noch einmal,
+        // weil manche nur „während des Gesprächs“ gelten
+        useEffect(
+            (id) => {
+                this.aktionenLaden(id);
+            },
+            () => [this.state.anruf?.id]
+        );
+        useBus(this.telefon.bus, "anruf-angenommen", ({ detail }) => {
+            if (detail?.anrufId === this.state.anruf?.id) {
+                this.aktionenLaden(detail.anrufId);
+            }
         });
         this.maxNotiz = MAX_NOTIZ;
         onMounted(() => {
@@ -34,6 +54,34 @@ export class Anrufansicht extends Component {
 
     get anruf() {
         return this.state.anruf;
+    }
+
+    async aktionenLaden(id) {
+        const nr = ++this._aktionenNr;
+        if (!Number.isInteger(id)) {
+            this.lokal.aktionen = [];
+            return;
+        }
+        let daten;
+        try {
+            daten = await this.orm.call("wb.voip.anruf", "wb_voip_kontext", [[id]]);
+        } catch {
+            // ohne Buttons bleibt die Anrufansicht voll benutzbar
+            daten = null;
+        }
+        if (nr === this._aktionenNr && id === this.state.anruf?.id) {
+            this.lokal.aktionen = daten?.aktionen || [];
+        }
+    }
+
+    aktionAusfuehren(aktionId) {
+        const id = this.state.anruf?.id;
+        if (!Number.isInteger(id)) {
+            return;
+        }
+        return this._aktionAusfuehren(() =>
+            this.orm.call("wb.voip.anruf", "wb_voip_aktion_ausfuehren", [[id], aktionId])
+        );
     }
 
     get name() {

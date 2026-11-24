@@ -52,8 +52,11 @@
                     <button name="action_wb_voip_folgeaktivitaet" type="object"
                             string="Folgeaktivität planen" class="btn-secondary"/>
                 </header>
-                <!-- Platz für Aktionsknöpfe späterer Ausbaustufen -->
-                <div class="o_wb_voip_popup_aktionen"/>
+                <!-- Anruf-Buttons des Popups (Widget lädt sie vom Server) -->
+                <field name="anruf_id" invisible="1"/>
+                <div class="o_wb_voip_popup_aktionen">
+                    <widget name="wb_voip_popup_aktionen"/>
+                </div>
                 <sheet>
                     <div class="row">
                         <div class="col-12 col-lg-7">

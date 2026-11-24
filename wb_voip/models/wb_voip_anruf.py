@@ -566,14 +566,21 @@ class WbVoipAnruf(models.Model):
             'res_id': aktivitaet.res_id,
         } for aktivitaet in aktivitaeten]
 
-    def _wb_voip_aktionen(self):
-        """Return the buttons that apply to this call for the caller (client data)."""
+    def _wb_voip_aktionen(self, ort=None):
+        """Return the buttons that apply to this call for the caller (client data).
+
+        ``ort`` (``anrufer_fenster``, ``protokoll_popup``, ``softphone``) limits the list to
+        the buttons shown at that place; without it every place counts.
+        """
         self.ensure_one()
         anruf = self.sudo()
         zustand = 'beendet' if anruf.zustand in FINALE_ZUSTAENDE else anruf.zustand
-        aktionen = self.env['wb.voip.aktion'].search([
-            '|', '|', ('ort_anrufer_fenster', '=', True), ('ort_protokoll_popup', '=', True),
-            ('ort_softphone', '=', True),
+        if ort is None:
+            ort_domain = ['|', '|', ('ort_anrufer_fenster', '=', True),
+                          ('ort_protokoll_popup', '=', True), ('ort_softphone', '=', True)]
+        else:
+            ort_domain = [(f'ort_{ort}', '=', True)]
+        aktionen = self.env['wb.voip.aktion'].search(ort_domain + [
             ('richtung', 'in', ['beide', anruf.richtung]),
             ('zustand', 'in', ['immer', zustand]),
         ], limit=KONTEXT_AKTIONEN)

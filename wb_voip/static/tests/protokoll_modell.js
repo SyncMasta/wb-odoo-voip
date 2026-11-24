@@ -13,14 +13,21 @@ export class WbVoipProtokoll extends models.Model {
         ],
     });
     beschreibung = fields.Html();
+    anruf_id = fields.Integer();
+
+    /** Standard: keine Buttons (Tests überschreiben das per onRpc). */
+    wb_voip_popup_aktionen() {
+        return [];
+    }
 
     _records = [
-        { id: 1, ergebnis: "erreicht", beschreibung: "<p>Notiz</p>" },
+        { id: 1, ergebnis: "erreicht", beschreibung: "<p>Notiz</p>", anruf_id: 5 },
         { id: 77, ergebnis: "erreicht" },
     ];
     _views = {
         form: `<form>
-            <div class="o_wb_voip_popup_aktionen"/>
+            <field name="anruf_id" invisible="1"/>
+            <div class="o_wb_voip_popup_aktionen"><widget name="wb_voip_popup_aktionen"/></div>
             <field name="ergebnis"/>
             <field name="beschreibung"/>
         </form>`,

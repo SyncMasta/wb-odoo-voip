@@ -116,3 +116,66 @@ class TestPopup(WbVoipCase):
         ansicht = self.env.ref('wb_voip.wb_voip_protokoll_view_form_popup')
         self.assertIn('o_wb_voip_popup_aktionen', ansicht.arch_db)
         self.assertIn('action_wb_voip_folgeaktivitaet', ansicht.arch_db)
+
+    # --- Anruf-Buttons im Popup --------------------------------------------------------
+
+    def _anruf_mit_protokoll(self, user=None, zustand='beendet'):
+        user = user or self.user_a
+        anruf = self.env['wb.voip.anruf'].sudo().create({
+            'user_id': user.id, 'richtung': 'eingehend', 'zustand': zustand,
+            'nummer': '+49 170 1234567', 'nummer_e164': '+491701234567',
+            'partner_id': self.kontakt.id})
+        protokoll = self._protokoll(user=user, anruf_id=anruf.id)
+        return anruf, protokoll
+
+    def _taste(self, **werte):
+        vals = {'name': 'Taste', 'art': 'neuer_kontakt', 'ort_protokoll_popup': True,
+                'zustand': 'beendet'}
+        vals.update(werte)
+        return self.env['wb.voip.aktion'].create(vals)
+
+    def test_popup_aktionen_nur_popup_buttons(self):
+        self._lizenz_gueltig()
+        _anruf, protokoll = self._anruf_mit_protokoll()
+        popup = self._taste(name='Im Popup')
+        self._taste(name='Nur Fenster', ort_protokoll_popup=False, ort_anrufer_fenster=True)
+        self._taste(name='Nur Softphone', ort_protokoll_popup=False, ort_softphone=True)
+        self._taste(name='Falsche Richtung', richtung='ausgehend')
+        self._taste(name='Läuft', zustand='laeuft')
+        aktionen = protokoll.with_user(self.user_a).wb_voip_popup_aktionen()
+        self.assertEqual([a['id'] for a in aktionen if a['name'] in (
+            'Im Popup', 'Nur Fenster', 'Nur Softphone', 'Falsche Richtung', 'Läuft')], [popup.id])
+        self.assertIn('protokoll_popup', aktionen[0]['orte'])
+        self.assertNotIn('url_vorlage', aktionen[0])
+
+    def test_popup_aktionen_fremdes_protokoll(self):
+        _anruf, protokoll = self._anruf_mit_protokoll()
+        self._taste()
+        with self.assertRaises(AccessError):
+            protokoll.with_user(self.user_b).wb_voip_popup_aktionen()
+
+    def test_popup_aktionen_nur_voip_benutzer(self):
+        _anruf, protokoll = self._anruf_mit_protokoll()
+        ohne_gruppe = self.env['res.users'].with_context(no_reset_password=True).create({
+            'name': 'Ohne Gruppe', 'login': 'wb_voip_ohne2', 'email': 'ohne2@example.com',
+            'group_ids': [(6, 0, [self.env.ref('base.group_user').id])],
+        })
+        with self.assertRaises(AccessError):
+            protokoll.with_user(ohne_gruppe).wb_voip_popup_aktionen()
+
+    def test_popup_aktionen_ohne_anruf(self):
+        protokoll = self._protokoll()
+        self._taste()
+        self.assertEqual(protokoll.with_user(self.user_a).wb_voip_popup_aktionen(), [])
+
+    def test_popup_aktion_ausfuehren_ueber_den_anruf(self):
+        self._lizenz_gueltig()
+        anruf, protokoll = self._anruf_mit_protokoll()
+        taste = self._taste()
+        ergebnis = anruf.with_user(self.user_a).wb_voip_aktion_ausfuehren(taste.id)
+        self.assertEqual(ergebnis['res_model'], 'res.partner')
+        # Zustand „beendet“ muss der Button zulassen
+        zu_frueh = self._taste(zustand='laeuft')
+        with self.assertRaises(Exception):
+            anruf.with_user(self.user_a).wb_voip_aktion_ausfuehren(zu_frueh.id)
+        self.assertEqual(protokoll.anruf_id, anruf)
