@@ -92,7 +92,8 @@ Anruf, Richtung, Zustand, Gruppe und Kontakt passt; ein ausgeblendeter Button l�
 umgehen. Ausnahme: Code oder Formeln, die der Administrator in einer Serveraktion selbst mit ``.sudo()``
 schreibt, laufen mit erhöhten Rechten; dafür ist der Administrator verantwortlich. Der mitgelieferte
 Beispiel-Button „Neuer Kontakt“ lässt sich ändern oder archivieren; der damit angelegte Kontakt wird dem
-Anruf zugeordnet.
+Anruf zugeordnet, aber nur, wenn die Nummer des neuen Kontakts zur Anrufnummer passt (so bleibt etwa eine
+nebenbei angelegte Firma unverknüpft).
 
 Das Menü Einstellungen › Technisch erscheint nur im Entwicklermodus (Einstellungen › „Entwicklermodus
 aktivieren“).

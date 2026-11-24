@@ -47,7 +47,8 @@ class ResPartner(models.Model):
         """Link this new contact to the caller's own call ``anruf_id`` (from the context).
 
         Silently ignored unless the id is an int naming the caller's own call that has
-        no contact readable by the caller yet; never raises.
+        no contact readable by the caller yet and the call's E.164 number is one of the
+        contact's numbers; never raises.
         """
         self.ensure_one()
         if type(anruf_id) is not int or anruf_id <= 0 or not ist_voip_benutzer(self.env):
@@ -58,6 +59,12 @@ class ResPartner(models.Model):
                 if not anruf.exists():
                     return
                 eigen = anruf._wb_voip_eigener()  # fremder Anruf: AccessError/UserError
+                # Nur bei passender Nummer: Schnellanlagen (z. B. Firma im Feld „Unternehmen“)
+                # tragen denselben Kontext, haben aber keine Rufnummer.
+                if not anruf.nummer_e164 or anruf.nummer_e164 not in (
+                        self.wb_voip_nummern_e164 or '').split():
+                    _logger.debug("[wb_voip] Neuer Kontakt hat nicht die Nummer von Anruf %s", anruf_id)
+                    return
                 if eigen.with_user(self.env.user)._wb_voip_lesbarer_kontakt():
                     return  # schon zugeordnet: nicht umhängen
                 anruf._wb_voip_partner_setzen(self)

@@ -239,9 +239,35 @@ class TestKontext(WbVoipCase):
         protokoll = self._protokoll(partner_id=False, anruf_id=anruf.id)
         anruf.protokoll_id = protokoll
         neu = self.env['res.partner'].with_user(self.user_a).with_context(
-            wb_voip_anruf_id=anruf.id).create({'name': 'Neu Angelegt'})
+            wb_voip_anruf_id=anruf.id).create({
+                'name': 'Neu Angelegt', 'phone': '0170 1234567', 'country_id': self.env.ref('base.de').id})
         self.assertEqual(anruf.partner_id, neu)
         self.assertEqual(protokoll.partner_id, neu)
+
+    def test_neuer_kontakt_firma_per_name_create_nicht_verknuepft(self):
+        # Schnellanlage der Firma im Feld „Verknüpftes Unternehmen“ trägt denselben Kontext
+        anruf = self._anruf(partner_id=False)
+        Partner = self.env['res.partner'].with_user(self.user_a).with_context(
+            wb_voip_anruf_id=anruf.id)
+        firma_id, _name = Partner.name_create('Firma X')
+        self.assertTrue(firma_id)
+        self.assertFalse(anruf.partner_id)
+        person = Partner.create({'name': 'Neu Angelegt', 'phone': '+49 170 1234567',
+                                 'parent_id': firma_id})
+        self.assertEqual(anruf.partner_id, person)
+
+    def test_neuer_kontakt_andere_nummer_nicht_verknuepft(self):
+        anruf = self._anruf(partner_id=False)
+        self.env['res.partner'].with_user(self.user_a).with_context(
+            wb_voip_anruf_id=anruf.id).create({'name': 'Anderer', 'phone': '+49 170 7654321'})
+        self.assertFalse(anruf.partner_id)
+
+    def test_neuer_kontakt_anruf_ohne_nummer_nicht_verknuepft(self):
+        # interne Nebenstelle: keine E.164-Nummer am Anruf
+        anruf = self._anruf(partner_id=False, nummer='101', nummer_e164=False)
+        self.env['res.partner'].with_user(self.user_a).with_context(
+            wb_voip_anruf_id=anruf.id).create({'name': 'Intern', 'phone': '+49 170 1234567'})
+        self.assertFalse(anruf.partner_id)
 
     def test_neuer_kontakt_fremder_anruf_ignoriert(self):
         fremd = self._anruf(benutzer=self.user_b, partner_id=False)
