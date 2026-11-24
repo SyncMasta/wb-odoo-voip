@@ -15,13 +15,21 @@ class WbVoipZuordnen(models.TransientModel):
 
     anruf_id = fields.Many2one(
         'wb.voip.anruf', string='Anruf', required=True, ondelete='cascade')
-    nummer = fields.Char(string='Rufnummer', related='anruf_id.nummer', readonly=True)
+    nummer = fields.Char(string='Rufnummer', compute='_compute_nummer')
     partner_id = fields.Many2one('res.partner', string='Kontakt')
     feld = fields.Selection(
         selection='_selection_feld', string='Nummer speichern in', default='phone',
         required=True)
     ersetzen = fields.Boolean(
         string='Ersetzen', help="Eine vorhandene Nummer im gewählten Feld überschreiben.")
+
+    @api.depends('anruf_id')
+    def _compute_nummer(self):
+        # Nur die Nummer eines eigenen Anrufs (der Zugriff auf ``anruf_id`` läuft sonst über sudo)
+        for assistent in self:
+            anruf = assistent.anruf_id.sudo()
+            assistent.nummer = (anruf.nummer or False) \
+                if anruf and anruf.user_id == self.env.user else False
 
     @api.model
     def _selection_feld(self):
@@ -53,6 +61,11 @@ class WbVoipZuordnen(models.TransientModel):
                 self._anruf_pruefen(self.env['wb.voip.anruf'].browse(vals['anruf_id']))
         return super().create(vals_list)
 
+    def write(self, vals):
+        if vals.get('anruf_id') and not self.env.su:
+            self._anruf_pruefen(self.env['wb.voip.anruf'].browse(vals['anruf_id']))
+        return super().write(vals)
+
     # --- Aktion ---
 
     @nur_voip_benutzer
@@ -76,7 +89,7 @@ class WbVoipZuordnen(models.TransientModel):
         gespeichert = True
         if self.feld != NICHT_SPEICHERN and nummer:
             if self.feld not in partner._wb_voip_nummernfelder():
-                raise UserError(self.env._("Ungültige Angabe: %s.", self.env._("Feld")))
+                raise UserError(self.env._("Ungültiges Feld."))
             feld = partner._fields[self.feld]
             if partner.has_access('write') and partner._has_field_access(feld, 'write'):
                 vorhanden = partner[self.feld]

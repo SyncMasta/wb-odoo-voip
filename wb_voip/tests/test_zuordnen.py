@@ -1,4 +1,5 @@
 import json
+from unittest.mock import patch
 
 from odoo.exceptions import AccessError, UserError
 from odoo.tests import tagged
@@ -73,7 +74,7 @@ class TestZuordnen(WbVoipCase):
         self.assertEqual(aktion['context']['default_anruf_id'], anruf.id)
 
     def test_aktion_fremder_anruf(self):
-        with self.assertRaises(UserError):
+        with self.assertRaises(AccessError):
             self._anruf(self.user_b).with_user(self.user_a).action_wb_voip_zuordnen()
 
     def test_aktion_ohne_voip_gruppe(self):
@@ -91,13 +92,13 @@ class TestZuordnen(WbVoipCase):
 
     def test_anlegen_fremder_anruf(self):
         fremd = self._anruf(self.user_b)
-        with self.assertRaises(UserError):
+        with self.assertRaises(AccessError):
             self._assistent(fremd, self.kontakt)
 
     def test_default_fremder_anruf(self):
         fremd = self._anruf(self.user_b)
         Assistent = self.env['wb.voip.zuordnen'].with_user(self.user_a)
-        with self.assertRaises(UserError):
+        with self.assertRaises(AccessError):
             Assistent.with_context(default_anruf_id=fremd.id).default_get(['anruf_id'])
 
     def test_zuordnen_fremder_anruf_nachtraeglich(self):
@@ -106,7 +107,7 @@ class TestZuordnen(WbVoipCase):
         fremd = self._anruf(self.user_b)
         assistent = self._assistent(eigener, self.kontakt)
         assistent.sudo().anruf_id = fremd
-        with self.assertRaises(UserError):
+        with self.assertRaises(AccessError):
             assistent.action_zuordnen()
         self.assertFalse(fremd.partner_id)
         self.assertFalse(self.kontakt.phone)
@@ -114,7 +115,7 @@ class TestZuordnen(WbVoipCase):
     def test_zuordnen_ohne_voip_gruppe(self):
         assistent = self._assistent(self._anruf(), self.kontakt)
         assistent.sudo().create_uid = self.user_ohne
-        with self.assertRaises(UserError):
+        with self.assertRaises(AccessError):
             assistent.with_user(self.user_ohne).action_zuordnen()
 
     def test_zuordnen_ohne_lizenz(self):
@@ -145,8 +146,11 @@ class TestZuordnen(WbVoipCase):
         self.kontakt.phone = '+49 30 111'
         anruf = self._anruf()
         assistent = self._assistent(anruf, self.kontakt)
-        with self.assertRaises(UserError):
+        with self.assertRaises(UserError) as fehler:
             assistent.action_zuordnen()
+        self.assertEqual(
+            str(fehler.exception),
+            'Das Feld ist schon belegt. „Ersetzen“ anhaken oder ein anderes Feld wählen.')
         self.assertEqual(self.kontakt.phone, '+49 30 111')
         self.assertFalse(anruf.partner_id)
 
@@ -210,7 +214,7 @@ class TestZuordnen(WbVoipCase):
 
     def test_partner_setzen_fremder_anruf(self):
         fremd = self._anruf(self.user_b)
-        with self.assertRaises(UserError):
+        with self.assertRaises(AccessError):
             fremd.with_user(self.user_a)._wb_voip_partner_setzen(self.kontakt)
         self.assertFalse(fremd.partner_id)
 
@@ -227,3 +231,36 @@ class TestZuordnen(WbVoipCase):
         meldungen = self._bus_meldungen(assistent.action_zuordnen)
         self.assertEqual(
             meldungen, [{'type': 'wb_voip/kontext', 'payload': {'anruf_id': anruf.id}}])
+
+    # --- Fix Runde 1 ---
+
+    def test_umschreiben_auf_fremden_anruf(self):
+        fremd = self._anruf(self.user_b)
+        assistent = self._assistent(self._anruf(), self.kontakt)
+        with self.assertRaises(AccessError):
+            assistent.write({'anruf_id': fremd.id})
+
+    def test_nummer_fremder_anruf_nicht_lesbar(self):
+        fremd = self._anruf(self.user_b, nummer='0151 999')
+        assistent = self._assistent(self._anruf(), self.kontakt)
+        assistent.sudo().anruf_id = fremd
+        assistent.invalidate_recordset()
+        self.assertFalse(assistent.nummer)
+
+    def test_protokoll_wird_als_benutzer_geschrieben(self):
+        """The log is written as the caller (not sudo), so tracking names the real author."""
+        anruf = self._anruf()
+        protokoll = self._protokoll(anruf)
+        Protokoll = type(self.env['wb.voip.protokoll'])
+        original = Protokoll.write
+        benutzer = []
+
+        def aufzeichnen(rec, vals):
+            if 'partner_id' in vals:
+                benutzer.append((rec.env.uid, rec.env.su))
+            return original(rec, vals)
+
+        with patch.object(Protokoll, 'write', aufzeichnen):
+            self._assistent(anruf, self.kontakt).action_zuordnen()
+        self.assertEqual(benutzer, [(self.user_a.id, False)])
+        self.assertEqual(protokoll.partner_id, self.kontakt)

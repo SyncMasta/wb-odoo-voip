@@ -87,10 +87,12 @@ def _kontext_mischen(text, zusatz):
     try:
         baum = ast.parse(text.strip(), mode='eval')
     except (SyntaxError, ValueError, MemoryError, RecursionError):
+        _logger.debug("[wb_voip] Kontext der Fensteraktion nicht mischbar, nur Zusatzschlüssel")
         return dict(zusatz)
     dict_knoten = baum.body
     if not isinstance(dict_knoten, ast.Dict) or None in dict_knoten.keys \
             or dict_knoten.end_lineno is None:
+        _logger.debug("[wb_voip] Kontext der Fensteraktion nicht mischbar, nur Zusatzschlüssel")
         return dict(zusatz)
     # Einfügestelle aus dem Syntaxbaum: direkt hinter dem letzten Wert (bei leerem Dict hinter
     # der öffnenden Klammer). So bleiben Kommentare und ein Komma dahinter unberührt.
@@ -105,6 +107,7 @@ def _kontext_mischen(text, zusatz):
     if dict_knoten.values:
         letzter = dict_knoten.values[-1]
         if letzter.end_lineno is None:
+            _logger.debug("[wb_voip] Kontext der Fensteraktion nicht mischbar, nur Zusatzschlüssel")
             return dict(zusatz)
         stelle = versatz(letzter.end_lineno, letzter.end_col_offset)
         extra = ', ' + extra
@@ -114,6 +117,7 @@ def _kontext_mischen(text, zusatz):
     try:  # z. B. ein eingeklammerter letzter Wert würde hier ungültig: dann nur ``zusatz``
         ast.parse(ergebnis, mode='eval')
     except (SyntaxError, ValueError, MemoryError, RecursionError):
+        _logger.debug("[wb_voip] Kontext der Fensteraktion nicht mischbar, nur Zusatzschlüssel")
         return dict(zusatz)
     return ergebnis
 
@@ -459,7 +463,8 @@ class WbVoipAnruf(models.Model):
             raise AccessError(self.env._("Sie dürfen diesen Kontakt nicht lesen."))
         anruf.write({'partner_id': partner.id})
         if anruf.protokoll_id:
-            anruf.protokoll_id.write({'partner_id': partner.id})
+            # als Benutzer: der Verfolgungseintrag nennt den echten Autor
+            anruf.protokoll_id.with_user(self.env.user).write({'partner_id': partner.id})
         anruf._wb_voip_kontext_melden()
 
     # --- Anrufer-Kontext und Anruf-Buttons ---
