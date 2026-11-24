@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="wb_voip.Aufgabenliste">
+        <div class="o_wb_voip_aufgabenliste">
+            <div class="d-flex justify-content-end mb-1">
+                <button type="button" class="o_wb_voip_aktualisieren btn btn-sm btn-link"
+                        title="Aktualisieren" aria-label="Aktualisieren" t-on-click="laden">
+                    <i class="fa fa-refresh" aria-hidden="true"/>
+                </button>
+            </div>
+            <div t-if="lokal.fehler" class="alert alert-warning small" t-esc="lokal.fehler"/>
+            <div t-elif="!lokal.aufgaben.length" class="text-muted small p-2">
+                Keine offenen Aufgaben mit Telefonnummer.
+            </div>
+            <ul class="list-group list-group-flush">
+                <li t-foreach="lokal.aufgaben" t-as="aufgabe" t-key="aufgabe.id"
+                    class="o_wb_voip_eintrag list-group-item d-flex align-items-center gap-2 px-1">
+                    <div class="flex-grow-1 text-truncate">
+                        <div class="text-truncate fw-bold" t-esc="aufgabe.titel"/>
+                        <div class="small text-muted text-truncate">
+                            <span t-esc="aufgabe.res_name"/>
+                            <t t-if="faellig(aufgabe)"> · <span t-esc="faellig(aufgabe)"/></t>
+                        </div>
+                        <div class="small text-muted" t-esc="aufgabe.nummer"/>
+                    </div>
+                    <button type="button" class="o_wb_voip_eintrag_waehlen btn btn-sm btn-outline-success"
+                            title="Anrufen" aria-label="Anrufen" t-on-click="() => this.waehlen(aufgabe)">
+                        <i class="fa fa-phone" aria-hidden="true"/>
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </t>
+</templates>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="wb_voip.Kontaktliste">
+        <div class="o_wb_voip_kontaktliste">
+            <input type="search" class="o_wb_voip_kontaktsuche form-control mb-2"
+                   placeholder="Name, E-Mail oder Nummer" aria-label="Kontakte suchen"
+                   t-att-maxlength="maxSuchtext" t-model="lokal.suchtext"
+                   t-on-input="suchenVerzoegert" t-on-keydown="onKeydown"/>
+            <div t-if="lokal.fehler" class="alert alert-warning small" t-esc="lokal.fehler"/>
+            <ul class="list-group list-group-flush">
+                <li t-foreach="lokal.kontakte" t-as="kontakt" t-key="kontakt.id"
+                    class="o_wb_voip_eintrag list-group-item d-flex align-items-center gap-2 px-1">
+                    <div class="flex-grow-1 text-truncate">
+                        <div class="text-truncate fw-bold" t-esc="kontakt.name"/>
+                        <div class="small text-muted text-truncate">
+                            <t t-if="kontakt.firma"><span t-esc="kontakt.firma"/> · </t>
+                            <span t-esc="kontakt.nummer"/>
+                        </div>
+                    </div>
+                    <button type="button" class="o_wb_voip_eintrag_waehlen btn btn-sm btn-outline-success"
+                            title="Anrufen" aria-label="Anrufen" t-on-click="() => this.waehlen(kontakt)">
+                        <i class="fa fa-phone" aria-hidden="true"/>
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </t>
+</templates>

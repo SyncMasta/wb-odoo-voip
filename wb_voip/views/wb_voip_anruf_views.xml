@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="wb_voip_anruf_view_list" model="ir.ui.view">
+        <field name="name">wb.voip.anruf.list</field>
+        <field name="model">wb.voip.anruf</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0">
+                <field name="beginn"/>
+                <field name="user_id"/>
+                <field name="richtung"/>
+                <field name="nummer"/>
+                <field name="partner_id"/>
+                <field name="zustand"/>
+                <field name="dauer_sek"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="wb_voip_anruf_view_form" model="ir.ui.view">
+        <field name="name">wb.voip.anruf.form</field>
+        <field name="model">wb.voip.anruf</field>
+        <field name="arch" type="xml">
+            <form create="0" edit="0">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="user_id"/>
+                            <field name="richtung"/>
+                            <field name="nummer"/>
+                            <field name="nummer_e164"/>
+                            <field name="partner_id"/>
+                        </group>
+                        <group>
+                            <field name="zustand"/>
+                            <field name="beginn"/>
+                            <field name="annahme"/>
+                            <field name="ende"/>
+                            <field name="dauer_sek"/>
+                            <field name="sip_call_id"/>
+                        </group>
+                    </group>
+                    <field name="notiz"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="wb_voip_anruf_action" model="ir.actions.act_window">
+        <field name="name">Anrufe</field>
+        <field name="res_model">wb.voip.anruf</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

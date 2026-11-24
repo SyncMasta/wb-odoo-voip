@@ -1,0 +1,7 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+wb_voip_anlage_user,wb.voip.anlage Benutzer,model_wb_voip_anlage,group_wb_voip_user,1,0,0,0
+wb_voip_anlage_manager,wb.voip.anlage Administrator,model_wb_voip_anlage,group_wb_voip_manager,1,1,1,1
+wb_voip_anruf_user,wb.voip.anruf Benutzer,model_wb_voip_anruf,group_wb_voip_user,1,1,1,0
+wb_voip_anruf_manager,wb.voip.anruf Administrator,model_wb_voip_anruf,group_wb_voip_manager,1,1,1,1
+wb_voip_protokoll_user,wb.voip.protokoll Benutzer,model_wb_voip_protokoll,group_wb_voip_user,1,1,1,0
+wb_voip_protokoll_manager,wb.voip.protokoll Administrator,model_wb_voip_protokoll,group_wb_voip_manager,1,1,1,1

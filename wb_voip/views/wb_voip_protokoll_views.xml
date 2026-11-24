@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="wb_voip_protokoll_view_list" model="ir.ui.view">
+        <field name="name">wb.voip.protokoll.list</field>
+        <field name="model">wb.voip.protokoll</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="datum"/>
+                <field name="user_id"/>
+                <field name="richtung"/>
+                <field name="partner_id"/>
+                <field name="ergebnis"/>
+                <field name="dauer_sek"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="wb_voip_protokoll_view_form" model="ir.ui.view">
+        <field name="name">wb.voip.protokoll.form</field>
+        <field name="model">wb.voip.protokoll</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="partner_id"/>
+                            <field name="ergebnis"/>
+                            <field name="richtung" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="datum" readonly="1"/>
+                            <field name="user_id" readonly="1"/>
+                            <field name="dauer_sek" readonly="1"/>
+                            <field name="anruf_id" readonly="1"/>
+                        </group>
+                    </group>
+                    <field name="beschreibung" placeholder="Notizen zum Gespräch"/>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Popup nach dem Anruf (FormViewDialog, breit): links Ergebnis und Notiz, rechts Kontakt
+         und die letzten Anrufe. Speichern und Verwerfen kommen vom Dialog. -->
+    <record id="wb_voip_protokoll_view_form_popup" model="ir.ui.view">
+        <field name="name">wb.voip.protokoll.form.popup</field>
+        <field name="model">wb.voip.protokoll</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_wb_voip_folgeaktivitaet" type="object"
+                            string="Folgeaktivität planen" class="btn-secondary"/>
+                </header>
+                <!-- Platz für Aktionsknöpfe späterer Ausbaustufen -->
+                <div class="o_wb_voip_popup_aktionen"/>
+                <sheet>
+                    <div class="row">
+                        <div class="col-12 col-lg-7">
+                            <group>
+                                <field name="ergebnis"/>
+                                <field name="datum" readonly="1"/>
+                                <field name="dauer_sek" readonly="1"/>
+                            </group>
+                            <field name="beschreibung" placeholder="Notizen zum Gespräch"/>
+                        </div>
+                        <div class="col-12 col-lg-5">
+                            <group>
+                                <field name="partner_id" readonly="1"/>
+                                <field name="wb_voip_partner_telefon" readonly="1"/>
+                                <field name="wb_voip_partner_email" readonly="1"/>
+                            </group>
+                            <separator string="Letzte Anrufe"/>
+                            <field name="wb_voip_letzte_protokoll_ids" nolabel="1" readonly="1">
+                                <list no_open="1">
+                                    <field name="datum"/>
+                                    <field name="richtung"/>
+                                    <field name="ergebnis"/>
+                                </list>
+                            </field>
+                        </div>
+                    </div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="wb_voip_protokoll_view_search" model="ir.ui.view">
+        <field name="name">wb.voip.protokoll.search</field>
+        <field name="model">wb.voip.protokoll</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="partner_id"/>
+                <field name="user_id"/>
+                <filter name="eingehend" string="Eingehend" domain="[('richtung', '=', 'eingehend')]"/>
+                <filter name="ausgehend" string="Ausgehend" domain="[('richtung', '=', 'ausgehend')]"/>
+                <group>
+                    <filter name="gruppe_ergebnis" string="Ergebnis" context="{'group_by': 'ergebnis'}"/>
+                    <filter name="gruppe_user" string="Benutzer" context="{'group_by': 'user_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="wb_voip_protokoll_action" model="ir.actions.act_window">
+        <field name="name">Anrufprotokolle</field>
+        <field name="res_model">wb.voip.protokoll</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

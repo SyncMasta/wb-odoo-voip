@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="wb_voip_anlage_view_list" model="ir.ui.view">
+        <field name="name">wb.voip.anlage.list</field>
+        <field name="model">wb.voip.anlage</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="sip_domain"/>
+                <field name="ws_url"/>
+                <field name="modus"/>
+                <field name="country_id"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="wb_voip_anlage_view_form" model="ir.ui.view">
+        <field name="name">wb.voip.anlage.form</field>
+        <field name="model">wb.voip.anlage</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="modus"/>
+                            <field name="country_id"/>
+                        </group>
+                        <group>
+                            <field name="sip_domain"/>
+                            <field name="ws_url"/>
+                        </group>
+                    </group>
+                    <group string="Netzwerk">
+                        <field name="ice_server_urls" placeholder="leer = kein STUN/TURN"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="wb_voip_anlage_action" model="ir.actions.act_window">
+        <field name="name">Telefonanlagen</field>
+        <field name="res_model">wb.voip.anlage</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

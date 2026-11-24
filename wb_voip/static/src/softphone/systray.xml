@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="wb_voip.Systray">
+        <div class="o_wb_voip_systray d-flex align-items-center">
+            <button type="button" class="o_nav_entry o_wb_voip_systray_knopf btn border-0 position-relative"
+                    t-att-title="titel" t-att-aria-label="titel"
+                    t-att-aria-expanded="ui.offen ? 'true' : 'false'"
+                    t-on-click="umschalten">
+                <i class="fa fa-lg fa-phone" t-att-class="{'text-success': state.anruf}" aria-hidden="true"/>
+                <i class="fa fa-circle o_wb_voip_punkt" t-att-class="info.farbe" aria-hidden="true"/>
+            </button>
+        </div>
+    </t>
+</templates>

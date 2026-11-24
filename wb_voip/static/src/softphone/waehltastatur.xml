@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="wb_voip.Tastenfeld">
+        <div class="o_wb_voip_tastenfeld">
+            <t t-foreach="tasten" t-as="taste" t-key="taste">
+                <button type="button" class="o_wb_voip_taste btn btn-light"
+                        t-att-data-taste="taste" t-att-title="taste" t-att-aria-label="taste"
+                        t-on-click="() => this.props.onTaste(taste)" t-esc="taste"/>
+            </t>
+        </div>
+    </t>
+
+    <t t-name="wb_voip.Waehltastatur">
+        <div class="o_wb_voip_waehltastatur">
+            <div class="input-group mb-2">
+                <input type="tel" class="o_wb_voip_eingabe form-control" autocomplete="off"
+                       maxlength="64" placeholder="Nummer" aria-label="Nummer"
+                       t-model="lokal.nummer" t-on-keydown="onKeydown"/>
+                <button type="button" class="o_wb_voip_loeschen btn btn-outline-secondary"
+                        title="Letzte Ziffer löschen" aria-label="Letzte Ziffer löschen"
+                        t-on-click="loeschen">
+                    <i class="fa fa-long-arrow-left" aria-hidden="true"/>
+                </button>
+            </div>
+            <Tastenfeld onTaste.bind="taste"/>
+            <button type="button" class="o_wb_voip_anrufen btn btn-success w-100 mt-2"
+                    title="Anrufen" aria-label="Anrufen"
+                    t-att-disabled="!lokal.nummer.trim()" t-on-click="anrufen">
+                <i class="fa fa-phone me-1" aria-hidden="true"/>Anrufen
+            </button>
+        </div>
+    </t>
+</templates>

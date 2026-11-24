@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="wb_voip.StatusAnzeige">
+        <div class="o_wb_voip_status px-3 py-2 border-bottom small" role="status" aria-live="polite">
+            <div class="d-flex align-items-center gap-2">
+                <i class="fa fa-circle o_wb_voip_punkt" t-att-class="info.farbe" aria-hidden="true"/>
+                <span class="fw-bold" t-att-class="info.farbe" t-esc="info.text"/>
+                <button t-if="state.status === 'getrennt'" type="button"
+                        class="o_wb_voip_neu_verbinden btn btn-sm btn-outline-secondary ms-auto"
+                        title="Neu verbinden" aria-label="Neu verbinden" t-on-click="neuVerbinden">
+                    <i class="fa fa-refresh me-1" aria-hidden="true"/>Neu verbinden
+                </button>
+            </div>
+            <div t-if="fehler" class="o_wb_voip_fehler text-muted mt-1" t-esc="fehler"/>
+            <t t-if="state.status === 'ohne_lizenz'">
+                <button t-if="lizenzAktivierbar" type="button"
+                        class="o_wb_voip_lizenz btn btn-link btn-sm p-0 mt-1"
+                        title="Lizenz aktivieren" aria-label="Lizenz aktivieren"
+                        t-on-click="lizenzAktivieren">Lizenz aktivieren</button>
+                <div t-else="" class="text-muted mt-1">Bitte wenden Sie sich an Ihren Administrator.</div>
+            </t>
+            <t t-if="state.status === 'nicht_konfiguriert' or nichtEingerichtet">
+                <div t-if="state.status !== 'nicht_konfiguriert'" class="text-muted mt-1">
+                    Telefonie ist noch nicht eingerichtet.
+                </div>
+                <div t-if="istManager" class="o_wb_voip_hinweis_manager text-muted mt-1">
+                    <t t-if="state.status === 'nicht_konfiguriert'">
+                        Administrator: Umgebungsvariable WB_VOIP_FERNET_KEY im Odoo-Server setzen und
+                        Odoo neu starten.
+                    </t>
+                    Telefonanlage und SIP-Benutzer im Benutzerformular (Reiter Telefonie) zuordnen.
+                </div>
+            </t>
+        </div>
+    </t>
+
+    <t t-name="wb_voip.Softphone">
+        <section class="o_wb_voip_softphone card shadow h-100" aria-label="Softphone">
+            <header class="o_wb_voip_kopf card-header d-flex align-items-center gap-2">
+                <i class="fa fa-phone" aria-hidden="true"/>
+                <span class="fw-bold flex-grow-1">Telefon</span>
+                <button type="button" class="o_wb_voip_schliessen btn btn-sm"
+                        title="Softphone schließen" aria-label="Softphone schließen"
+                        t-on-click="schliessen">
+                    <i class="fa fa-times" aria-hidden="true"/>
+                </button>
+            </header>
+            <StatusAnzeige/>
+            <div class="o_wb_voip_inhalt card-body p-0 overflow-auto">
+                <Anrufansicht t-if="state.anruf"/>
+                <t t-else="">
+                    <div class="o_wb_voip_reiter nav nav-tabs px-2 pt-2" role="tablist">
+                        <t t-foreach="reiter" t-as="r" t-key="r.schluessel">
+                            <button type="button" role="tab" class="nav-link"
+                                    t-att-class="{active: r.schluessel === aktiverReiter.schluessel}"
+                                    t-att-aria-selected="r.schluessel === aktiverReiter.schluessel ? 'true' : 'false'"
+                                    t-att-title="r.titel"
+                                    t-on-click="() => this.waehleReiter(r.schluessel)"
+                                    t-esc="r.titel"/>
+                        </t>
+                    </div>
+                    <div class="p-2" role="tabpanel">
+                        <t t-if="aktiverReiter" t-component="aktiverReiter.Component"
+                           t-key="aktiverReiter.schluessel"/>
+                    </div>
+                </t>
+            </div>
+            <footer t-if="lokal.erlaubnis === 'default'" class="card-footer py-1 px-2 small">
+                <button type="button" class="o_wb_voip_benachrichtigung_erlauben btn btn-link btn-sm p-0"
+                        title="Desktop-Benachrichtigung für eingehende Anrufe erlauben"
+                        aria-label="Desktop-Benachrichtigung für eingehende Anrufe erlauben"
+                        t-on-click="benachrichtigungErlauben">
+                    <i class="fa fa-bell me-1" aria-hidden="true"/>Desktop-Benachrichtigung erlauben
+                </button>
+            </footer>
+        </section>
+    </t>
+
+    <t t-name="wb_voip.SoftphoneFenster">
+        <div t-if="sichtbar" class="o_wb_voip_fenster position-fixed">
+            <Softphone/>
+        </div>
+    </t>
+</templates>

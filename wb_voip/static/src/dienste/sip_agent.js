@@ -1,0 +1,417 @@
+// SIP-Agenten für den Telefon-Dienst. Der Dienst kennt nur diese kleine Schnittstelle:
+//
+//   Agent:   register(), unregister(), stop(), invite(ziel) -> Sitzung
+//            Ereignisse: "invitation" (Sitzung), "getrennt" (Text)
+//   Sitzung: callId, remoteNummer, accept(), reject({statusCode}), cancel(), bye(),
+//            hold(), unhold(), mute(an), dtmf(ziffer), refer(ziel)
+//            Ereignisse: "fortschritt" ({statusCode, mitSdp}), "angenommen",
+//            "beendet" ({grund})
+//
+// Umsetzungen: SipJsAgent (SIP.js 0.21.2, Modus „prod“), TestAgent (simuliert, Modus „test“),
+// in den Tests FakeAgent (static/tests/sip_fake.js).
+
+export class Sender {
+    constructor() {
+        this._wbHandler = {};
+    }
+    on(name, rueckruf) {
+        (this._wbHandler[name] ||= []).push(rueckruf);
+        return () => {
+            this._wbHandler[name] = this._wbHandler[name].filter((r) => r !== rueckruf);
+        };
+    }
+    emit(name, ...args) {
+        for (const rueckruf of [...(this._wbHandler[name] || [])]) {
+            rueckruf(...args);
+        }
+    }
+}
+
+const REGISTER_TIMEOUT_MS = 30_000;
+const REGISTER_EXPIRES_S = 300;
+
+function zufall() {
+    return Math.random().toString(36).slice(2, 12);
+}
+
+/** RTCIceServer-Liste aus den URLs der Anlage (leer = kein STUN/TURN). */
+export function iceServer(urls) {
+    const liste = Array.isArray(urls) ? urls.filter((url) => typeof url === "string" && /^stun:/i.test(url)) : [];
+    return liste.length ? [{ urls: liste }] : [];
+}
+
+// --- SIP.js ---------------------------------------------------------------------------
+
+class SipJsSitzung extends Sender {
+    constructor(agent, session, { ausgehend }) {
+        super();
+        this._agent = agent;
+        this._session = session;
+        this._ausgehend = ausgehend;
+        this._grund = "";
+        this._angenommen = false;
+        this._audio = null;
+        this.callId = session.request?.callId || `wb-voip-${zufall()}`;
+        this.remoteNummer = session.remoteIdentity?.uri?.user || "";
+        const { SessionState } = agent.SIP;
+        session.stateChange.addListener((zustand) => {
+            if (zustand === SessionState.Established) {
+                this._angenommen = true;
+                this._audioAnhaengen();
+                this.emit("angenommen");
+            } else if (zustand === SessionState.Terminated) {
+                this._audioLoesen();
+                // Grund aus onReject kann im selben Takt noch kommen
+                Promise.resolve().then(() =>
+                    this.emit("beendet", { grund: this._grund || (this._angenommen ? "bye" : "") })
+                );
+            }
+        });
+        if (!ausgehend) {
+            // Anrufer legt vor der Annahme auf (CANCEL)
+            session.delegate = {
+                ...(session.delegate || {}),
+                onCancel: () => {
+                    this._grund = "487";
+                },
+            };
+        }
+    }
+    get _sdh() {
+        return this._session.sessionDescriptionHandler;
+    }
+    _fortschritt(antwort) {
+        const nachricht = antwort?.message || {};
+        const mitSdp = Boolean(nachricht.body);
+        if (mitSdp) {
+            // Early Media: Ton der Gegenstelle hörbar machen
+            this._audioAnhaengen();
+        }
+        this.emit("fortschritt", { statusCode: nachricht.statusCode, mitSdp });
+    }
+    _audioAnhaengen() {
+        const strom = this._sdh?.remoteMediaStream;
+        if (!strom) {
+            return;
+        }
+        if (!this._audio) {
+            this._audio = new Audio();
+            this._audio.autoplay = true;
+        }
+        if (this._audio.srcObject !== strom) {
+            this._audio.srcObject = strom;
+        }
+        this._audio.play().catch(() => {});
+    }
+    _audioLoesen() {
+        if (this._audio) {
+            this._audio.pause();
+            this._audio.srcObject = null;
+            this._audio = null;
+        }
+    }
+    accept() {
+        return this._session.accept({
+            sessionDescriptionHandlerOptions: { constraints: { audio: true, video: false } },
+        });
+    }
+    reject({ statusCode = 603 } = {}) {
+        this._grund = String(statusCode);
+        return this._session.reject({ statusCode });
+    }
+    cancel() {
+        this._grund = "487";
+        return this._session.cancel();
+    }
+    bye() {
+        this._grund = "bye";
+        return this._session.bye();
+    }
+    _halten(an) {
+        const optionen = this._session.sessionDescriptionHandlerOptionsReInvite || {};
+        this._session.sessionDescriptionHandlerOptionsReInvite = { ...optionen, hold: an };
+        return new Promise((resolve, reject) => {
+            this._session
+                .invite({
+                    requestDelegate: {
+                        onAccept: () => resolve(),
+                        onReject: (antwort) =>
+                            reject(new Error(`Re-INVITE abgelehnt (${antwort.message.statusCode})`)),
+                    },
+                })
+                .catch(reject);
+        });
+    }
+    hold() {
+        return this._halten(true);
+    }
+    unhold() {
+        return this._halten(false);
+    }
+    mute(an) {
+        const verbindung = this._sdh?.peerConnection;
+        for (const sender of verbindung?.getSenders() || []) {
+            if (sender.track) {
+                sender.track.enabled = !an;
+            }
+        }
+    }
+    dtmf(ziffer) {
+        // RFC 4733 über RTP; sonst SIP INFO
+        if (this._sdh?.sendDtmf?.(ziffer)) {
+            return;
+        }
+        this._session
+            .info({
+                requestOptions: {
+                    body: {
+                        contentDisposition: "render",
+                        contentType: "application/dtmf-relay",
+                        content: `Signal=${ziffer}\r\nDuration=160`,
+                    },
+                },
+            })
+            .catch(() => {});
+    }
+    refer(ziel) {
+        const uri = this._agent._uri(ziel);
+        return new Promise((resolve, reject) => {
+            this._session
+                .refer(uri, {
+                    requestDelegate: {
+                        onAccept: () => {
+                            resolve();
+                            // Blindes Weiterleiten: nach 202 selbst auflegen
+                            this.bye().catch(() => {});
+                        },
+                        onReject: (antwort) =>
+                            reject(new Error(`REFER abgelehnt (${antwort.message.statusCode})`)),
+                    },
+                })
+                .catch(reject);
+        });
+    }
+}
+
+export class SipJsAgent extends Sender {
+    /**
+     * @param {object} zugang Ergebnis von res.users.wb_voip_zugang_lesen
+     * @param {object} SIP    globales SIP.js-Objekt
+     */
+    constructor(zugang, SIP) {
+        super();
+        this.SIP = SIP;
+        this._domain = zugang.sip_domain;
+        this._gestoppt = false;
+        this._registerer = null;
+        const { UserAgent } = SIP;
+        this._ua = new UserAgent({
+            uri: this._uri(zugang.sip_benutzer),
+            transportOptions: { server: zugang.ws_url },
+            // Nur ICE-Server der Anlage; ohne Eintrag keiner. SIP.js fragt sonst
+            // stun.l.google.com (Daten an Dritte, DSGVO Art. 5/44).
+            sessionDescriptionHandlerFactoryOptions: {
+                peerConnectionConfiguration: { iceServers: iceServer(zugang.ice_server_urls) },
+            },
+            authorizationUsername: zugang.sip_benutzer,
+            authorizationPassword: zugang.sip_passwort || "",
+            displayName: zugang.sip_benutzer,
+            userAgentString: "WB VoIP",
+            logLevel: "error",
+            delegate: {
+                onInvite: (invitation) => this._eingehend(invitation),
+                onDisconnect: (fehler) => {
+                    if (!this._gestoppt) {
+                        this.emit("getrennt", fehler?.message || "Verbindung zur Anlage getrennt");
+                    }
+                },
+            },
+        });
+    }
+    _uri(benutzer) {
+        const uri = this.SIP.UserAgent.makeURI(`sip:${benutzer}@${this._domain}`);
+        if (!uri) {
+            throw new Error("Ungültige SIP-Adresse.");
+        }
+        return uri;
+    }
+    async register() {
+        const { Registerer, RegistererState } = this.SIP;
+        await this._ua.start();
+        this._registerer = new Registerer(this._ua, { expires: REGISTER_EXPIRES_S });
+        await new Promise((resolve, reject) => {
+            const timer = setTimeout(
+                () => reject(new Error("Anlage antwortet nicht auf REGISTER.")),
+                REGISTER_TIMEOUT_MS
+            );
+            const fertig = (fn) => (arg) => {
+                clearTimeout(timer);
+                fn(arg);
+            };
+            this._registerer
+                .register({
+                    requestDelegate: {
+                        onAccept: fertig(() => resolve()),
+                        onReject: fertig((antwort) =>
+                            reject(
+                                new Error(
+                                    `REGISTER abgelehnt (${antwort.message.statusCode} ${antwort.message.reasonPhrase || ""})`.trim()
+                                )
+                            )
+                        ),
+                    },
+                })
+                .catch(fertig(reject));
+        });
+        // Registrierung geht später verloren (Auffrischung scheitert)
+        this._registerer.stateChange.addListener((zustand) => {
+            if (zustand === RegistererState.Unregistered && !this._gestoppt) {
+                this.emit("getrennt", "Registrierung an der Anlage verloren");
+            }
+        });
+    }
+    async unregister() {
+        if (this._registerer) {
+            await this._registerer.unregister().catch(() => {});
+        }
+    }
+    async stop() {
+        if (this._gestoppt) {
+            return;
+        }
+        this._gestoppt = true;
+        // unregister() schickt REGISTER mit Ablauf 0 noch im selben Takt (vor dem ersten
+        // await), auch wenn die Seite gerade geschlossen wird
+        await this.unregister();
+        await this._ua.stop().catch(() => {});
+    }
+    invite(ziel) {
+        const { Inviter } = this.SIP;
+        const inviter = new Inviter(this._ua, this._uri(ziel), {
+            earlyMedia: true,
+            sessionDescriptionHandlerOptions: { constraints: { audio: true, video: false } },
+        });
+        const sitzung = new SipJsSitzung(this, inviter, { ausgehend: true });
+        sitzung.remoteNummer = ziel;
+        inviter
+            .invite({
+                requestDelegate: {
+                    onProgress: (antwort) => sitzung._fortschritt(antwort),
+                    onReject: (antwort) => {
+                        sitzung._grund = String(antwort.message.statusCode);
+                    },
+                },
+            })
+            .catch(() => {
+                sitzung._grund ||= "fehler";
+            });
+        return sitzung;
+    }
+    _eingehend(invitation) {
+        this.emit("invitation", new SipJsSitzung(this, invitation, { ausgehend: false }));
+    }
+}
+
+// --- Simulation (Modus „test“) ----------------------------------------------------------
+
+const TEST_KLINGELN_MS = 1000;
+
+class TestSitzung extends Sender {
+    constructor(uhr, { remoteNummer }) {
+        super();
+        this._uhr = uhr;
+        this.callId = `wb-voip-test-${zufall()}`;
+        this.remoteNummer = remoteNummer;
+        this._timer = [];
+        this._vorbei = false;
+    }
+    _spaeter(ms, fn) {
+        this._timer.push(this._uhr.setTimeout(() => !this._vorbei && fn(), ms));
+    }
+    _ende(grund) {
+        if (this._vorbei) {
+            return;
+        }
+        this._vorbei = true;
+        this._timer.forEach((id) => this._uhr.clearTimeout(id));
+        this.emit("beendet", { grund });
+    }
+    accept() {
+        this._spaeter(0, () => this.emit("angenommen"));
+        return Promise.resolve();
+    }
+    reject({ statusCode = 603 } = {}) {
+        this._ende(String(statusCode));
+        return Promise.resolve();
+    }
+    cancel() {
+        this._ende("487");
+        return Promise.resolve();
+    }
+    bye() {
+        this._ende("bye");
+        return Promise.resolve();
+    }
+    hold() {
+        return Promise.resolve();
+    }
+    unhold() {
+        return Promise.resolve();
+    }
+    mute() {}
+    dtmf() {}
+    refer() {
+        this._spaeter(0, () => this._ende("bye"));
+        return Promise.resolve();
+    }
+}
+
+/** Simulierter Agent: keine SIP-Verbindung; ein Anruf klingelt 1 s und wird angenommen. */
+export class TestAgent extends Sender {
+    constructor(zugang, { uhr }) {
+        super();
+        this._uhr = uhr;
+    }
+    register() {
+        return Promise.resolve();
+    }
+    unregister() {
+        return Promise.resolve();
+    }
+    stop() {
+        return Promise.resolve();
+    }
+    invite(ziel) {
+        const sitzung = new TestSitzung(this._uhr, { remoteNummer: ziel });
+        sitzung._spaeter(0, () => sitzung.emit("fortschritt", { statusCode: 180, mitSdp: false }));
+        sitzung._spaeter(TEST_KLINGELN_MS, () => sitzung.emit("angenommen"));
+        return sitzung;
+    }
+    /** Eingehenden Anruf simulieren (Demo). */
+    simuliereEingehend(nummer) {
+        const sitzung = new TestSitzung(this._uhr, { remoteNummer: nummer });
+        this.emit("invitation", sitzung);
+        return sitzung;
+    }
+}
+
+/**
+ * Liefert die Agent-Fabrik des Dienstes: Modus „test“ simuliert, sonst wird das Bündel
+ * ``wb_voip.sip_lib`` (SIP.js) erst jetzt nachgeladen.
+ */
+export function erzeugeAgentFabrik({ bibliothekLaden, sipBibliothek = () => window.SIP } = {}) {
+    return async (zugang, { uhr }) => {
+        if (zugang.modus === "test") {
+            return new TestAgent(zugang, { uhr });
+        }
+        await bibliothekLaden();
+        const SIP = sipBibliothek();
+        if (!SIP?.UserAgent) {
+            throw new Error("SIP-Bibliothek konnte nicht geladen werden.");
+        }
+        if (!zugang.ws_url || !zugang.sip_domain || !zugang.sip_benutzer) {
+            throw new Error("SIP-Zugang unvollständig (WebSocket, Domain oder Benutzer fehlt).");
+        }
+        return new SipJsAgent(zugang, SIP);
+    };
+}

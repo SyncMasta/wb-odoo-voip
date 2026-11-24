@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="group_wb_voip_user" model="res.groups">
+        <field name="name">WB VoIP: Benutzer</field>
+        <field name="comment">Darf das Softphone nutzen und eigene Anrufe protokollieren.</field>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+    </record>
+
+    <record id="group_wb_voip_manager" model="res.groups">
+        <field name="name">WB VoIP: Administrator</field>
+        <field name="comment">Verwaltet Telefonanlagen und sieht alle Anrufe.</field>
+        <field name="implied_ids" eval="[(4, ref('group_wb_voip_user'))]"/>
+    </record>
+
+    <!-- Nur bei der Installation: entfernt ein Administrator die Mitgliedschaft, setzt ein
+         Update sie nicht wieder -->
+    <data noupdate="1">
+        <record id="base.user_root" model="res.users">
+            <field name="group_ids" eval="[(4, ref('group_wb_voip_manager'))]"/>
+        </record>
+        <record id="base.user_admin" model="res.users">
+            <field name="group_ids" eval="[(4, ref('group_wb_voip_manager'))]"/>
+        </record>
+    </data>
+
+    <record id="wb_voip_anruf_regel_benutzer" model="ir.rule">
+        <field name="name">WB VoIP: eigene Anrufe</field>
+        <field name="model_id" ref="model_wb_voip_anruf"/>
+        <field name="domain_force">[('user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('group_wb_voip_user'))]"/>
+    </record>
+
+    <record id="wb_voip_anruf_regel_manager" model="ir.rule">
+        <field name="name">WB VoIP: alle Anrufe (Administrator)</field>
+        <field name="model_id" ref="model_wb_voip_anruf"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('group_wb_voip_manager'))]"/>
+    </record>
+
+    <record id="wb_voip_protokoll_regel_benutzer" model="ir.rule">
+        <field name="name">WB VoIP: eigene Protokolle</field>
+        <field name="model_id" ref="model_wb_voip_protokoll"/>
+        <field name="domain_force">[('user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('group_wb_voip_user'))]"/>
+    </record>
+
+    <record id="wb_voip_protokoll_regel_manager" model="ir.rule">
+        <field name="name">WB VoIP: alle Protokolle (Administrator)</field>
+        <field name="model_id" ref="model_wb_voip_protokoll"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('group_wb_voip_manager'))]"/>
+    </record>
+</odoo>

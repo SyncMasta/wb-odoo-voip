@@ -1,0 +1,15 @@
+WB VoIP (Odoo-Modul wb_voip)
+Copyright (c) 2026 WISSEN BERATUNG, Inh. Tobias Wissen, Holdorf
+
+Lizenz: Odoo Proprietary License v1.0 (OPL-1)
+Wortlaut: https://www.odoo.com/documentation/19.0/legal/licenses.html
+
+Die Nutzung (Ausführen, Ändern, Ausführen nach Änderung) ist nur mit einer gültigen Lizenz von
+WISSEN BERATUNG erlaubt. Veröffentlichen, Weitergeben, Unterlizenzieren oder Verkaufen von Kopien der Software
+oder geänderter Kopien ist untersagt. Die Veröffentlichung dieses Quelltextes durch den Urheber dient nur der
+Einsicht und räumt keine Nutzungsrechte ein.
+
+Lizenzen und Fragen: info@wissen-beratung.de · https://www.wissen-beratung.de
+
+Enthaltene Fremdsoftware:
+- SIP.js 0.21.2, MIT-Lizenz, siehe wb_voip/static/lib/SIP.js-LICENSE

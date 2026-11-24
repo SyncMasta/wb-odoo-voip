@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- Aufbewahrung von Anrufdaten in Monaten; 0 = nie löschen -->
+    <record id="wb_voip_aufbewahrung_monate_param" model="ir.config_parameter">
+        <field name="key">wb_voip.aufbewahrung_monate</field>
+        <field name="value">12</field>
+    </record>
+</odoo>

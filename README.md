@@ -1,0 +1,96 @@
+# WB VoIP – Telefonie direkt in Odoo 19
+
+**Softphone im Browser, Anrufprotokoll und Anbindung an SIP-Telefonanlagen für Odoo 19.**
+Ein Produkt von [WISSEN BERATUNG](https://www.wissen-beratung.de).
+
+Wer in Odoo arbeitet und daneben ein Tischtelefon oder eine zweite Telefon-App bedient, tippt Nummern ab, vergisst
+Notizen und findet später nicht mehr, wer wann mit wem gesprochen hat. WB VoIP holt das Telefon in Odoo: anrufen per
+Klick aus jedem Telefonfeld, eingehende Anrufe mit Namen des Kontakts, und nach jedem Gespräch ein Protokolleintrag
+am richtigen Datensatz.
+
+> **Stand:** Phase 1 (Version 19.0.1.4.x). Softphone, Anrufprotokoll und Lizenzanbindung sind fertig und mit
+> automatischen Tests abgesichert. Der Betrieb gegen eine echte Telefonanlage wird gerade erprobt; bis dahin gilt
+> das Modul als Vorabversion.
+
+---
+
+## Funktionen
+
+**Softphone in der Odoo-Kopfzeile**
+- Telefonsymbol mit Statuspunkt: verbunden, aus, in anderem Tab, getrennt, ohne Lizenz, nicht eingerichtet
+- Reiter „Wählen“, „Anrufe“, „Kontakte“ und „Aufgaben“; weitere Reiter können Zusatzmodule einhängen
+- Im Gespräch: Stumm, Halten, Tastatur (DTMF), Weiterleiten, Notiz, Auflegen
+- Eingehend: Annehmen oder Ablehnen, auf Wunsch mit Desktop-Benachrichtigung
+- Telefonsymbol neben jedem Odoo-Telefonfeld; der Anruf wird mit dem Datensatz verknüpft
+- Mehrere Odoo-Tabs: Nur ein Tab meldet sich an der Anlage an (eine Registrierung je Nebenstelle), die anderen
+  reichen Wählen an ihn weiter. Schließt der Tab, übernimmt der nächste.
+
+**Anrufprotokoll**
+- Nach jedem Anruf genau ein Protokolleintrag (erreicht, nicht erreicht, Mailbox, besetzt) mit Dauer und Notiz
+- Breites Popup direkt nach dem Auflegen mit Kontakt, den letzten Anrufen und „Folgeaktivität planen“
+- Hinweis im Chatter des verknüpften Datensatzes bzw. des Kontakts
+- Kontakterkennung über die Rufnummer, unabhängig von der Schreibweise (`0170 1234567` = `+49 170 1234567`)
+
+**Sicherheit und Datenschutz**
+- SIP-Passwort nur verschlüsselt gespeichert (Fernet); Benutzer und Administratoren können es setzen, nie lesen
+- Jeder Benutzer sieht nur seine eigenen Anrufe und Protokolle; Administratoren sehen alle
+- Keine Daten an Dritte: standardmäßig kein fremder STUN-Server, optional eigene STUN-Server je Anlage
+- Einstellbare Löschfrist für Anrufdaten (Standard 12 Monate); Protokolle bleiben erhalten
+- Alle Serverfunktionen prüfen Gruppe, Eigentümer und Eingaben; geprüft gegen OWASP ASVS und die
+  Odoo-Sicherheitsrichtlinien
+
+## Voraussetzungen
+
+| | |
+|---|---|
+| Odoo | 19.0 (Community oder Enterprise ohne das Enterprise-Modul `voip`) |
+| Odoo-Module | `mail`, `phone_validation`, `bus`, `web` (Standard) und `wb_license_client` (Lizenz-Client von WISSEN BERATUNG) |
+| Python | `cryptography` (im offiziellen Odoo-Image enthalten) |
+| Telefonanlage | SIP über WebSocket mit TLS (`wss://`, RFC 7118), eine Nebenstelle je Benutzer |
+| Browser | aktueller Chrome, Edge oder Firefox; Odoo über HTTPS |
+| Lizenz | gültiger Lizenzschlüssel für den Produktcode `VOIP` |
+
+## Installation
+
+1. `wb_voip` und `wb_license_client` in den Addons-Pfad legen.
+2. Schlüssel für die Passwort-Verschlüsselung erzeugen und als Umgebungsvariable des Odoo-Prozesses setzen:
+
+   ```bash
+   python3 -c "from cryptography.fernet import Fernet;print(Fernet.generate_key().decode())"
+   # Ergebnis als WB_VOIP_FERNET_KEY setzen, Odoo neu starten
+   ```
+
+   Der Schlüssel gehört nie in die Datenbank oder in ein Repository. Geht er verloren, müssen alle SIP-Passwörter
+   neu eingegeben werden.
+3. Modul „WB VoIP“ installieren und den Lizenzschlüssel unter Einstellungen aktivieren.
+
+## Einrichtung
+
+1. **Telefonanlage** (Einstellungen › Technisch › WB VoIP › Telefonanlagen): WebSocket-URL (`wss://…`), SIP-Domain,
+   Land. Modus „test“ simuliert Anrufe ohne Anlage, „prod“ meldet sich an der Anlage an.
+2. **Nebenstellen** (Benutzerformular, Reiter „Telefonie“): Anlage und SIP-Benutzer je Benutzer; jede Nebenstelle
+   gehört genau einem Benutzer. Das SIP-Passwort setzt der Benutzer unter „Mein Profil“ oder der Administrator.
+3. **Rechte**: „WB VoIP: Benutzer“ für alle, die telefonieren; „WB VoIP: Administrator“ für die Pflege von Anlagen
+   und Nebenstellen.
+4. **Löschfrist** (Einstellungen › WB VoIP): Monate bis zur Löschung beendeter Anrufe, `0` = nie.
+
+Details stehen in [`wb_voip/README.rst`](wb_voip/README.rst).
+
+## Geplant
+
+- Anrufer-Fenster mit eigenen Schaltflächen und einem Designer für den Aufbau der Fenster
+- Verpasste Anrufe mit Rückruf-Liste
+- CRM-Anbindung (Anrufe am Vorgang)
+- Adapter für Telefonanlagen, beginnend mit Ansitel (Rufumleitung, Anrufbeantworter, Anrufliste)
+- Englische Oberfläche
+
+## Lizenz
+
+Odoo Proprietary License v1.0 (OPL-1), siehe [LICENSE](LICENSE). Der Quelltext ist zur Einsicht veröffentlicht; die
+Nutzung setzt eine Lizenz von WISSEN BERATUNG voraus. Enthalten ist [SIP.js](https://sipjs.com) 0.21.2 unter der
+MIT-Lizenz (`wb_voip/static/lib/SIP.js-LICENSE`).
+
+## Kontakt
+
+WISSEN BERATUNG · Inh. Tobias Wissen · Lerchenstr. 16 · 49451 Holdorf
+Telefon +49 5494 2419770 · info@wissen-beratung.de · [www.wissen-beratung.de](https://www.wissen-beratung.de)
