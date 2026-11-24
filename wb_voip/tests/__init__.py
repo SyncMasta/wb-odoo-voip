@@ -16,3 +16,4 @@ from . import test_aktion
 from . import test_kontext
 from . import test_zuordnen
 from . import test_layout
+from . import test_layout_kontext

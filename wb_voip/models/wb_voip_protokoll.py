@@ -118,6 +118,31 @@ class WbVoipProtokoll(models.Model):
         return anruf.with_user(self.env.user)._wb_voip_aktionen(ort='protokoll_popup')
 
     @nur_voip_benutzer
+    def wb_voip_popup_layout(self):
+        """Return the right column of the popup for this log entry (client data).
+
+        ``{layout, kontakt, protokolle}`` for the place ``protokoll_popup``: the caller's
+        popup layout with formatted field values of the contact, the contact card and the
+        caller's earlier logs of the same contact (without this one). Only the caller's own
+        entry; everything is read as the caller, nothing about an unreadable contact.
+        """
+        self.ensure_one()
+        self.check_access('read')
+        if self.user_id != self.env.user:
+            raise AccessError(self.env._("Dies ist nicht Ihr Anrufprotokoll."))
+        partner = self.partner_id
+        if partner and not partner.has_access('read'):
+            partner = partner.browse()
+        layout = self.env.user._wb_voip_layout('protokoll_popup')
+        Anruf = self.env['wb.voip.anruf']
+        return {
+            'layout': layout._wb_voip_fuer_client(partner),
+            'kontakt': Anruf._wb_voip_kontakt_daten(partner),
+            'protokolle': Anruf._wb_voip_kontakt_protokolle(
+                partner, layout._wb_voip_anzahl('protokolle'), ohne=self),
+        }
+
+    @nur_voip_benutzer
     def action_wb_voip_folgeaktivitaet(self):
         """Return Odoo's standard "schedule activity" dialog for the follow-up.
 

@@ -52,6 +52,8 @@ LOESCH_STAPEL = 1000
 # Anrufer-Kontext: Obergrenzen je Abruf
 KONTEXT_PROTOKOLLE = 5
 KONTEXT_AUFGABEN = 10
+# Höchstzahl je Liste, auch wenn das Layout mehr verlangt
+KONTEXT_HOECHSTENS = 20
 # Obergrenze der Buttons je Abruf (nach Ort, Richtung, Zustand und Gruppe vorgefiltert)
 KONTEXT_AKTIONEN = 200
 AKTION_ORTE = ('anrufer_fenster', 'protokoll_popup', 'softphone')
@@ -492,18 +494,23 @@ class WbVoipAnruf(models.Model):
     def wb_voip_kontext(self):
         """Return the caller window data of the caller's own call.
 
-        ``{anruf, kontakt, protokolle, aufgaben, aktionen}``; everything is read as the
-        caller, ``kontakt`` is False (and lists stay empty) unless the contact is readable.
+        ``{anruf, kontakt, protokolle, aufgaben, aktionen, layout}``; everything is read as
+        the caller, ``kontakt`` is False (and lists stay empty) unless the contact is readable.
+        ``layout`` is the caller's caller-window layout with formatted field values; it also
+        decides how many logs and activities are loaded (none without such a block).
         """
         anruf = self._wb_voip_eigener()
         eigen = anruf.with_user(self.env.user)
         partner = eigen._wb_voip_lesbarer_kontakt()
+        layout = self.env.user._wb_voip_layout('anrufer_fenster')
         return {
             'anruf': eigen._wb_voip_client_daten(),
             'kontakt': eigen._wb_voip_kontakt_daten(partner),
-            'protokolle': eigen._wb_voip_kontakt_protokolle(partner),
-            'aufgaben': eigen._wb_voip_kontakt_aufgaben(partner),
+            'protokolle': eigen._wb_voip_kontakt_protokolle(
+                partner, layout._wb_voip_anzahl('protokolle')),
+            'aufgaben': eigen._wb_voip_kontakt_aufgaben(partner, layout._wb_voip_anzahl('aufgaben')),
             'aktionen': eigen._wb_voip_aktionen(),
+            'layout': layout._wb_voip_fuer_client(partner),
         }
 
     def _wb_voip_kontakt_daten(self, partner):
@@ -525,15 +532,20 @@ class WbVoipAnruf(models.Model):
             'bild_url': f'/web/image/res.partner/{partner.id}/avatar_128',
         }
 
-    def _wb_voip_kontakt_protokolle(self, partner):
-        """Return the caller's latest call logs of the contact (plain text, shortened)."""
-        if not partner:
+    def _wb_voip_kontakt_protokolle(self, partner, anzahl=KONTEXT_PROTOKOLLE, ohne=None):
+        """Return the caller's latest call logs of the contact (plain text, shortened).
+
+        At most ``anzahl`` (capped at 20) entries, without the log ``ohne``.
+        """
+        anzahl = min(anzahl or 0, KONTEXT_HOECHSTENS)
+        if not partner or not anzahl:
             return []
         Protokoll = self.env['wb.voip.protokoll']
         texte = dict(Protokoll._fields['ergebnis']._description_selection(self.env))
-        protokolle = Protokoll.search([
-            ('user_id', '=', self.env.uid), ('partner_id', '=', partner.id),
-        ], limit=KONTEXT_PROTOKOLLE)
+        domain = [('user_id', '=', self.env.uid), ('partner_id', '=', partner.id)]
+        if ohne:
+            domain.append(('id', '!=', ohne.id))
+        protokolle = Protokoll.search(domain, limit=anzahl)
         ergebnis = []
         for protokoll in protokolle:
             html = (protokoll.beschreibung or '')[:KONTEXT_HTML_MAX]
@@ -547,9 +559,15 @@ class WbVoipAnruf(models.Model):
             })
         return ergebnis
 
-    def _wb_voip_kontakt_aufgaben(self, partner):
-        """Return the caller's open activities on the contact or on the call's record."""
+    def _wb_voip_kontakt_aufgaben(self, partner, anzahl=KONTEXT_AUFGABEN):
+        """Return the caller's open activities on the contact or on the call's record.
+
+        At most ``anzahl`` (capped at 20) entries.
+        """
         self.ensure_one()
+        anzahl = min(anzahl or 0, KONTEXT_HOECHSTENS)
+        if not anzahl:
+            return []
         orte = []
         if partner:
             orte.append(Domain('res_model', '=', 'res.partner') & Domain('res_id', '=', partner.id))
@@ -560,7 +578,7 @@ class WbVoipAnruf(models.Model):
             return []
         aktivitaeten = self.env['mail.activity'].search(
             Domain('user_id', '=', self.env.uid) & Domain.OR(orte),
-            order='date_deadline, id', limit=KONTEXT_AUFGABEN)
+            order='date_deadline, id', limit=anzahl)
         return [{
             'id': aktivitaet.id,
             'titel': aktivitaet.summary or aktivitaet.activity_type_id.name or '',
