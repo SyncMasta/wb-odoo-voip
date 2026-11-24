@@ -3,6 +3,7 @@
     <t t-name="wb_voip.AnruferFenster">
         <section t-if="fenster.offen" t-ref="panel"
                  class="o_wb_voip_anrufer_fenster position-fixed d-flex flex-column bg-view shadow-lg"
+                 t-att-class="breiteKlasse"
                  role="dialog" aria-label="Anrufer-Fenster" tabindex="-1" t-on-keydown="onKeydown"
                  t-on-mouseenter="onZeigerEin" t-on-mouseleave="onZeigerAus"
                  t-on-focusin="onFokusEin" t-on-focusout="onFokusAus">
@@ -63,63 +64,12 @@
                 <div t-if="fenster.fehler" class="o_wb_voip_af_fehler alert alert-warning" role="alert"
                      t-esc="fenster.fehler"/>
 
-                <div t-if="kontakt" class="o_wb_voip_af_kontakt mb-3">
-                    <div t-if="kontakt.telefon" class="text-truncate">
-                        <i class="fa fa-phone me-2" aria-hidden="true"/><span t-esc="kontakt.telefon"/>
-                    </div>
-                    <div t-if="kontakt.email" class="text-truncate">
-                        <i class="fa fa-envelope me-2" aria-hidden="true"/><span t-esc="kontakt.email"/>
-                    </div>
-                    <button type="button" class="o_wb_voip_af_kontakt_oeffnen btn btn-link p-0"
-                            t-on-click="kontaktOeffnen">
-                        <i class="fa fa-external-link me-1" aria-hidden="true"/>Kontakt öffnen
-                    </button>
-                </div>
-
-                <div t-if="daten" class="o_wb_voip_af_aktionen d-flex flex-wrap gap-2 mb-3">
-                    <button t-if="!kontakt" type="button"
-                            class="o_wb_voip_af_zuordnen btn btn-outline-primary"
-                            t-on-click="zuordnen">
-                        <i class="fa fa-link me-1" aria-hidden="true"/>Zuordnen
-                    </button>
-                    <AktionsLeiste aktionen="aktionen" ort="ort" itemKlasse="'o_wb_voip_af_aktion'"
-                                   onAusfuehren.bind="aktionAusfuehren"/>
-                </div>
-
-                <t t-if="laufenderAnruf">
-                    <label class="form-label small text-muted mb-1" for="wb_voip_af_notiz">Notiz</label>
-                    <textarea id="wb_voip_af_notiz" class="o_wb_voip_af_notiz form-control mb-3" rows="4"
-                              t-att-maxlength="maxNotiz" placeholder="Notiz zum Gespräch"
-                              t-model="state.anruf.notiz"/>
-                </t>
-
-                <div t-if="aufgaben.length" class="o_wb_voip_af_aufgaben mb-3">
-                    <h6 class="text-muted">Offene Aufgaben</h6>
-                    <ul class="list-unstyled mb-0">
-                        <li t-foreach="aufgaben" t-as="aufgabe" t-key="aufgabe.id">
-                            <button type="button" class="o_wb_voip_af_aufgabe btn btn-link p-0 text-start"
-                                    t-on-click="() => this.aufgabeOeffnen(aufgabe)">
-                                <span t-esc="aufgabe.titel"/>
-                                <span t-if="aufgabe.faellig" class="text-muted ms-2" t-esc="aufgabe.faellig"/>
-                            </button>
-                        </li>
-                    </ul>
-                </div>
-
-                <div t-if="protokolle.length" class="o_wb_voip_af_protokolle">
-                    <h6 class="text-muted">Letzte Gespräche</h6>
-                    <ul class="list-unstyled mb-0">
-                        <li t-foreach="protokolle" t-as="protokoll" t-key="protokoll.id"
-                            class="o_wb_voip_af_protokoll border-top py-2">
-                            <div class="small text-muted">
-                                <span t-esc="protokoll.datum"/>
-                                <span t-if="protokoll.ergebnis" class="ms-2" t-esc="protokoll.ergebnis"/>
-                                <span t-if="protokoll.dauer" class="ms-2 font-monospace" t-esc="protokoll.dauer"/>
-                            </div>
-                            <div t-if="protokoll.text" class="o_wb_voip_af_protokoll_text" t-esc="protokoll.text"/>
-                        </li>
-                    </ul>
-                </div>
+                <LayoutBloecke t-if="daten" layout="layout" kontakt="kontakt"
+                               protokolle="daten.protokolle || []" aufgaben="daten.aufgaben || []"
+                               aktionen="aktionen" ort="ort" anruf="laufenderAnruf" maxNotiz="maxNotiz"
+                               onAktion.bind="aktionAusfuehren" onZuordnen.bind="zuordnen"
+                               onKontaktOeffnen.bind="kontaktOeffnen"
+                               onAufgabeOeffnen.bind="aufgabeOeffnen"/>
             </div>
         </section>
     </t>

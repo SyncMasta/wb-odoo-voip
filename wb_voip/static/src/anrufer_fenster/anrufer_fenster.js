@@ -1,17 +1,11 @@
 import { Component, onWillUnmount, useEffect, useRef, useState } from "@odoo/owl";
-import {
-    deserializeDate,
-    deserializeDateTime,
-    formatDate,
-    formatDateTime,
-} from "@web/core/l10n/dates";
 import { registry } from "@web/core/registry";
 import { useBus, useService } from "@web/core/utils/hooks";
 import { session } from "@web/session";
 
-import { AktionsLeiste, ORT_FENSTER, fehlertext, useAktionAusfuehren } from "../aktionen/aktions_leiste";
+import { ORT_FENSTER, fehlertext, useAktionAusfuehren } from "../aktionen/aktions_leiste";
 import { MAX_NOTIZ } from "../dienste/telefon_dienst";
-import { formatDauer } from "../softphone/waehlen_hilfe";
+import { BREITEN, LayoutBloecke, STANDARD_LAYOUT, breiteVon } from "../layout/bloecke";
 
 /** Nach dem Anrufende bleibt das Fenster so lange offen (Einstellung je Benutzer später). */
 export const SCHLIESSEN_NACH_MS = 10_000;
@@ -32,13 +26,13 @@ export function tipptGerade(el) {
 }
 
 /**
- * Seitenpanel rechts mit Kontakt, letzten Protokollen, offenen Aufgaben, Notiz und den
- * Anruf-Buttons. Öffnet sich nur im Telefon-Tab (Ereignis ``anruf-aktiv`` des Dienstes)
+ * Seitenpanel rechts: fest die Kopfzeile mit Name, Nummer und Gesprächsknöpfen, darunter
+ * die Blöcke aus dem Layout des Benutzers (``kontext.layout``). Öffnet sich nur im Telefon-Tab (Ereignis ``anruf-aktiv`` des Dienstes)
  * und schließt sich manuell oder ``SCHLIESSEN_NACH_MS`` nach dem Anrufende.
  */
 export class AnruferFenster extends Component {
     static template = "wb_voip.AnruferFenster";
-    static components = { AktionsLeiste };
+    static components = { LayoutBloecke };
     static props = {};
 
     setup() {
@@ -94,6 +88,9 @@ export class AnruferFenster extends Component {
                     this.panel.el?.focus();
                 }
                 document.body.classList.add("o_wb_voip_af_offen");
+                // das Softphone rückt um die Breite des Panels nach links
+                const breiteKlasse = `o_wb_voip_af_offen_${this.breite}`;
+                document.body.classList.add(breiteKlasse);
                 // Fokus im „Mehr“-Menü (liegt außerhalb des Panels) zählt als Fokus im Panel
                 const beiFokus = (ev) => {
                     if (this._innen(ev.target)) {
@@ -107,10 +104,10 @@ export class AnruferFenster extends Component {
                 document.addEventListener("focusin", beiFokus);
                 return () => {
                     document.removeEventListener("focusin", beiFokus);
-                    document.body.classList.remove("o_wb_voip_af_offen");
+                    document.body.classList.remove("o_wb_voip_af_offen", breiteKlasse);
                 };
             },
-            () => [this.fenster.offen]
+            () => [this.fenster.offen, this.breite]
         );
 
         onWillUnmount(() => {
@@ -280,21 +277,19 @@ export class AnruferFenster extends Component {
         return anruf && anruf.id && anruf.id === this.fenster.anrufId ? anruf : null;
     }
 
-    get protokolle() {
-        return (this.daten?.protokolle || []).map((p) => ({
-            id: p.id,
-            datum: p.datum ? formatDateTime(deserializeDateTime(p.datum)) : "",
-            ergebnis: p.ergebnis_label || "",
-            dauer: p.dauer_sek ? formatDauer(p.dauer_sek) : "",
-            text: p.beschreibung_text || "",
-        }));
+    /** Layout vom Server; ohne Angabe das ausgelieferte (leere Blockliste bleibt leer). */
+    get layout() {
+        const layout = this.daten?.layout;
+        return layout && typeof layout === "object" ? layout : STANDARD_LAYOUT;
     }
 
-    get aufgaben() {
-        return (this.daten?.aufgaben || []).map((a) => ({
-            ...a,
-            faellig: a.faellig ? formatDate(deserializeDate(a.faellig)) : "",
-        }));
+    /** Breite des Panels (``normal``/``breit``/``sehr_breit``), schon vor dem Laden „normal“. */
+    get breite() {
+        return breiteVon(this.daten ? this.layout : null);
+    }
+
+    get breiteKlasse() {
+        return `o_wb_voip_af_breite_${BREITEN.includes(this.breite) ? this.breite : "normal"}`;
     }
 
     /** Buttons für das Fenster (der Server wählt aus, z. B. „Neuer Kontakt“ nur ohne Kontakt). */

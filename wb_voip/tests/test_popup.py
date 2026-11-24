@@ -116,6 +116,11 @@ class TestPopup(WbVoipCase):
         ansicht = self.env.ref('wb_voip.wb_voip_protokoll_view_form_popup')
         self.assertIn('o_wb_voip_popup_aktionen', ansicht.arch_db)
         self.assertIn('action_wb_voip_folgeaktivitaet', ansicht.arch_db)
+        # rechte Spalte nach Layout, linke Spalte fest
+        self.assertIn('wb_voip_popup_layout', ansicht.arch_db)
+        for feld in ('ergebnis', 'beschreibung'):
+            self.assertIn(f'<field name="{feld}"', ansicht.arch_db)
+        self.assertNotIn('wb_voip_letzte_protokoll_ids', ansicht.arch_db)
 
     # --- Anruf-Buttons im Popup --------------------------------------------------------
 

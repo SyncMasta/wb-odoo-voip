@@ -161,8 +161,13 @@ class WbVoipLayout(models.Model):
 
     @api.model
     def _wb_voip_feldwerte(self, partner, felder):
-        """Return ``[{name, label, wert}]`` of the readable, non-empty values of ``felder``."""
+        """Return ``[{name, label, wert}]`` of the readable, non-empty values of ``felder``.
+
+        Nothing if the user of ``partner`` may not read it (checked once for all fields).
+        """
         ergebnis = []
+        if not partner or not partner.has_access('read'):
+            return ergebnis
         for feld in felder.sudo():
             field = partner._fields.get(feld.name)
             if field is None or not self._wb_voip_feld_erlaubt(field):
@@ -186,12 +191,13 @@ class WbVoipLayout(models.Model):
     def _wb_voip_feldwert(self, record, field):
         """Return the value of ``field`` on ``record`` as text, read as the record's user.
 
-        Empty string if the user may not read the record, the field or (for relations)
-        any of the target records; never raises for missing rights.
+        The caller has checked that the user may read ``record``. Empty string if he may
+        not read the field or (for relations) any of the target records; never raises for
+        missing rights.
         """
         record.ensure_one()
         try:
-            if not record.has_access('read') or not record._has_field_access(field, 'read'):
+            if not record._has_field_access(field, 'read'):
                 return ''
             return self._wb_voip_wert_text(record, field, record[field.name])
         except AccessError:
@@ -230,7 +236,7 @@ class WbVoipLayout(models.Model):
                 return format_amount(env, wert, waehrung)
             return formatLang(env, wert)
         text = str(wert)
-        if typ == 'text' and len(text) > TEXT_FELD_MAX:
+        if typ in ('char', 'text') and len(text) > TEXT_FELD_MAX:
             text = text[:TEXT_FELD_MAX - 1] + '…'
         return text
 

@@ -214,6 +214,20 @@ class TestLayoutKontext(WbVoipCase):
         self.assertEqual(wert, format_amount(env_a, 1234.5, firma.currency_id))
         self.assertIn(firma.currency_id.symbol, wert)
 
+    def test_char_gekuerzt(self):
+        self._felder_layout('ref')
+        self.kontakt.write({'ref': 'y' * 800})
+        wert = self._werte(self._kontext())['ref']
+        self.assertEqual(len(wert), 500)
+        self.assertTrue(wert.endswith('…'))
+
+    def test_feldwerte_unlesbarer_kontakt_leer(self):
+        felder = self._feld('ref') | self._feld('email')
+        Layout = self.Layout.with_user(self.user_a)
+        self.assertFalse(self.fremder_kontakt.with_user(self.user_a).has_access('read'))
+        self.assertEqual(Layout._wb_voip_feldwerte(self.fremder_kontakt.with_user(self.user_a), felder), [])
+        self.assertEqual(Layout._wb_voip_feldwerte(self.env['res.partner'].with_user(self.user_a), felder), [])
+
     # --- Anzahl ---
 
     def test_anzahl_steuert_protokolle_und_aufgaben(self):

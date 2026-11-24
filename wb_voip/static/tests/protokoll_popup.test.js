@@ -40,13 +40,12 @@ test("Popup nicht ohne Protokoll", async () => {
     expect(".modal").toHaveCount(0);
 });
 
-test("Popup ist breit", async () => {
+test("Popup mit Standard-Layout ist groß (lg)", async () => {
     const telefon = await mitDienst();
     telefon.bus.trigger("anruf-beendet", { anrufId: 5, protokollId: 1, eigenerTab: true });
-    await animationFrame();
-    await animationFrame();
+    await waitFor(".modal .o_form_view");
     expect(".modal").toHaveCount(1);
-    expect(".modal-dialog").toHaveClass("modal-xl");
+    expect(".modal-dialog").toHaveClass("modal-lg");
 });
 
 test("Popup zeigt Ergebnis erreicht", async () => {

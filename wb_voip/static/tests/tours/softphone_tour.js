@@ -31,8 +31,8 @@ registry.category("web_tour.tours").add("wb_voip_softphone_tour", {
             trigger: ".o_wb_voip_softphone:not(:has(.o_wb_voip_anrufansicht))",
         },
         {
-            content: "Protokoll-Popup öffnet sich breit",
-            trigger: ".modal-xl .o_form_view",
+            content: "Protokoll-Popup öffnet sich in der Größe des Standard-Layouts, rechts das Layout",
+            trigger: ".modal-lg .o_form_view .o_wb_voip_popup_rechts .o_wb_voip_popup_layout",
         },
         {
             content: "Ergebnis-Auswahl öffnen",

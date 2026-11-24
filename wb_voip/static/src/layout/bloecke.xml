@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <!-- Alle Serverwerte nur als Text (t-esc), nie als Markup oder Klasse -->
+    <t t-name="wb_voip.LayoutBloecke">
+        <div class="o_wb_voip_lb" t-att-class="zweispaltig ? 'o_wb_voip_lb_zwei' : 'o_wb_voip_lb_eins'">
+            <div t-foreach="spalten" t-as="spalte" t-key="spalte_index" class="o_wb_voip_lb_spalte">
+                <t t-foreach="spalte" t-as="eintrag" t-key="eintrag.key">
+                    <t t-component="eintrag.Component" block="eintrag.block" daten="props"/>
+                </t>
+            </div>
+        </div>
+    </t>
+
+    <t t-name="wb_voip.LayoutBlockTitel">
+        <h6 t-if="titel" class="o_wb_voip_lb_titel text-muted" t-esc="titel"/>
+    </t>
+
+    <t t-name="wb_voip.LayoutBlockKontaktkopf">
+        <section t-if="kontakt" class="o_wb_voip_lb_block o_wb_voip_lb_kontaktkopf o_wb_voip_af_kontakt mb-3">
+            <t t-call="wb_voip.LayoutBlockTitel"/>
+            <t t-if="props.daten.mitName">
+                <div class="o_wb_voip_lb_name fw-bold text-truncate" t-esc="kontakt.name"/>
+                <div t-if="kontakt.firma" class="o_wb_voip_lb_firma text-truncate" t-esc="kontakt.firma"/>
+            </t>
+            <div t-if="kontakt.telefon" class="text-truncate">
+                <i class="fa fa-phone me-2" aria-hidden="true"/><span t-esc="kontakt.telefon"/>
+            </div>
+            <div t-if="kontakt.email" class="text-truncate">
+                <i class="fa fa-envelope me-2" aria-hidden="true"/><span t-esc="kontakt.email"/>
+            </div>
+            <button t-if="props.daten.onKontaktOeffnen" type="button"
+                    class="o_wb_voip_af_kontakt_oeffnen btn btn-link p-0"
+                    t-on-click="() => props.daten.onKontaktOeffnen()">
+                <i class="fa fa-external-link me-1" aria-hidden="true"/>Kontakt öffnen
+            </button>
+        </section>
+    </t>
+
+    <t t-name="wb_voip.LayoutBlockFelder">
+        <section t-if="felder.length" class="o_wb_voip_lb_block o_wb_voip_lb_felder mb-3">
+            <t t-call="wb_voip.LayoutBlockTitel"/>
+            <dl class="o_wb_voip_lb_feldliste mb-0">
+                <t t-foreach="felder" t-as="feld" t-key="feld.name">
+                    <dt class="o_wb_voip_lb_label small text-muted" t-esc="feld.label"/>
+                    <dd class="o_wb_voip_lb_wert" t-esc="feld.wert"/>
+                </t>
+            </dl>
+        </section>
+    </t>
+
+    <t t-name="wb_voip.LayoutBlockProtokolle">
+        <section t-if="protokolle.length" class="o_wb_voip_lb_block o_wb_voip_lb_protokolle o_wb_voip_af_protokolle mb-3">
+            <h6 class="o_wb_voip_lb_titel text-muted"><t t-if="titel" t-esc="titel"/><t t-else="">Letzte Gespräche</t></h6>
+            <ul class="list-unstyled mb-0">
+                <li t-foreach="protokolle" t-as="protokoll" t-key="protokoll.id"
+                    class="o_wb_voip_af_protokoll border-top py-2">
+                    <div class="small text-muted">
+                        <span t-esc="protokoll.datum"/>
+                        <span t-if="protokoll.ergebnis" class="ms-2" t-esc="protokoll.ergebnis"/>
+                        <span t-if="protokoll.dauer" class="ms-2 font-monospace" t-esc="protokoll.dauer"/>
+                    </div>
+                    <div t-if="protokoll.text" class="o_wb_voip_af_protokoll_text" t-esc="protokoll.text"/>
+                </li>
+            </ul>
+        </section>
+    </t>
+
+    <t t-name="wb_voip.LayoutBlockAufgaben">
+        <section t-if="aufgaben.length" class="o_wb_voip_lb_block o_wb_voip_lb_aufgaben o_wb_voip_af_aufgaben mb-3">
+            <h6 class="o_wb_voip_lb_titel text-muted"><t t-if="titel" t-esc="titel"/><t t-else="">Offene Aufgaben</t></h6>
+            <ul class="list-unstyled mb-0">
+                <li t-foreach="aufgaben" t-as="aufgabe" t-key="aufgabe.id">
+                    <button t-if="props.daten.onAufgabeOeffnen" type="button"
+                            class="o_wb_voip_af_aufgabe btn btn-link p-0 text-start"
+                            t-on-click="() => props.daten.onAufgabeOeffnen(aufgabe)">
+                        <span t-esc="aufgabe.titel"/>
+                        <span t-if="aufgabe.faellig" class="text-muted ms-2" t-esc="aufgabe.faellig"/>
+                    </button>
+                    <span t-else="" class="o_wb_voip_af_aufgabe">
+                        <span t-esc="aufgabe.titel"/>
+                        <span t-if="aufgabe.faellig" class="text-muted ms-2" t-esc="aufgabe.faellig"/>
+                    </span>
+                </li>
+            </ul>
+        </section>
+    </t>
+
+    <t t-name="wb_voip.LayoutBlockNotiz">
+        <section t-if="anruf" class="o_wb_voip_lb_block o_wb_voip_lb_notiz mb-3">
+            <label class="form-label small text-muted mb-1" for="wb_voip_af_notiz"><t t-if="titel" t-esc="titel"/><t t-else="">Notiz</t></label>
+            <textarea id="wb_voip_af_notiz" class="o_wb_voip_af_notiz form-control" rows="4"
+                      t-att-maxlength="props.daten.maxNotiz" placeholder="Notiz zum Gespräch"
+                      t-model="anruf.notiz"/>
+        </section>
+    </t>
+
+    <t t-name="wb_voip.LayoutBlockButtons">
+        <section t-if="zeigen" class="o_wb_voip_lb_block o_wb_voip_lb_buttons mb-3">
+            <t t-call="wb_voip.LayoutBlockTitel"/>
+            <div class="o_wb_voip_af_aktionen d-flex flex-wrap gap-2">
+                <button t-if="!kontakt and props.daten.onZuordnen" type="button"
+                        class="o_wb_voip_af_zuordnen btn btn-outline-primary"
+                        t-on-click="() => props.daten.onZuordnen()">
+                    <i class="fa fa-link me-1" aria-hidden="true"/>Zuordnen
+                </button>
+                <AktionsLeiste t-if="props.daten.onAktion" aktionen="aktionen" ort="props.daten.ort"
+                               itemKlasse="'o_wb_voip_af_aktion'" onAusfuehren="props.daten.onAktion"/>
+            </div>
+        </section>
+    </t>
+
+    <t t-name="wb_voip.LayoutBlockText">
+        <section t-if="text" class="o_wb_voip_lb_block o_wb_voip_lb_text mb-3">
+            <t t-call="wb_voip.LayoutBlockTitel"/>
+            <div class="o_wb_voip_lb_text_inhalt" t-esc="text"/>
+        </section>
+    </t>
+</templates>

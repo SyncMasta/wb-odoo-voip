@@ -1,0 +1,25 @@
+// WB VoIP: Blöcke eines Fenster-Layouts (Anrufer-Fenster, Popup, Vorschau)
+.o_wb_voip_lb {
+    &.o_wb_voip_lb_zwei {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        column-gap: 1.5rem;
+        align-items: start;
+    }
+
+    .o_wb_voip_lb_spalte {
+        min-width: 0;
+    }
+
+    .o_wb_voip_af_protokoll_text,
+    .o_wb_voip_lb_text_inhalt,
+    .o_wb_voip_lb_wert {
+        // Klartext mit Zeilenumbrüchen, lange Wörter umbrechen
+        white-space: pre-line;
+        overflow-wrap: anywhere;
+    }
+
+    .o_wb_voip_lb_wert {
+        margin-bottom: 0.5rem;
+    }
+}

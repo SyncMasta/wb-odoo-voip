@@ -41,8 +41,8 @@
         </field>
     </record>
 
-    <!-- Popup nach dem Anruf (FormViewDialog, breit): links Ergebnis und Notiz, rechts Kontakt
-         und die letzten Anrufe. Speichern und Verwerfen kommen vom Dialog. -->
+    <!-- Popup nach dem Anruf (FormViewDialog, Größe nach Layout): links fest Ergebnis und Notiz,
+         rechts die Blöcke des Popup-Layouts. Speichern und Verwerfen kommen vom Dialog. -->
     <record id="wb_voip_protokoll_view_form_popup" model="ir.ui.view">
         <field name="name">wb.voip.protokoll.form.popup</field>
         <field name="model">wb.voip.protokoll</field>
@@ -59,7 +59,7 @@
                 </div>
                 <sheet>
                     <div class="row">
-                        <div class="col-12 col-lg-7">
+                        <div class="col-12 col-lg-7 o_wb_voip_popup_links">
                             <group>
                                 <field name="ergebnis"/>
                                 <field name="datum" readonly="1"/>
@@ -67,20 +67,9 @@
                             </group>
                             <field name="beschreibung" placeholder="Notizen zum Gespräch"/>
                         </div>
-                        <div class="col-12 col-lg-5">
-                            <group>
-                                <field name="partner_id" readonly="1"/>
-                                <field name="wb_voip_partner_telefon" readonly="1"/>
-                                <field name="wb_voip_partner_email" readonly="1"/>
-                            </group>
-                            <separator string="Letzte Anrufe"/>
-                            <field name="wb_voip_letzte_protokoll_ids" nolabel="1" readonly="1">
-                                <list no_open="1">
-                                    <field name="datum"/>
-                                    <field name="richtung"/>
-                                    <field name="ergebnis"/>
-                                </list>
-                            </field>
+                        <!-- rechte Spalte nach dem Popup-Layout des Benutzers -->
+                        <div class="col-12 col-lg-5 o_wb_voip_popup_rechts">
+                            <widget name="wb_voip_popup_layout"/>
                         </div>
                     </div>
                 </sheet>

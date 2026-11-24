@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="wb_voip.PopupLayout">
+        <div class="o_wb_voip_popup_layout">
+            <LayoutBloecke t-if="daten and daten.layout" layout="daten.layout"
+                           kontakt="daten.kontakt || false" protokolle="daten.protokolle || []"
+                           ort="ort" mitName="true" einspaltig="true"/>
+        </div>
+    </t>
+</templates>
