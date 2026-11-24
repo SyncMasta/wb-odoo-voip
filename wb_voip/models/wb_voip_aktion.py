@@ -4,7 +4,10 @@ from urllib.parse import urlsplit
 
 from odoo import api, fields, models
 from odoo.fields import Domain
-from odoo.exceptions import AccessError, ValidationError
+from odoo.exceptions import AccessError, UserError, ValidationError
+
+from ..tools import serverfelder
+from ..tools.rechte import GRUPPE_SYSTEM, nur_voip_manager
 
 ICON_MUSTER = re.compile(r'^fa-[a-z0-9-]{1,40}$')
 URL_MAX = 500
@@ -17,6 +20,19 @@ DOMAIN_OPERATOREN = frozenset((
 ))
 DOMAIN_MAX = 2000
 DOMAIN_TIEFE = 3
+# Technische Gruppe der Serveraktionen aus dem Assistenten (hat niemand)
+GRUPPE_BUTTON_AKTION = 'wb_voip.group_wb_voip_button_aktion'
+# Felder, die nur der Server (Assistent) setzt
+_NUR_SERVER = ('wb_voip_assistent',)
+# An Buttons aus dem Assistenten nur über den Assistenten änderbar
+_NUR_ASSISTENT = ('art', 'server_action_id')
+
+
+def assistenten_aktion(server):
+    """Return True if ``server`` carries exactly the technical group of the button wizard."""
+    server = server.sudo()
+    gruppe = server.env.ref(GRUPPE_BUTTON_AKTION, raise_if_not_found=False)
+    return bool(server) and bool(gruppe) and server.group_ids == gruppe
 
 
 def serveraktion_erlaubt(server):
@@ -85,6 +101,68 @@ class WbVoipAktion(models.Model):
     url_vorlage = fields.Char(
         string='Webadresse', groups='wb_voip.group_wb_voip_manager',
         help="Nur https://. Platzhalter: {nummer}, {nummer_e164}, {partner_id}.")
+    # Nur der Assistent setzt das Kennzeichen (nach seinen Prüfungen); lesbar ist es für alle,
+    # geschrieben wird es nur vom Server (siehe create/write)
+    wb_voip_assistent = fields.Boolean(
+        string='Mit Assistent angelegt', readonly=True, copy=False)
+
+    # --- Schutz der Assistenten-Daten ---
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        if not self.env.su:
+            for vals in vals_list:
+                serverfelder.pruefen(self.env, vals, _NUR_SERVER)
+            self = self.with_context(serverfelder.kontext_ohne_defaults(self.env, _NUR_SERVER))
+        return super().create(vals_list)
+
+    def write(self, vals):
+        if not self.env.su:
+            serverfelder.pruefen(self.env, vals, _NUR_SERVER)
+            if set(vals) & set(_NUR_ASSISTENT) and self.sudo().filtered('wb_voip_assistent'):
+                raise UserError(self.env._(
+                    "Die Aktion dieses Buttons wurde mit dem Assistenten angelegt. "
+                    "Bitte mit „Mit Assistent bearbeiten“ ändern."))
+        return super().write(vals)
+
+    def unlink(self):
+        # Serveraktionen aus dem Assistenten merken; gelöscht wird erst nach dem Löschen der
+        # Buttons (das prüft die Rechte) und nur, wenn kein anderer Button sie nutzt
+        server = self.sudo().filtered('wb_voip_assistent').server_action_id
+        ergebnis = super().unlink()
+        self.env['wb.voip.aktion']._wb_voip_serveraktionen_aufraeumen(server)
+        return ergebnis
+
+    @api.model
+    def _wb_voip_serveraktionen_aufraeumen(self, server):
+        """Delete the wizard's server actions in ``server`` that no button uses any more."""
+        for einzeln in server.sudo().exists():
+            if not assistenten_aktion(einzeln):
+                continue
+            genutzt = self.sudo().with_context(active_test=False).search_count(
+                [('server_action_id', '=', einzeln.id)], limit=1)
+            if not genutzt:
+                einzeln.unlink()
+
+    @nur_voip_manager
+    def action_wb_voip_assistent_bearbeiten(self):
+        """Open the button wizard on this wizard-made button (Python code: system admins only)."""
+        self.ensure_one()
+        self.check_access('write')
+        aktion = self.sudo()
+        if not aktion.wb_voip_assistent:
+            raise UserError(self.env._("Dieser Button wurde nicht mit dem Assistenten angelegt."))
+        if aktion.server_action_id.state == 'code' and not self.env.user.has_group(GRUPPE_SYSTEM):
+            raise AccessError(self.env._("Python-Code dürfen nur Systemadministratoren bearbeiten."))
+        return {
+            'type': 'ir.actions.act_window',
+            'name': self.env._("Button mit Assistent bearbeiten"),
+            'res_model': 'wb.voip.aktion.assistent',
+            'view_mode': 'form',
+            'views': [[False, 'form']],
+            'target': 'new',
+            'context': {'default_aktion_id': self.id},
+        }
 
     # --- Prüfungen ---
 

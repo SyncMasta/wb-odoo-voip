@@ -95,6 +95,28 @@ Beispiel-Button „Neuer Kontakt“ lässt sich ändern oder archivieren; der da
 Anruf zugeordnet, aber nur, wenn die Nummer des neuen Kontakts zur Anrufnummer passt (so bleibt etwa eine
 nebenbei angelegte Firma unverknüpft).
 
+Button-Assistent
+~~~~~~~~~~~~~~~~
+
+„Button mit Assistent anlegen“ (Knopf in der Button-Liste und Menü, nur WB-VoIP-Administratoren) legt den
+Button zusammen mit seiner Serveraktion an, immer in einer erlaubten Form:
+
+* **Feld setzen**: ein Feld am Kontakt des Anrufs oder am Datensatz, aus dem heraus angerufen wurde, bekommt
+  einen festen Wert. Wählbar sind nur Modelle, die der Administrator selbst ändern darf (keine technischen
+  Modelle wie ``ir.*``, ``res.users``, ``res.groups``, ``mail.*``, ``bus.*``), und nur gespeicherte, nicht
+  berechnete Felder der Typen Text, Auswahl, Ja/Nein, Zahl, Datum, Many2one und Many2many (Many2many:
+  „hinzufügen“), die er selbst schreiben darf. Ein Datensatz als Wert muss für ihn lesbar sein.
+* **Vorlage**: „Kategorie am Kontakt hinzufügen“ und „Sprache des Kontakts setzen“; intern ebenfalls
+  „Feld setzen“.
+* **Python-Code**: nur für Systemadministratoren (``base.group_system``), auch per Aufruf nicht umgehbar.
+
+Die erzeugte Serveraktion bekommt die technische Gruppe „WB VoIP: Button-Serveraktionen (technisch)“, der
+niemand angehört, und keinen Eintrag im Aktionsmenü. Außerhalb der Anruf-Buttons lässt Odoo sie deshalb von
+niemandem ausführen. Am Button läuft sie mit den Rechten des Benutzers, der klickt. Diese Gruppe niemandem
+zuweisen. Ändern lässt sich die Aktion nur über „Mit Assistent bearbeiten“ am Button (Python-Code nur durch
+Systemadministratoren); Bezeichnung, Orte und Gruppen auch direkt im Formular. Beim Löschen des Buttons wird
+seine Serveraktion mitgelöscht, sofern kein anderer Button sie nutzt.
+
 Das Menü Einstellungen › Technisch erscheint nur im Entwicklermodus (Einstellungen › „Entwicklermodus
 aktivieren“).
 

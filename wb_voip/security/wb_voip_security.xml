@@ -12,6 +12,14 @@
         <field name="implied_ids" eval="[(4, ref('group_wb_voip_user'))]"/>
     </record>
 
+    <!-- Technische Gruppe der vom Assistenten erzeugten Serveraktionen: niemand gehört ihr an,
+         deshalb lehnt Odoo die Ausführung außerhalb von WB VoIP (Aktionsmenü, /web/action/run)
+         für alle ab. Nie Benutzern zuweisen. -->
+    <record id="group_wb_voip_button_aktion" model="res.groups">
+        <field name="name">WB VoIP: Button-Serveraktionen (technisch)</field>
+        <field name="comment">Technische Gruppe ohne Mitglieder. Serveraktionen aus dem Button-Assistenten laufen nur über die Anruf-Buttons. Bitte niemandem zuweisen.</field>
+    </record>
+
     <!-- Nur bei der Installation: entfernt ein Administrator die Mitgliedschaft, setzt ein
          Update sie nicht wieder -->
     <data noupdate="1">

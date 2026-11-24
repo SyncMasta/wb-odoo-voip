@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="wb_voip_aktion_assistent_view_form" model="ir.ui.view">
+        <field name="name">wb.voip.aktion.assistent.form</field>
+        <field name="model">wb.voip.aktion.assistent</field>
+        <field name="arch" type="xml">
+            <form string="Button-Assistent">
+                <field name="schritt" invisible="1"/>
+                <field name="aktion_id" invisible="1"/>
+                <field name="feld_typ" invisible="1"/>
+                <field name="feld_name" invisible="1"/>
+                <field name="wert_auswahl" invisible="1"/>
+                <field name="wert_res_model" invisible="1"/>
+                <div class="text-muted mb-3" invisible="schritt != 'button'">
+                    Schritt 1: Wie sieht der Button aus, wo und wann erscheint er?
+                </div>
+                <div class="text-muted mb-3" invisible="schritt != 'aktion'">
+                    Schritt 2: Was passiert beim Klick? Die Aktion läuft immer mit den
+                    Rechten des Benutzers, der klickt.
+                </div>
+                <div class="text-muted mb-3" invisible="schritt != 'feld'">
+                    Schritt 3: Welches Feld bekommt welchen Wert?
+                </div>
+                <group invisible="schritt != 'button'">
+                    <group string="Darstellung">
+                        <field name="name" required="schritt == 'button'"/>
+                        <field name="icon" placeholder="fa-user"/>
+                        <field name="farbe"/>
+                    </group>
+                    <group string="Wo wird der Button gezeigt?">
+                        <field name="ort_anrufer_fenster"/>
+                        <field name="ort_protokoll_popup"/>
+                        <field name="ort_softphone"/>
+                    </group>
+                    <group string="Wann?">
+                        <field name="richtung"/>
+                        <field name="zustand"/>
+                    </group>
+                    <group string="Für wen?">
+                        <field name="group_ids" widget="many2many_tags"/>
+                    </group>
+                </group>
+                <group invisible="schritt != 'aktion'">
+                    <field name="art" widget="radio"/>
+                    <field name="vorlage" invisible="art != 'vorlage'"
+                           required="schritt == 'aktion' and art == 'vorlage'"/>
+                    <field name="ziel" invisible="art == 'vorlage'" widget="radio"/>
+                    <field name="modell" invisible="art == 'vorlage' or ziel != 'datensatz'"
+                           required="schritt == 'aktion' and art != 'vorlage' and ziel == 'datensatz'"/>
+                    <field name="wert_kategorie_id"
+                           invisible="art != 'vorlage' or vorlage != 'kategorie_hinzufuegen'"
+                           required="schritt == 'aktion' and art == 'vorlage' and vorlage == 'kategorie_hinzufuegen'"
+                           options="{'no_create': True}"/>
+                    <field name="wert_sprache"
+                           invisible="art != 'vorlage' or vorlage != 'sprache_setzen'"
+                           required="schritt == 'aktion' and art == 'vorlage' and vorlage == 'sprache_setzen'"/>
+                    <field name="code" invisible="art != 'code'" widget="code"
+                           options="{'mode': 'python'}" groups="base.group_system"
+                           placeholder="record.write({'function': 'Rückruf'})"/>
+                </group>
+                <group invisible="schritt != 'feld'">
+                    <field name="feld_option_id" required="schritt == 'feld'"
+                           options="{'no_create': True, 'no_open': True}"/>
+                    <field name="wert_char" invisible="feld_typ != 'char'"/>
+                    <field name="wert_text" invisible="feld_typ != 'text'"/>
+                    <field name="wert_integer" invisible="feld_typ != 'integer'"/>
+                    <field name="wert_float" invisible="feld_typ != 'float'"/>
+                    <field name="wert_boolean" invisible="feld_typ != 'boolean'"/>
+                    <field name="wert_date" invisible="feld_typ != 'date'"/>
+                    <field name="wert_auswahl_option_id" invisible="feld_typ != 'selection'"
+                           required="schritt == 'feld' and feld_typ == 'selection'"
+                           options="{'no_create': True, 'no_open': True}"/>
+                    <field name="wert_res_id" widget="many2one_reference"
+                           invisible="feld_typ not in ('many2one', 'many2many')"
+                           required="schritt == 'feld' and feld_typ in ('many2one', 'many2many')"
+                           options="{'no_create': True}"/>
+                </group>
+                <div class="text-muted" invisible="schritt != 'feld' or feld_typ != 'many2many'">
+                    Der gewählte Datensatz wird hinzugefügt, vorhandene bleiben erhalten.
+                </div>
+                <footer>
+                    <button name="action_weiter" type="object" string="Weiter" class="btn-primary"
+                            invisible="schritt == 'feld' or (schritt == 'aktion' and art != 'feld')"
+                            data-hotkey="q"/>
+                    <button name="action_anlegen" type="object" string="Speichern"
+                            class="btn-primary"
+                            invisible="schritt == 'button' or (schritt == 'aktion' and art == 'feld')"
+                            data-hotkey="q"/>
+                    <button name="action_zurueck" type="object" string="Zurück"
+                            class="btn-secondary" invisible="schritt == 'button'"/>
+                    <button string="Abbrechen" class="btn-secondary" special="cancel"
+                            data-hotkey="x"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="wb_voip_aktion_assistent_action" model="ir.actions.act_window">
+        <field name="name">Button mit Assistent anlegen</field>
+        <field name="res_model">wb.voip.aktion.assistent</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="group_ids" eval="[(4, ref('wb_voip.group_wb_voip_manager'))]"/>
+    </record>
+</odoo>

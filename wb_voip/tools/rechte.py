@@ -5,6 +5,7 @@ from odoo.exceptions import AccessError
 
 GRUPPE_BENUTZER = 'wb_voip.group_wb_voip_user'
 GRUPPE_MANAGER = 'wb_voip.group_wb_voip_manager'
+GRUPPE_SYSTEM = 'base.group_system'
 
 
 def ist_voip_benutzer(env):

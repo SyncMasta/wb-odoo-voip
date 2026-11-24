@@ -14,6 +14,9 @@
     <menuitem id="wb_voip_menu_aktion" name="Anruf-Buttons" parent="wb_voip_menu_root"
               action="wb_voip_aktion_action" sequence="40"
               groups="wb_voip.group_wb_voip_manager"/>
+    <menuitem id="wb_voip_menu_aktion_assistent" name="Button mit Assistent anlegen"
+              parent="wb_voip_menu_root" action="wb_voip_aktion_assistent_action" sequence="45"
+              groups="wb_voip.group_wb_voip_manager"/>
     <menuitem id="wb_voip_menu_layout" name="Fenster-Layouts" parent="wb_voip_menu_root"
               action="wb_voip_layout_action" sequence="50"
               groups="wb_voip.group_wb_voip_manager"/>

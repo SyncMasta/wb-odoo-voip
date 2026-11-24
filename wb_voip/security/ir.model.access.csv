@@ -10,3 +10,5 @@ wb_voip_aktion_manager,wb.voip.aktion Administrator,model_wb_voip_aktion,group_w
 wb_voip_zuordnen_user,wb.voip.zuordnen Benutzer,model_wb_voip_zuordnen,group_wb_voip_user,1,1,1,1
 wb_voip_layout_manager,wb.voip.layout Administrator,model_wb_voip_layout,group_wb_voip_manager,1,1,1,1
 wb_voip_layout_block_manager,wb.voip.layout.block Administrator,model_wb_voip_layout_block,group_wb_voip_manager,1,1,1,1
+wb_voip_aktion_assistent_manager,wb.voip.aktion.assistent Administrator,model_wb_voip_aktion_assistent,group_wb_voip_manager,1,1,1,1
+wb_voip_aktion_assistent_option_manager,wb.voip.aktion.assistent.option Administrator,model_wb_voip_aktion_assistent_option,group_wb_voip_manager,1,1,1,1

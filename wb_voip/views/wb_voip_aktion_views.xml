@@ -5,6 +5,11 @@
         <field name="model">wb.voip.aktion</field>
         <field name="arch" type="xml">
             <list>
+                <header>
+                    <button name="%(wb_voip_aktion_assistent_action)d" type="action"
+                            string="Button mit Assistent anlegen" class="btn-primary"
+                            display="always"/>
+                </header>
                 <field name="sequence" widget="handle"/>
                 <field name="name"/>
                 <field name="art"/>
@@ -23,6 +28,11 @@
         <field name="model">wb.voip.aktion</field>
         <field name="arch" type="xml">
             <form>
+                <header>
+                    <button name="action_wb_voip_assistent_bearbeiten" type="object"
+                            string="Mit Assistent bearbeiten" class="btn-primary"
+                            invisible="not wb_voip_assistent"/>
+                </header>
                 <sheet>
                     <widget name="web_ribbon" title="Archiviert" bg_color="text-bg-danger"
                             invisible="active"/>
@@ -50,12 +60,17 @@
                             <field name="partner_domain" placeholder="[('is_company', '=', True)]"/>
                         </group>
                     </group>
+                    <div class="alert alert-info" role="status" invisible="not wb_voip_assistent">
+                        Die Aktion dieses Buttons wurde mit dem Assistenten angelegt und lässt
+                        sich nur dort ändern.
+                    </div>
                     <group string="Was passiert?">
-                        <field name="art"/>
+                        <field name="wb_voip_assistent" invisible="1"/>
+                        <field name="art" readonly="wb_voip_assistent"/>
                         <field name="act_window_id" invisible="art != 'fenster'"
                                required="art == 'fenster'"/>
                         <field name="server_action_id" invisible="art != 'serveraktion'"
-                               required="art == 'serveraktion'"/>
+                               required="art == 'serveraktion'" readonly="wb_voip_assistent"/>
                         <field name="url_vorlage" invisible="art != 'url'" required="art == 'url'"
                                placeholder="https://beispiel.example/suche?nr={nummer_e164}"/>
                     </group>

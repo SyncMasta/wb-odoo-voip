@@ -22,7 +22,8 @@ from ..tools.eingaben import limit_pruefen
 from ..tools.rechte import nur_voip_benutzer
 from ..tools.nummer import e164
 from . import PRODUKT_CODE
-from .wb_voip_aktion import URL_PLATZHALTER_MUSTER, WbVoipAktion, serveraktion_erlaubt
+from .wb_voip_aktion import (
+    URL_PLATZHALTER_MUSTER, WbVoipAktion, assistenten_aktion, serveraktion_erlaubt)
 
 _logger = logging.getLogger(__name__)
 
@@ -707,6 +708,12 @@ class WbVoipAnruf(models.Model):
         Allowed are only ``code`` (``run()`` evaluates it with the caller's env) and
         ``object_write`` on a field of the target itself, which is written here with
         ``write()`` as the caller (ACL, record rules, field groups apply), not via ``run()``.
+
+        Server actions made by the button wizard carry a technical group nobody has, so
+        Odoo refuses them everywhere else (``run()``, action menu). For such buttons the
+        group check is skipped here and ``code`` runs through Odoo's code runner
+        ``_run_action_code_multi`` with an evaluation context built as the caller (the
+        same context ``run()`` would build), never through ``run()``.
         """
         server = aktion.sudo().server_action_id
         if not serveraktion_erlaubt(server):
@@ -714,8 +721,11 @@ class WbVoipAnruf(models.Model):
                 "Diese Art von Serveraktion ist für Anruf-Buttons nicht erlaubt."))
         if server.warning:
             raise UserError(self.env._("Die Serveraktion des Buttons ist fehlerhaft."))
+        # Assistenten-Aktion nur mit Kennzeichen am Button und genau der technischen Gruppe
+        assistent = aktion.sudo().wb_voip_assistent and assistenten_aktion(server)
         # wie run(): Gruppen der Serveraktion (gilt auch für object_write ohne run())
-        if server.group_ids and not (server.group_ids & self.env.user.all_group_ids):
+        if not assistent and server.group_ids \
+                and not (server.group_ids & self.env.user.all_group_ids):
             raise AccessError(self.env._("Sie dürfen diese Serveraktion nicht ausführen."))
         modell = server.model_id.model
         if modell == self._name:
@@ -745,7 +755,13 @@ class WbVoipAnruf(models.Model):
             wert = server.with_context(kontext)._eval_value(eval_context=auswertung)[server.id]
             datensatz.with_context(kontext).write({server.update_field_id.name: wert})
             return False
-        ergebnis = Server.browse(server.id).run()
+        if assistent:
+            # Wie run(): Kontext als Benutzer (env = Benutzer, kein su), Code per sudo lesen
+            # (Feldgruppe base.group_system), ausführen mit Odoos Code-Ausführer
+            auswertung = Server._get_eval_context(server)
+            ergebnis = server.with_context(kontext)._run_action_code_multi(eval_context=auswertung)
+        else:
+            ergebnis = Server.browse(server.id).run()
         if isinstance(ergebnis, dict) and ergebnis:
             return clean_action(ergebnis, env=self.env)
         return False
