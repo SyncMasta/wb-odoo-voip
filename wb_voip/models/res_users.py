@@ -197,3 +197,21 @@ class ResUsers(models.Model):
             'eingerichtet': benutzer._wb_voip_eingerichtet(),
             'konfiguriert': konfiguriert,
         }
+
+    def _wb_voip_layout(self, ort):
+        """Return the window layout of this user for ``ort``.
+
+        Layouts restricted to groups win by lowest sequence if one of the groups matches;
+        layouts without groups apply to everyone; otherwise the standard layout of the place.
+        Private helper (not callable via RPC); the search runs as superuser after the group check.
+        """
+        self.ensure_one()
+        if ort not in dict(self.env['wb.voip.layout']._fields['ort'].selection):
+            raise ValidationError(self.env._("Unbekanntes Fenster."))
+        Layout = self.env['wb.voip.layout'].sudo()
+        gruppen = self.sudo().all_group_ids.ids
+        passend = Layout.search([
+            ('ort', '=', ort), ('ist_standard', '=', False),
+            '|', ('group_ids', '=', False), ('group_ids', 'in', gruppen),
+        ], order='sequence, id', limit=1)
+        return passend or Layout.search([('ort', '=', ort), ('ist_standard', '=', True)], limit=1)

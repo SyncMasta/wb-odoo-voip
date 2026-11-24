@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Nur bei der Installation: Änderungen am Standard-Layout bleiben; Zurücksetzen per Knopf -->
+    <data noupdate="1">
+        <record id="wb_voip_layout_anrufer_fenster_standard" model="wb.voip.layout">
+            <field name="name">Standard Anrufer-Fenster</field>
+            <field name="ort">anrufer_fenster</field>
+            <field name="sequence">10</field>
+            <field name="ist_standard" eval="True"/>
+        </record>
+        <record id="wb_voip_layout_anrufer_fenster_block_1" model="wb.voip.layout.block">
+            <field name="layout_id" ref="wb_voip_layout_anrufer_fenster_standard"/>
+            <field name="sequence">10</field>
+            <field name="art">kontaktkopf</field>
+        </record>
+        <record id="wb_voip_layout_anrufer_fenster_block_2" model="wb.voip.layout.block">
+            <field name="layout_id" ref="wb_voip_layout_anrufer_fenster_standard"/>
+            <field name="sequence">20</field>
+            <field name="art">buttons</field>
+        </record>
+        <record id="wb_voip_layout_anrufer_fenster_block_3" model="wb.voip.layout.block">
+            <field name="layout_id" ref="wb_voip_layout_anrufer_fenster_standard"/>
+            <field name="sequence">30</field>
+            <field name="art">protokolle</field>
+            <field name="anzahl">5</field>
+        </record>
+        <record id="wb_voip_layout_anrufer_fenster_block_4" model="wb.voip.layout.block">
+            <field name="layout_id" ref="wb_voip_layout_anrufer_fenster_standard"/>
+            <field name="sequence">40</field>
+            <field name="art">aufgaben</field>
+            <field name="anzahl">10</field>
+        </record>
+        <record id="wb_voip_layout_anrufer_fenster_block_5" model="wb.voip.layout.block">
+            <field name="layout_id" ref="wb_voip_layout_anrufer_fenster_standard"/>
+            <field name="sequence">50</field>
+            <field name="art">notiz</field>
+        </record>
+        <record id="wb_voip_layout_protokoll_popup_standard" model="wb.voip.layout">
+            <field name="name">Standard Protokoll-Popup</field>
+            <field name="ort">protokoll_popup</field>
+            <field name="sequence">10</field>
+            <field name="ist_standard" eval="True"/>
+        </record>
+        <record id="wb_voip_layout_protokoll_popup_block_1" model="wb.voip.layout.block">
+            <field name="layout_id" ref="wb_voip_layout_protokoll_popup_standard"/>
+            <field name="sequence">10</field>
+            <field name="art">kontaktkopf</field>
+        </record>
+        <record id="wb_voip_layout_protokoll_popup_block_2" model="wb.voip.layout.block">
+            <field name="layout_id" ref="wb_voip_layout_protokoll_popup_standard"/>
+            <field name="sequence">20</field>
+            <field name="art">protokolle</field>
+            <field name="anzahl">5</field>
+        </record>
+    </data>
+</odoo>
