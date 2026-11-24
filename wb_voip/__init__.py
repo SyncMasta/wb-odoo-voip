@@ -16,3 +16,4 @@ def _wb_voip_post_init(env):
         env['wb.license.client'].register_install(models.PRODUKT_CODE)
     except Exception as e:
         _logger.warning("[wb_voip] register_install failed: %s", e)
+    env['wb.voip.layout']._wb_voip_standard_bloecke_sicherstellen()

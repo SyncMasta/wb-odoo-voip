@@ -7,7 +7,7 @@ ORTE = [('anrufer_fenster', 'Anrufer-Fenster'), ('protokoll_popup', 'Protokoll-P
 TEXT_MAX = 2000
 ANZAHL_MIN, ANZAHL_MAX = 1, 20
 FELD_TYPEN = ('char', 'text', 'selection', 'date', 'datetime', 'boolean', 'integer', 'float',
-              'monetary', 'many2one')
+              'monetary', 'many2one', 'many2many')
 # Name parts that never appear in a layout (credentials)
 FELD_NAMENTEILE = ('password', 'token', 'secret', 'key')
 # Partner fields that never appear in a layout, whatever their name
@@ -16,14 +16,17 @@ _WB_VOIP_LAYOUT_SPERRFELDER = (
     'user_ids', 'message_ids', 'activity_ids', 'website_message_ids', 'message_follower_ids',
     'message_partner_ids', 'message_main_attachment_id', 'rating_ids',
 )
-# Many2one targets that are never followed (users, groups, technical models)
-SPERR_ZIEL_PRAEFIXE = ('ir.', 'base.', 'bus.', 'res.users', 'res.groups', 'auth_', 'mail.')
+# Many2one targets a layout field may point to (everything else is rejected)
+ERLAUBTE_ZIELE = ('res.partner', 'res.country', 'res.country.state', 'res.partner.title',
+                  'res.partner.category', 'res.lang', 'res.partner.industry', 'res.currency')
+# Many2many targets
+ERLAUBTE_ZIELE_M2M = ('res.partner.category',)
 
-# Delivered blocks (art, anzahl) per place; mirrors data/wb_voip_layout_data.xml
+# Delivered blocks (art, anzahl) per place; anzahl only for counted blocks
 STANDARD_BLOECKE = {
-    'anrufer_fenster': [('kontaktkopf', 5), ('buttons', 5), ('protokolle', 5),
-                        ('aufgaben', 10), ('notiz', 5)],
-    'protokoll_popup': [('kontaktkopf', 5), ('protokolle', 5)],
+    'anrufer_fenster': [('kontaktkopf', None), ('buttons', None), ('protokolle', 5),
+                        ('aufgaben', 10), ('notiz', None)],
+    'protokoll_popup': [('kontaktkopf', None), ('protokolle', 5)],
 }
 
 
@@ -68,9 +71,24 @@ class WbVoipLayout(models.Model):
             if not layout.active:
                 raise ValidationError(self.env._("Das Standard-Layout muss aktiv bleiben."))
 
+    @api.model_create_multi
+    def create(self, vals_list):
+        # Standard layouts only come from the module data (install/update)
+        if not self.env.context.get('install_mode') \
+                and any(vals.get('ist_standard') for vals in vals_list):
+            raise UserError(self.env._("Standard-Layouts kommen nur aus den Moduldaten."))
+        return super().create(vals_list)
+
     def write(self, vals):
-        if 'active' in vals and not vals['active'] and self.filtered('ist_standard'):
-            raise UserError(self.env._("Das Standard-Layout kann nicht archiviert werden."))
+        if self.filtered('ist_standard'):
+            if 'active' in vals and not vals['active']:
+                raise UserError(self.env._("Das Standard-Layout kann nicht archiviert werden."))
+            for feld in ('ist_standard', 'ort'):
+                if feld in vals and any(vals[feld] != layout[feld] for layout in self):
+                    raise UserError(self.env._(
+                        "Beim Standard-Layout lassen sich Standard-Kennzeichen und Fenster nicht ändern."))
+        elif vals.get('ist_standard') and not self.env.context.get('install_mode'):
+            raise UserError(self.env._("Standard-Layouts kommen nur aus den Moduldaten."))
         return super().write(vals)
 
     @api.ondelete(at_uninstall=False)
@@ -85,13 +103,29 @@ class WbVoipLayout(models.Model):
         for layout in self:
             if not layout.ist_standard:
                 raise UserError(self.env._("Nur das Standard-Layout lässt sich zurücksetzen."))
+            layout._wb_voip_bloecke_setzen()
+        return True
+
+    def _wb_voip_bloecke_setzen(self):
+        """Replace the blocks of standard layouts by the delivered ones."""
+        Block = self.env['wb.voip.layout.block']
+        for layout in self:
             layout.block_ids.unlink()
             for nr, (art, anzahl) in enumerate(STANDARD_BLOECKE[layout.ort], start=1):
-                self.env['wb.voip.layout.block'].create({
+                Block.create({
                     'layout_id': layout.id, 'sequence': nr * 10, 'art': art,
-                    **({'anzahl': anzahl} if art in ('protokolle', 'aufgaben') else {}),
+                    **({'anzahl': anzahl} if anzahl else {}),
                 })
-        return True
+
+    @api.model
+    def _wb_voip_standard_bloecke_sicherstellen(self):
+        """Idempotent: give standard layouts without blocks their delivered blocks.
+
+        Called from the post-init hook and a migration; never touches a layout that has blocks.
+        """
+        for layout in self.sudo().with_context(active_test=False).search([('ist_standard', '=', True)]):
+            if not layout.block_ids and layout.ort in STANDARD_BLOECKE:
+                layout._wb_voip_bloecke_setzen()
 
 
 class WbVoipLayoutBlock(models.Model):
@@ -144,14 +178,12 @@ class WbVoipLayoutBlock(models.Model):
                 raise ValidationError(self.env._("Bitte mindestens ein Feld wählen."))
             for feld in block.feld_ids.sudo():
                 name = feld.name or ''
-                python = Partner._fields.get(name)
-                if (feld.model != 'res.partner' or python is None
-                        or feld.ttype not in FELD_TYPEN
-                        or not (feld.store or python.search)
+                ziele = {'many2one': ERLAUBTE_ZIELE, 'many2many': ERLAUBTE_ZIELE_M2M}
+                if (feld.model != 'res.partner' or name not in Partner._fields
+                        or feld.ttype not in FELD_TYPEN or not feld.store
                         or name in _WB_VOIP_LAYOUT_SPERRFELDER
                         or any(teil in name.lower() for teil in FELD_NAMENTEILE)
-                        or (feld.ttype == 'many2one' and (feld.relation or '').startswith(
-                            SPERR_ZIEL_PRAEFIXE))):
+                        or (feld.ttype in ziele and feld.relation not in ziele[feld.ttype])):
                     raise ValidationError(self.env._(
                         "Das Feld „%(feld)s“ ist in Layouts nicht erlaubt.",
                         feld=feld.field_description or name))

@@ -237,3 +237,54 @@ class TestLayout(WbVoipCase):
     def test_zuruecksetzen_nur_standard(self):
         with self.assertRaises(UserError):
             self._layout().action_auf_standard_zuruecksetzen()
+
+    # --- Fix round 1 ---
+
+    def test_standard_kennzeichen_geschuetzt(self):
+        with self.assertRaises(UserError):
+            self.std_fenster.write({'ist_standard': False})
+        with self.assertRaises(UserError):
+            self.std_fenster.write({'ort': 'protokoll_popup'})
+        with self.assertRaises(UserError):
+            self._layout(ist_standard=True)
+        eigenes = self._layout()
+        with self.assertRaises(UserError):
+            eigenes.write({'ist_standard': True})
+        # unchanged values are fine
+        self.std_fenster.write({'ort': 'anrufer_fenster', 'ist_standard': True})
+
+    def test_standard_bloecke_helfer_idempotent(self):
+        vorher = self._bloecke(self.std_fenster)
+        self.Layout._wb_voip_standard_bloecke_sicherstellen()
+        self.assertEqual(self._bloecke(self.std_fenster), vorher)
+        self.assertEqual(len(self.std_fenster.block_ids), len(vorher))
+        # reset then a simulated update: block count stays
+        self.std_fenster.action_auf_standard_zuruecksetzen()
+        self.Layout._wb_voip_standard_bloecke_sicherstellen()
+        self.assertEqual(self._bloecke(self.std_fenster), vorher)
+        self.assertFalse(self.env['ir.model.data'].search([
+            ('model', '=', 'wb.voip.layout.block'), ('res_id', 'in', self.std_fenster.block_ids.ids)]))
+        # empty standard layout gets its blocks back
+        self.std_popup.block_ids.unlink()
+        self.Layout._wb_voip_standard_bloecke_sicherstellen()
+        self.assertEqual(self._bloecke(self.std_popup), [('kontaktkopf', 0), ('protokolle', 5)])
+
+    def test_ziele_erlaubliste(self):
+        layout = self._layout()
+        for modell, name in (('res.partner', 'bank_ids'), ('res.partner', 'company_id'),
+                             ('res.partner', 'user_id')):
+            with self.assertRaises(ValidationError, msg=name):
+                self._block(layout, art='felder', feld_ids=[(6, 0, [self._feld(name, modell).id])])
+        for name in ('country_id', 'state_id', 'title', 'parent_id', 'lang', 'industry_id',
+                     'category_id'):
+            self._block(layout, art='felder', feld_ids=[(6, 0, [self._feld(name).id])])
+
+    def test_nur_gespeicherte_felder(self):
+        layout = self._layout()
+        # display_name is not stored on res.partner
+        nicht_gespeichert = self.env['ir.model.fields'].search([
+            ('model', '=', 'res.partner'), ('store', '=', False), ('ttype', '=', 'char'),
+            ('name', 'not ilike', 'key')], limit=1)
+        self.assertTrue(nicht_gespeichert)
+        with self.assertRaises(ValidationError):
+            self._block(layout, art='felder', feld_ids=[(6, 0, [nicht_gespeichert.id])])
