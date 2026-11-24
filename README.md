@@ -8,8 +8,8 @@ Notizen und findet später nicht mehr, wer wann mit wem gesprochen hat. WB VoIP 
 Klick aus jedem Telefonfeld, eingehende Anrufe mit Namen des Kontakts, und nach jedem Gespräch ein Protokolleintrag
 am richtigen Datensatz.
 
-> **Stand:** Phase 1 (Version 19.0.1.4.x). Softphone, Anrufprotokoll und Lizenzanbindung sind fertig und mit
-> automatischen Tests abgesichert. Der Betrieb gegen eine echte Telefonanlage wird gerade erprobt; bis dahin gilt
+> **Stand:** Phase 2 (Version 19.0.2.x). Softphone, Anrufprotokoll, Anrufer-Fenster, eigene Anruf-Buttons,
+> Rufnummer zuordnen und Lizenzanbindung sind fertig und mit automatischen Tests abgesichert. Der Betrieb gegen eine echte Telefonanlage wird gerade erprobt; bis dahin gilt
 > das Modul als Vorabversion.
 
 ---
@@ -30,6 +30,24 @@ am richtigen Datensatz.
 - Breites Popup direkt nach dem Auflegen mit Kontakt, den letzten Anrufen und „Folgeaktivität planen“
 - Hinweis im Chatter des verknüpften Datensatzes bzw. des Kontakts
 - Kontakterkennung über die Rufnummer, unabhängig von der Schreibweise (`0170 1234567` = `+49 170 1234567`)
+
+**Anrufer-Fenster**
+- Seitenpanel bei jedem Anruf, nur im Tab, der telefoniert: Kontakt mit Bild, letzte Gespräche, offene Aufgaben,
+  Notiz zum laufenden Gespräch
+- Schließt sich zehn Sekunden nach dem Auflegen, solange nicht Maus oder Tastaturfokus im Panel sind;
+  nimmt keinen Fokus aus einem Eingabefeld
+- Unbekannte Nummer: „Zuordnen“ und „Neuer Kontakt“
+
+**Eigene Anruf-Buttons**
+- Selbst konfigurierbar unter Einstellungen › Technisch › WB VoIP › Anruf-Buttons: Fenster öffnen,
+  Serveraktion, Webadresse (nur `https://`) oder neuer Kontakt
+- Anzeige im Anrufer-Fenster, im Protokoll-Popup und im Softphone, einstellbar nach Richtung, Anrufzustand,
+  Benutzergruppen und einer Bedingung am Kontakt
+- Läuft mit den Rechten des Benutzers; als Serveraktion nur Python-Code und „Feld schreiben“ am Datensatz selbst
+
+**Rufnummer zuordnen**
+- Unbekannte Nummer einem Kontakt zuordnen und auf Wunsch in dessen Telefonfeld speichern; danach erkennt
+  WB VoIP die Nummer selbst
 
 **Sicherheit und Datenschutz**
 - SIP-Passwort nur verschlüsselt gespeichert (Fernet); Benutzer und Administratoren können es setzen, nie lesen
@@ -73,12 +91,14 @@ am richtigen Datensatz.
 3. **Rechte**: „WB VoIP: Benutzer“ für alle, die telefonieren; „WB VoIP: Administrator“ für die Pflege von Anlagen
    und Nebenstellen.
 4. **Löschfrist** (Einstellungen › WB VoIP): Monate bis zur Löschung beendeter Anrufe, `0` = nie.
+5. **Anruf-Buttons** (Einstellungen › Technisch › WB VoIP › Anruf-Buttons, optional): eigene Schaltflächen für
+   Anrufer-Fenster, Protokoll-Popup und Softphone anlegen.
 
 Details stehen in [`wb_voip/README.rst`](wb_voip/README.rst).
 
 ## Geplant
 
-- Anrufer-Fenster mit eigenen Schaltflächen und einem Designer für den Aufbau der Fenster
+- Designer für den Aufbau des Anrufer-Fensters
 - Verpasste Anrufe mit Rückruf-Liste
 - CRM-Anbindung (Anrufe am Vorgang)
 - Adapter für Telefonanlagen, beginnend mit Ansitel (Rufumleitung, Anrufbeantworter, Anrufliste)

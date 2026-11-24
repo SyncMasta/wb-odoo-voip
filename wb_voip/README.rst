@@ -4,8 +4,8 @@ WB VoIP
 
 Softphone im Browser, Anrufprotokoll und Anbindung an SIP-Telefonanlagen für Odoo 19.
 
-Stand Phase 1: Softphone, Anrufprotokoll mit Popup nach dem Anruf, Löschfrist und Lizenzanbindung
-(Produktcode ``VOIP``).
+Stand Phase 2: Softphone, Anrufprotokoll mit Popup nach dem Anruf, Anrufer-Fenster, eigene Anruf-Buttons,
+Rufnummer zuordnen, Löschfrist und Lizenzanbindung (Produktcode ``VOIP``).
 
 Einrichtung
 -----------
@@ -35,6 +35,64 @@ Nach dem Auflegen öffnet sich im Tab, der den Anruf geführt hat, ein breites P
 (vorbelegt) und Notiz, rechts Kontakt mit Telefon und E-Mail sowie die letzten fünf Anrufe des Kontakts
 (nur eigene). „Folgeaktivität planen“ öffnet den Odoo-Dialog am verknüpften Datensatz (wenn der Benutzer
 dort schreiben darf), sonst am Protokoll. Verwerfen lässt das vorbelegte Ergebnis stehen.
+
+Anrufer-Fenster
+---------------
+
+Bei einem eingehenden oder ausgehenden Anruf öffnet sich im Telefon-Tab ein Seitenpanel rechts. Es zeigt
+Kontakt (Bild, Name, Firma, Telefon, E-Mail, „Kontakt öffnen“), die letzten Gespräche mit dem Kontakt
+(nur eigene), offene Aufgaben am Kontakt, die Notiz zum laufenden Gespräch und die Anruf-Buttons.
+Ist die Nummer keinem Kontakt zugeordnet, steht dort „Unbekannte Nummer“ mit „Zuordnen“. Das Panel schließt
+sich mit der Escape-Taste, über das Kreuz oder zehn Sekunden nach dem Auflegen; solange der Mauszeiger darüber
+steht oder der Fokus im Panel liegt, bleibt es offen. Es nimmt keinen Fokus aus einem Eingabefeld und
+öffnet sich nur in dem Tab, der den Anruf führt. Gezeigt werden nur Daten, die der angemeldete Benutzer
+auch sonst lesen darf.
+
+Anruf-Buttons
+-------------
+
+Einstellungen › Technisch › WB VoIP › Anruf-Buttons (Administrator). Jeder Button erscheint an den gewählten
+Orten: Anrufer-Fenster, Protokoll-Popup nach dem Auflegen und Softphone-Anrufansicht. Im Softphone sind
+höchstens vier Buttons sichtbar, der Rest steht unter „Mehr“.
+
+Je Button einstellbar:
+
+* **Art**:
+
+  * *Fenster öffnen*: öffnet eine Odoo-Fensteraktion (z. B. ein Formular oder eine Liste).
+  * *Serveraktion*: führt eine Serveraktion aus. Erlaubt sind nur Python-Code (``code``) und „Feld schreiben“
+    am Datensatz selbst (ohne Punktnotation im Feldpfad); alle anderen Arten (Datensatz anlegen/kopieren,
+    Mehrfachaktion, Webhook, Mail-Arten) lehnt das Modul ab, weil Odoo sie mit erhöhten Rechten ausführt.
+  * *Webadresse öffnen*: öffnet eine Adresse in einem neuen Tab. Nur ``https://``, höchstens 500 Zeichen,
+    Platzhalter ``{nummer}``, ``{nummer_e164}`` und ``{partner_id}`` (werden URL-kodiert eingesetzt). Keine
+    Zugangsdaten, Tokens oder Schlüssel in die Adresse schreiben: Sie ist für jeden Benutzer der Gruppe
+    im Browser sichtbar.
+  * *Neuer Kontakt*: öffnet ein Kontaktformular mit der Rufnummer; erscheint nur, solange der Anruf noch
+    keinem Kontakt zugeordnet ist.
+
+* **Orte**: Anrufer-Fenster, Protokoll-Popup, Softphone (mindestens einer).
+* **Richtung**: beide, nur eingehend oder nur ausgehend.
+* **Zustand**: immer, während es klingelt, während des Gesprächs oder nach dem Anruf.
+* **Gruppen**: Leer = alle WB-VoIP-Benutzer, sonst nur Mitglieder der gewählten Gruppen.
+* **Bedingung für Kontakte**: optionale Domain auf Kontakte, z. B. ``[('is_company', '=', True)]``. Sie wird nie
+  als Code ausgeführt, nur bekannte Felder und Standard-Operatoren sind erlaubt, und der Autor darf nur Felder
+  verwenden, die er selbst lesen darf. Ohne Kontakt am Anruf passt eine Bedingung nie.
+* **Symbol** (Font-Awesome-Klasse wie ``fa-user``) und **Farbe** aus einer festen Liste.
+
+Alles läuft mit den Rechten des Benutzers, der den Button drückt: Serveraktionen und Fensteraktionen sehen und
+ändern nur, was dieser Benutzer auch sonst darf. Der Server prüft bei jedem Klick erneut, ob der Button zu
+Anruf, Richtung, Zustand, Gruppe und Kontakt passt; ein ausgeblendeter Button lässt sich nicht per Aufruf
+umgehen. Die mitgelieferten Beispiel-Buttons lassen sich ändern oder archivieren.
+
+Rufnummer zuordnen
+------------------
+
+„Zuordnen“ im Anrufer-Fenster öffnet einen Assistenten für Anrufe mit unbekannter Nummer: Kontakt wählen und
+bestimmen, in welchem Telefonfeld des Kontakts die Nummer gespeichert wird (Telefon, Mobil usw. oder „Nicht
+speichern“). Ist das Feld schon belegt, speichert der Assistent erst nach „Ersetzen“. Darf der Benutzer den
+Kontakt nicht ändern, wird der Anruf trotzdem zugeordnet und die Nummer nicht gespeichert (mit Hinweis). Danach
+gehören Anruf und Protokoll zum Kontakt, und spätere Anrufe dieser Nummer erkennt WB VoIP selbst. Zuordnen
+kann nur, wer den Anruf selbst geführt hat.
 
 SIP-Passwort und Schlüssel
 --------------------------
