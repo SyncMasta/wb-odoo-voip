@@ -11,12 +11,14 @@
         </div>
     </t>
 
+    <!-- Blocktitel als h3 unter der (versteckten) Überschrift des Fensters -->
     <t t-name="wb_voip.LayoutBlockTitel">
-        <h6 t-if="titel" class="o_wb_voip_lb_titel text-muted" t-esc="titel"/>
+        <h3 t-if="titel" t-att-id="titelId" class="o_wb_voip_lb_titel h6 text-muted" t-esc="titel"/>
     </t>
 
     <t t-name="wb_voip.LayoutBlockKontaktkopf">
-        <section t-if="kontakt" class="o_wb_voip_lb_block o_wb_voip_lb_kontaktkopf o_wb_voip_af_kontakt mb-3">
+        <section t-if="kontakt" class="o_wb_voip_lb_block o_wb_voip_lb_kontaktkopf o_wb_voip_af_kontakt mb-3"
+                 t-att-aria-labelledby="titel ? titelId : false" t-att-aria-label="titel ? false : artLabel">
             <t t-call="wb_voip.LayoutBlockTitel"/>
             <t t-if="props.daten.mitName">
                 <div class="o_wb_voip_lb_name fw-bold text-truncate" t-esc="kontakt.name"/>
@@ -37,7 +39,8 @@
     </t>
 
     <t t-name="wb_voip.LayoutBlockFelder">
-        <section t-if="felder.length" class="o_wb_voip_lb_block o_wb_voip_lb_felder mb-3">
+        <section t-if="felder.length" class="o_wb_voip_lb_block o_wb_voip_lb_felder mb-3"
+                 t-att-aria-labelledby="titel ? titelId : false" t-att-aria-label="titel ? false : artLabel">
             <t t-call="wb_voip.LayoutBlockTitel"/>
             <dl class="o_wb_voip_lb_feldliste mb-0">
                 <t t-foreach="felder" t-as="feld" t-key="feld.name">
@@ -49,8 +52,9 @@
     </t>
 
     <t t-name="wb_voip.LayoutBlockProtokolle">
-        <section t-if="protokolle.length" class="o_wb_voip_lb_block o_wb_voip_lb_protokolle o_wb_voip_af_protokolle mb-3">
-            <h6 class="o_wb_voip_lb_titel text-muted"><t t-if="titel" t-esc="titel"/><t t-else="">Letzte Gespräche</t></h6>
+        <section t-if="protokolle.length" class="o_wb_voip_lb_block o_wb_voip_lb_protokolle o_wb_voip_af_protokolle mb-3"
+                 t-att-aria-labelledby="titelId">
+            <h3 t-att-id="titelId" class="o_wb_voip_lb_titel h6 text-muted"><t t-if="titel" t-esc="titel"/><t t-else="">Letzte Gespräche</t></h3>
             <ul class="list-unstyled mb-0">
                 <li t-foreach="protokolle" t-as="protokoll" t-key="protokoll.id"
                     class="o_wb_voip_af_protokoll border-top py-2">
@@ -66,8 +70,9 @@
     </t>
 
     <t t-name="wb_voip.LayoutBlockAufgaben">
-        <section t-if="aufgaben.length" class="o_wb_voip_lb_block o_wb_voip_lb_aufgaben o_wb_voip_af_aufgaben mb-3">
-            <h6 class="o_wb_voip_lb_titel text-muted"><t t-if="titel" t-esc="titel"/><t t-else="">Offene Aufgaben</t></h6>
+        <section t-if="aufgaben.length" class="o_wb_voip_lb_block o_wb_voip_lb_aufgaben o_wb_voip_af_aufgaben mb-3"
+                 t-att-aria-labelledby="titelId">
+            <h3 t-att-id="titelId" class="o_wb_voip_lb_titel h6 text-muted"><t t-if="titel" t-esc="titel"/><t t-else="">Offene Aufgaben</t></h3>
             <ul class="list-unstyled mb-0">
                 <li t-foreach="aufgaben" t-as="aufgabe" t-key="aufgabe.id">
                     <button t-if="props.daten.onAufgabeOeffnen" type="button"
@@ -86,31 +91,28 @@
     </t>
 
     <t t-name="wb_voip.LayoutBlockNotiz">
-        <section t-if="anruf" class="o_wb_voip_lb_block o_wb_voip_lb_notiz mb-3">
-            <label class="form-label small text-muted mb-1" for="wb_voip_af_notiz"><t t-if="titel" t-esc="titel"/><t t-else="">Notiz</t></label>
-            <textarea id="wb_voip_af_notiz" class="o_wb_voip_af_notiz form-control" rows="4"
+        <section t-if="anruf" class="o_wb_voip_lb_block o_wb_voip_lb_notiz mb-3" t-att-aria-labelledby="titelId">
+            <label t-att-id="titelId" class="form-label small text-muted mb-1" t-att-for="feldId"><t t-if="titel" t-esc="titel"/><t t-else="">Notiz</t></label>
+            <textarea t-att-id="feldId" class="o_wb_voip_af_notiz form-control" rows="4"
                       t-att-maxlength="props.daten.maxNotiz" placeholder="Notiz zum Gespräch"
                       t-model="anruf.notiz"/>
         </section>
     </t>
 
     <t t-name="wb_voip.LayoutBlockButtons">
-        <section t-if="zeigen" class="o_wb_voip_lb_block o_wb_voip_lb_buttons mb-3">
+        <section t-if="zeigen" class="o_wb_voip_lb_block o_wb_voip_lb_buttons mb-3"
+                 t-att-aria-labelledby="titel ? titelId : false" t-att-aria-label="titel ? false : artLabel">
             <t t-call="wb_voip.LayoutBlockTitel"/>
             <div class="o_wb_voip_af_aktionen d-flex flex-wrap gap-2">
-                <button t-if="!kontakt and props.daten.onZuordnen" type="button"
-                        class="o_wb_voip_af_zuordnen btn btn-outline-primary"
-                        t-on-click="() => props.daten.onZuordnen()">
-                    <i class="fa fa-link me-1" aria-hidden="true"/>Zuordnen
-                </button>
-                <AktionsLeiste t-if="props.daten.onAktion" aktionen="aktionen" ort="props.daten.ort"
+                <AktionsLeiste aktionen="aktionen" ort="props.daten.ort"
                                itemKlasse="'o_wb_voip_af_aktion'" onAusfuehren="props.daten.onAktion"/>
             </div>
         </section>
     </t>
 
     <t t-name="wb_voip.LayoutBlockText">
-        <section t-if="text" class="o_wb_voip_lb_block o_wb_voip_lb_text mb-3">
+        <section t-if="text" class="o_wb_voip_lb_block o_wb_voip_lb_text mb-3"
+                 t-att-aria-labelledby="titel ? titelId : false" t-att-aria-label="titel ? false : artLabel">
             <t t-call="wb_voip.LayoutBlockTitel"/>
             <div class="o_wb_voip_lb_text_inhalt" t-esc="text"/>
         </section>

@@ -1,7 +1,7 @@
-import { describe, expect, test } from "@odoo/hoot";
-import { queryAll, queryOne, queryRect, resize, waitFor } from "@odoo/hoot-dom";
-import { animationFrame } from "@odoo/hoot-mock";
-import { EventBus, reactive } from "@odoo/owl";
+import { describe, expect, getFixture, test } from "@odoo/hoot";
+import { click, queryAll, queryOne, queryRect, resize, waitFor } from "@odoo/hoot-dom";
+import { Deferred, animationFrame } from "@odoo/hoot-mock";
+import { Component, EventBus, reactive, useState, xml } from "@odoo/owl";
 import { defineMailModels } from "@mail/../tests/mail_test_helpers";
 import {
     defineModels,
@@ -14,6 +14,7 @@ import { MainComponentsContainer } from "@web/core/main_components_container";
 import { session } from "@web/session";
 
 import { AnruferFenster } from "@wb_voip/anrufer_fenster/anrufer_fenster";
+import { LayoutBloecke, NotizBlock } from "@wb_voip/layout/bloecke";
 import "@wb_voip/layout/popup_layout";
 import "@wb_voip/protokoll_popup";
 
@@ -93,10 +94,10 @@ async function fensterOeffnen(telefon, anrufId = 10) {
     await animationFrame();
 }
 
-async function fensterMit(lay, { breite = 1400 } = {}) {
+async function fensterMit(lay, { breite = 1400, extra = () => ({}) } = {}) {
     await resize({ width: breite, height: 900 });
     patchWithCleanup(session, { wb_voip_aktiv: false });
-    onRpc("wb.voip.anruf", "wb_voip_kontext", ({ args }) => kontext(args[0][0], lay()));
+    onRpc("wb.voip.anruf", "wb_voip_kontext", ({ args }) => kontext(args[0][0], lay(), extra()));
     const telefon = telefonAttrappe();
     mockService("wb_voip_telefon", () => telefon);
     await mountWithCleanup(AnruferFenster, { noMainContainer: true });
@@ -298,17 +299,184 @@ test("Popup: „sehr breit“ ist Vollbild", async () => {
 });
 
 test("Popup: Fehler beim Laden des Layouts öffnet trotzdem (groß)", async () => {
-    let erster = true;
     await popupMit(() => {
-        if (erster) {
-            erster = false;
-            throw new Error("weg");
-        }
-        return { layout: layout([block("text", { text: "Zweiter Versuch" })]), kontakt: false, protokolle: [] };
+        throw new Error("weg");
     });
     expect(".modal-dialog").toHaveClass("modal-lg");
     expect(".o_wb_voip_popup_links .o_field_widget[name=ergebnis]").toHaveCount(1);
-    // das Widget lädt selbst noch einmal
-    expect.verifySteps(["layout 1", "layout 1"]);
-    expect(".o_wb_voip_popup_rechts .o_wb_voip_lb_text_inhalt").toHaveText("Zweiter Versuch");
+    expect(".o_wb_voip_popup_rechts .o_wb_voip_lb_block").toHaveCount(0);
+    // nur das Widget lädt, einmal
+    expect.verifySteps(["layout 1"]);
+});
+
+test("Popup öffnet sofort, das Widget lädt seine Daten und passt die Größe an", async () => {
+    const antwort = new Deferred();
+    onRpc("wb.voip.protokoll", "wb_voip_popup_layout", ({ args }) => {
+        expect.step(`layout ${args[0][0]}`);
+        return antwort;
+    });
+    const telefon = telefonAttrappe();
+    mockService("wb_voip_telefon", () => telefon);
+    await mountWithCleanup(MainComponentsContainer);
+    telefon.bus.trigger("anruf-beendet", { anrufId: 5, protokollId: 1, eigenerTab: true });
+    await waitFor(".modal .o_form_view");
+    await animationFrame();
+    // Dialog schon offen, obwohl die Antwort fehlt
+    expect.verifySteps(["layout 1"]);
+    expect(".modal-dialog").toHaveClass("modal-lg");
+    expect(".o_wb_voip_popup_links .o_field_widget[name=ergebnis]").toHaveCount(1);
+    antwort.resolve({
+        layout: layout([block("text", { text: "Später da" })], "breit"),
+        kontakt: ERIKA,
+        protokolle: [],
+    });
+    await animationFrame();
+    await animationFrame();
+    expect(".o_wb_voip_popup_rechts .o_wb_voip_lb_text_inhalt").toHaveText("Später da");
+    expect(".modal-dialog").toHaveClass("modal-xl");
+    expect(".modal-dialog").not.toHaveClass("modal-lg");
+    // das nächste Popup im selben Tab öffnet gleich in der zuletzt gesehenen Größe
+    await click(".modal .btn-close");
+    await animationFrame();
+    telefon.bus.trigger("anruf-beendet", { anrufId: 6, protokollId: 1, eigenerTab: true });
+    await waitFor(".modal .o_form_view");
+    expect(".modal-dialog").toHaveClass("modal-xl");
+    await animationFrame();
+    expect.verifySteps(["layout 1"]);
+});
+
+// --- Kopfzeile, Barrierefreiheit, Softphone (Nacharbeiten) ----------------------------------
+
+const NEUER_KONTAKT = {
+    id: 1,
+    name: "Neuer Kontakt",
+    icon: "fa-user-plus",
+    farbe: "primary",
+    art: "neuer_kontakt",
+    orte: ["anrufer_fenster"],
+};
+const WEB = { id: 2, name: "Web", icon: false, farbe: "secondary", art: "url", orte: ["anrufer_fenster"] };
+
+test("unbekannte Nummer: „Zuordnen“ und „Neuer Kontakt“ fest im Kopf, auch ohne Buttons-Block", async () => {
+    await fensterMit(() => layout([]), {
+        extra: () => ({ kontakt: false, protokolle: [], aktionen: [NEUER_KONTAKT, WEB] }),
+    });
+    expect(".o_wb_voip_af_name").toHaveText("Unbekannte Nummer");
+    expect(".o_wb_voip_af_kopf .o_wb_voip_af_zuordnen").toHaveCount(1);
+    expect(".o_wb_voip_af_kopf .o_wb_voip_af_aktion").toHaveCount(1);
+    expect(".o_wb_voip_af_kopf .o_wb_voip_af_aktion").toHaveText("Neuer Kontakt");
+    // kein Buttons-Block: der Web-Button fehlt
+    expect(".o_wb_voip_lb_buttons").toHaveCount(0);
+});
+
+test("Buttons-Block zeigt weder „Zuordnen“ noch „Neuer Kontakt“", async () => {
+    await fensterMit(() => layout([block("buttons")]), {
+        extra: () => ({ kontakt: false, protokolle: [], aktionen: [NEUER_KONTAKT, WEB] }),
+    });
+    expect(".o_wb_voip_lb_buttons .o_wb_voip_af_aktion").toHaveCount(1);
+    expect(".o_wb_voip_lb_buttons .o_wb_voip_af_aktion").toHaveText("Web");
+    expect(".o_wb_voip_lb_buttons .o_wb_voip_af_zuordnen").toHaveCount(0);
+    expect(".o_wb_voip_af_kopf .o_wb_voip_af_zuordnen").toHaveCount(1);
+    expect(".o_wb_voip_af_kopf .o_wb_voip_af_aktion").toHaveText("Neuer Kontakt");
+});
+
+test("bekannter Kontakt: kein „Zuordnen“ im Kopf", async () => {
+    await fensterMit(() => layout([block("buttons")]), { extra: () => ({ aktionen: [WEB] }) });
+    expect(".o_wb_voip_af_zuordnen").toHaveCount(0);
+    expect(".o_wb_voip_af_kopf .o_wb_voip_af_aktion").toHaveCount(0);
+    expect(".o_wb_voip_lb_buttons .o_wb_voip_af_aktion").toHaveText("Web");
+});
+
+test("Blöcke haben einen zugänglichen Namen, das Fenster eine Überschrift", async () => {
+    await fensterMit(() =>
+        layout([
+            block("text", { titel: "Hinweis", text: "Bitte prüfen" }),
+            block("kontaktkopf"),
+            block("protokolle", { anzahl: 5 }),
+        ])
+    );
+    const ueberschrift = queryOne(".o_wb_voip_anrufer_fenster .o_wb_voip_af_ueberschrift");
+    expect(ueberschrift.tagName).toBe("H2");
+    expect(ueberschrift).toHaveClass("visually-hidden");
+    const text = queryOne(".o_wb_voip_lb_text");
+    const titelId = text.getAttribute("aria-labelledby");
+    expect(titelId).toMatch(/^wb_voip_lb_/);
+    expect(queryOne(`#${titelId}`)).toHaveText("Hinweis");
+    expect(queryOne(`#${titelId}`).tagName).toBe("H3");
+    // ohne Titel: Name der Art
+    expect(".o_wb_voip_lb_kontaktkopf").toHaveAttribute("aria-label", "Kontakt");
+    expect(".o_wb_voip_lb_kontaktkopf").not.toHaveAttribute("aria-labelledby");
+    // Protokolle haben immer eine Überschrift
+    const protokolle = queryOne(".o_wb_voip_lb_protokolle");
+    expect(queryOne(`#${protokolle.getAttribute("aria-labelledby")}`)).toHaveText("Letzte Gespräche");
+});
+
+test("Softphone wird nie aus dem Bild geschoben", async () => {
+    const softphone = document.createElement("div");
+    softphone.className = "o_wb_voip_fenster position-fixed";
+    softphone.style.height = "80px";
+    getFixture().appendChild(softphone);
+    let breite = "normal";
+    const telefon = await fensterMit(() => layout([block("kontaktkopf")], breite));
+    let anrufId = 10;
+    for (const name of ["normal", "breit", "sehr_breit"]) {
+        if (name !== "normal") {
+            breite = name;
+            await fensterOeffnen(telefon, ++anrufId);
+        }
+        const panel = queryRect(".o_wb_voip_anrufer_fenster");
+        const sp = softphone.getBoundingClientRect();
+        // ganz sichtbar ...
+        expect(sp.left).toBeGreaterThan(-0.5);
+        // ... und entweder neben dem Panel oder gar nicht verschoben (Panel liegt darüber)
+        const neben = sp.right <= panel.left + 0.5;
+        const unverschoben = Math.abs(panel.right - 16 - sp.right) < 1;
+        expect(neben || unverschoben).toBe(true, { message: name });
+    }
+});
+
+class ZweiNotizen extends Component {
+    static components = { LayoutBloecke };
+    static props = ["anruf"];
+    static template = xml`
+        <div>
+            <t t-if="state.zeigen">
+                <LayoutBloecke layout="lay" ort="'anrufer_fenster'" anruf="props.anruf"/>
+                <LayoutBloecke layout="lay" ort="'anrufer_fenster'" anruf="props.anruf"/>
+            </t>
+        </div>`;
+    setup() {
+        this.state = useState({ zeigen: true });
+        this.lay = layout([block("notiz")]);
+        ZweiNotizen.letzte = this;
+    }
+}
+
+test("Notiz-Block: eindeutige Feld-ID, keine Beobachtung nach dem Abbau", async () => {
+    const anruf = reactive({ id: 10, notiz: "" });
+    await mountWithCleanup(ZweiNotizen, { props: { anruf } });
+    const felder = queryAll(".o_wb_voip_af_notiz");
+    expect(felder).toHaveLength(2);
+    expect(felder[0].id).not.toBe(felder[1].id);
+    for (const feld of felder) {
+        expect(queryAll(`label[for="${feld.id}"]`)).toHaveLength(1);
+    }
+    // Änderung an anderer Stelle wird gezeigt
+    anruf.notiz = "Von außen";
+    await animationFrame();
+    expect(".o_wb_voip_af_notiz:eq(0)").toHaveValue("Von außen");
+    // nach dem Abbau zeichnet niemand mehr
+    let gezeichnet = 0;
+    patchWithCleanup(NotizBlock.prototype, {
+        render(...args) {
+            gezeichnet++;
+            return super.render(...args);
+        },
+    });
+    ZweiNotizen.letzte.state.zeigen = false;
+    await animationFrame();
+    gezeichnet = 0;
+    anruf.notiz = "Nach dem Abbau";
+    await animationFrame();
+    expect(gezeichnet).toBe(0);
 });

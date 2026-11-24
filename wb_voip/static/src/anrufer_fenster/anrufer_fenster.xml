@@ -7,7 +7,10 @@
                  role="dialog" aria-label="Anrufer-Fenster" tabindex="-1" t-on-keydown="onKeydown"
                  t-on-mouseenter="onZeigerEin" t-on-mouseleave="onZeigerAus"
                  t-on-focusin="onFokusEin" t-on-focusout="onFokusAus">
-            <header class="o_wb_voip_af_kopf d-flex align-items-center gap-3 p-3">
+            <!-- Überschrift für Screenreader: die Blocktitel (h3) hängen darunter -->
+            <h2 class="o_wb_voip_af_ueberschrift visually-hidden">Anrufer-Fenster<t t-if="kontakt">: <t t-esc="kontakt.name"/></t></h2>
+            <header class="o_wb_voip_af_kopf p-3">
+                <div class="d-flex align-items-center gap-3">
                 <img t-if="bildUrl" class="o_wb_voip_af_bild rounded" t-att-src="bildUrl"
                      alt="" width="64" height="64"/>
                 <div t-else="" class="o_wb_voip_af_platzhalter rounded d-flex align-items-center justify-content-center">
@@ -58,6 +61,16 @@
                         t-on-click="schliessen">
                     <i class="fa fa-times" aria-hidden="true"/>
                 </button>
+                </div>
+                <!-- Unbekannte Nummer: Zuordnen und Neuer Kontakt immer da, unabhängig vom Layout -->
+                <div t-if="unbekannt" class="o_wb_voip_af_kopf_aktionen d-flex flex-wrap gap-2 mt-2">
+                    <button type="button" class="o_wb_voip_af_zuordnen btn btn-sm btn-light"
+                            t-on-click="zuordnen">
+                        <i class="fa fa-link me-1" aria-hidden="true"/>Zuordnen
+                    </button>
+                    <AktionsLeiste t-if="kopfAktionen.length" aktionen="kopfAktionen" ort="ort"
+                                   itemKlasse="'o_wb_voip_af_aktion btn-sm'" onAusfuehren.bind="aktionAusfuehren"/>
+                </div>
             </header>
 
             <div class="o_wb_voip_af_inhalt flex-grow-1 overflow-auto p-3">
@@ -67,7 +80,7 @@
                 <LayoutBloecke t-if="daten" layout="layout" kontakt="kontakt"
                                protokolle="daten.protokolle || []" aufgaben="daten.aufgaben || []"
                                aktionen="aktionen" ort="ort" anruf="laufenderAnruf" maxNotiz="maxNotiz"
-                               onAktion.bind="aktionAusfuehren" onZuordnen.bind="zuordnen"
+                               onAktion.bind="aktionAusfuehren"
                                onKontaktOeffnen.bind="kontaktOeffnen"
                                onAufgabeOeffnen.bind="aufgabeOeffnen"/>
             </div>

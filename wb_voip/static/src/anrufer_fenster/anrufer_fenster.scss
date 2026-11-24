@@ -72,11 +72,20 @@ $wb-voip-af-breiten: (
     }
 }
 
-// Breite Bildschirme: das Softphone rückt links neben das Panel
-@include media-breakpoint-up(xl) {
-    @each $name, $breite in $wb-voip-af-breiten {
+// Breite Bildschirme: das Softphone rückt links neben das Panel, aber nur, wenn es daneben
+// ganz Platz hat (Panel + Softphone 380 px + zwei Abstände). Sonst bleibt es, wo es ist,
+// und das Panel liegt darüber (wie unter xl); die Gesprächsknöpfe stehen im Panel-Kopf.
+$wb-voip-af-px: (normal: 720px, breit: 960px, sehr_breit: 1200px);
+$wb-voip-softphone-breite: 380px;
+
+@each $name, $px in $wb-voip-af-px {
+    $ab: $px + $wb-voip-softphone-breite + 32px;
+    @if $ab < map-get($grid-breakpoints, xl) {
+        $ab: map-get($grid-breakpoints, xl);
+    }
+    @media (min-width: $ab) {
         body.o_wb_voip_af_offen_#{$name} .o_wb_voip_fenster {
-            right: calc(#{$breite} + 1rem);
+            right: calc(#{$px} + 1rem);
         }
     }
 }

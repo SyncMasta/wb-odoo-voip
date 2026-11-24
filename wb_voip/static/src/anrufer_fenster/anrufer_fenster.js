@@ -3,9 +3,20 @@ import { registry } from "@web/core/registry";
 import { useBus, useService } from "@web/core/utils/hooks";
 import { session } from "@web/session";
 
-import { ORT_FENSTER, fehlertext, useAktionAusfuehren } from "../aktionen/aktions_leiste";
+import {
+    AktionsLeiste,
+    ORT_FENSTER,
+    fehlertext,
+    useAktionAusfuehren,
+} from "../aktionen/aktions_leiste";
 import { MAX_NOTIZ } from "../dienste/telefon_dienst";
-import { BREITEN, LayoutBloecke, STANDARD_LAYOUT, breiteVon } from "../layout/bloecke";
+import {
+    BREITEN,
+    KOPF_ARTEN,
+    LayoutBloecke,
+    STANDARD_LAYOUT,
+    breiteVon,
+} from "../layout/bloecke";
 
 /** Nach dem Anrufende bleibt das Fenster so lange offen (Einstellung je Benutzer später). */
 export const SCHLIESSEN_NACH_MS = 10_000;
@@ -32,7 +43,7 @@ export function tipptGerade(el) {
  */
 export class AnruferFenster extends Component {
     static template = "wb_voip.AnruferFenster";
-    static components = { LayoutBloecke };
+    static components = { AktionsLeiste, LayoutBloecke };
     static props = {};
 
     setup() {
@@ -295,6 +306,16 @@ export class AnruferFenster extends Component {
     /** Buttons für das Fenster (der Server wählt aus, z. B. „Neuer Kontakt“ nur ohne Kontakt). */
     get aktionen() {
         return this.daten?.aktionen || [];
+    }
+
+    /** Daten geladen, aber kein (lesbarer) Kontakt: Kopf zeigt „Zuordnen“ und „Neuer Kontakt“. */
+    get unbekannt() {
+        return Boolean(this.daten && !this.kontakt);
+    }
+
+    /** Buttons mit festem Platz im Kopf („Neuer Kontakt“), unabhängig vom Layout. */
+    get kopfAktionen() {
+        return this.aktionen.filter((a) => KOPF_ARTEN.includes(a?.art));
     }
 
     // --- Gesprächsknöpfe (dieselben Dienst-Methoden wie die Anrufansicht) ---------------
