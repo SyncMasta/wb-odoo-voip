@@ -505,6 +505,63 @@ test("Zeitgeber pausiert, solange der Fokus im Panel ist, und läuft danach neu"
     w.aufraeumen();
 });
 
+test("veralteter Fokus-Merker (Element entfernt) hält das Fenster nicht offen", async () => {
+    let mitKontakt = true;
+    onRpc("wb.voip.anruf", "wb_voip_kontext", ({ args }) =>
+        kontext(args[0][0], { kontakt: mitKontakt ? erika() : false })
+    );
+    const w = welt();
+    const dienst = await verbunden(w);
+    const { busSenden } = await fensterMit(dienst);
+    const sitzung = w.fabrik.letzterAgent.eingehend("0170 5555");
+    await weiter(w.uhr);
+    queryOne(".o_wb_voip_af_kontakt_oeffnen").focus();
+    await animationFrame();
+    // Kontakt verschwindet: Button samt Fokus wird entfernt, ohne dass der Panel-Handler es merkt
+    mitKontakt = false;
+    busSenden({ anruf_id: 10 });
+    await weiter(w.uhr);
+    expect(".o_wb_voip_af_kontakt_oeffnen").toHaveCount(0);
+    sitzung.gegenstelleLegtAuf("487");
+    await weiter(w.uhr);
+    await weiter(w.uhr, 10_000);
+    expect(".o_wb_voip_anrufer_fenster").toHaveCount(0);
+    w.aufraeumen();
+});
+
+test("Fokus im „Mehr“-Menü außerhalb des Panels hält das Fenster offen", async () => {
+    onRpc("wb.voip.anruf", "wb_voip_kontext", ({ args }) =>
+        kontext(args[0][0], { kontakt: erika() })
+    );
+    const w = welt();
+    const dienst = await verbunden(w);
+    await fensterMit(dienst);
+    const sitzung = w.fabrik.letzterAgent.eingehend("0170 5555");
+    await weiter(w.uhr);
+    const menue = document.createElement("div");
+    menue.className = "o-dropdown--menu";
+    menue.innerHTML = '<button type="button" class="o_test_menue">Eintrag</button>';
+    document.body.appendChild(menue);
+    try {
+        queryOne(".o_wb_voip_af_kontakt_oeffnen").focus();
+        await animationFrame();
+        sitzung.gegenstelleLegtAuf("487");
+        await weiter(w.uhr);
+        menue.querySelector(".o_test_menue").focus();
+        await animationFrame();
+        await weiter(w.uhr, 30_000);
+        expect(".o_wb_voip_anrufer_fenster").toHaveCount(1);
+        // Fokus verlässt das Menü: Frist läuft neu
+        queryOne(".o_test_vorher").focus();
+        await animationFrame();
+        await weiter(w.uhr, 10_000);
+        expect(".o_wb_voip_anrufer_fenster").toHaveCount(0);
+    } finally {
+        menue.remove();
+    }
+    w.aufraeumen();
+});
+
 test("Zeitgeber pausiert, solange der Zeiger über dem Panel steht", async () => {
     onRpc("wb.voip.anruf", "wb_voip_kontext", ({ args }) => kontext(args[0][0]));
     const w = welt();

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from odoo.exceptions import AccessError
+from odoo.exceptions import AccessError, UserError
 
 from .common import WbVoipCase
 from odoo.tests import tagged
@@ -176,6 +176,6 @@ class TestPopup(WbVoipCase):
         self.assertEqual(ergebnis['res_model'], 'res.partner')
         # Zustand „beendet“ muss der Button zulassen
         zu_frueh = self._taste(zustand='laeuft')
-        with self.assertRaises(Exception):
+        with self.assertRaises(UserError):
             anruf.with_user(self.user_a).wb_voip_aktion_ausfuehren(zu_frueh.id)
         self.assertEqual(protokoll.anruf_id, anruf)

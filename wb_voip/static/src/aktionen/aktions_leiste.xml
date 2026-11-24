@@ -10,7 +10,8 @@
             </button>
         </t>
         <Dropdown t-if="mehr.length">
-            <button type="button" class="o_wb_voip_aktion_mehr btn btn-outline-secondary">
+            <button type="button" class="o_wb_voip_aktion_mehr btn btn-outline-secondary"
+                    aria-label="Weitere Aktionen">
                 Mehr
             </button>
             <t t-set-slot="content">

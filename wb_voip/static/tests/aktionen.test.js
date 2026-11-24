@@ -7,12 +7,14 @@ import {
     defineModels,
     mockService,
     mountWithCleanup,
+    patchWithCleanup,
     onRpc,
 } from "@web/../tests/web_test_helpers";
 import { MainComponentsContainer } from "@web/core/main_components_container";
 
 import "@wb_voip/aktionen/popup_aktionen";
 import "@wb_voip/protokoll_popup";
+import { Anrufansicht } from "@wb_voip/softphone/anrufansicht";
 import { Softphone } from "@wb_voip/softphone/softphone";
 import { TelefonDienst } from "@wb_voip/dienste/telefon_dienst";
 
@@ -150,11 +152,24 @@ test("Softphone: nur Softphone-Buttons, höchstens 4, Rest unter „Mehr“, Kon
         return false;
     });
     const { dienst, uhr, fabrik } = await softphoneMitAnruf();
+    // Ladevorgänge der Anrufansicht selbst (das Anrufer-Fenster fragt den Kontext zusätzlich ab)
+    let ladungen = 0;
+    patchWithCleanup(Anrufansicht.prototype, {
+        aktionenLaden() {
+            ladungen++;
+            return super.aktionenLaden(...arguments);
+        },
+    });
     await dienst.waehlen("0170 1234567");
+    await uhr.vorspulen(0);
+    await animationFrame();
+    expect(ladungen).toBe(1);
     fabrik.letzterAgent.invites[0].gegenstelleNimmtAn();
     await uhr.vorspulen(0);
     await animationFrame();
     await animationFrame();
+    // nach der Annahme genau ein weiteres Laden (Buttons „während des Gesprächs“)
+    expect(ladungen).toBe(2);
     expect(".o_wb_voip_anrufansicht .o_wb_voip_aktion").toHaveCount(4);
     expect(".o_wb_voip_anrufansicht .o_wb_voip_aktion:eq(3)").toHaveText("Vier");
     expect(".o_wb_voip_anrufansicht .o_wb_voip_aktion_mehr").toHaveCount(1);
@@ -163,7 +178,7 @@ test("Softphone: nur Softphone-Buttons, höchstens 4, Rest unter „Mehr“, Kon
     await uhr.vorspulen(30_000);
     await animationFrame();
     expect(kontexte).toBe(vorher);
-    expect(kontexte).toBeLessThan(3);
+    expect(ladungen).toBe(2);
     expect(".o_wb_voip_anrufansicht .o_wb_voip_aktion").toHaveCount(4);
     await click(".o_wb_voip_anrufansicht .o_wb_voip_aktion_mehr");
     await animationFrame();

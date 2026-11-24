@@ -11,6 +11,8 @@ import { formatDauer } from "../softphone/waehlen_hilfe";
 /** Nach dem Anrufende bleibt das Fenster so lange offen (Einstellung je Benutzer später). */
 export const SCHLIESSEN_NACH_MS = 10_000;
 export const BUS_KONTEXT = "wb_voip/kontext";
+/** Menü des „Mehr“-Auswahlfelds; Odoo hängt es außerhalb des Panels ein. */
+const MENUE = ".o-dropdown--menu";
 
 /** True, wenn ``el`` ein Eingabefeld oder editierbarer Bereich ist (dort nie Fokus wegnehmen). */
 export function tipptGerade(el) {
@@ -81,7 +83,21 @@ export class AnruferFenster extends Component {
                     this.panel.el?.focus();
                 }
                 document.body.classList.add("o_wb_voip_af_offen");
-                return () => document.body.classList.remove("o_wb_voip_af_offen");
+                // Fokus im „Mehr“-Menü (liegt außerhalb des Panels) zählt als Fokus im Panel
+                const beiFokus = (ev) => {
+                    if (this._innen(ev.target)) {
+                        this._fokusInnen = true;
+                        this._timerStoppen();
+                    } else if (this._fokusInnen) {
+                        this._fokusInnen = false;
+                        this._schliessenPlanen();
+                    }
+                };
+                document.addEventListener("focusin", beiFokus);
+                return () => {
+                    document.removeEventListener("focusin", beiFokus);
+                    document.body.classList.remove("o_wb_voip_af_offen");
+                };
             },
             () => [this.fenster.offen]
         );
@@ -102,6 +118,8 @@ export class AnruferFenster extends Component {
             return;
         }
         this._timerStoppen();
+        // der Merker aus dem vorigen Anruf kann veraltet sein (Element zwischenzeitlich entfernt)
+        this._fokusInnen = this._innen(document.activeElement);
         if (!this.fenster.offen) {
             const aktiv = document.activeElement;
             this._vorher = aktiv && aktiv !== document.body ? aktiv : null;
@@ -127,6 +145,10 @@ export class AnruferFenster extends Component {
     /** Startet die Frist bis zum automatischen Schließen, sofern niemand das Panel benutzt. */
     _schliessenPlanen() {
         this._timerStoppen();
+        if (this._fokusInnen && !this._innen(document.activeElement)) {
+            // Merker veraltet: das Element mit Fokus ist weg (kein focusout bei Entfernung)
+            this._fokusInnen = false;
+        }
         if (!this.fenster.offen || !this.fenster.beendet || this._zeiger || this._fokusInnen) {
             return;
         }
@@ -155,10 +177,17 @@ export class AnruferFenster extends Component {
         this._timerStoppen();
     }
 
-    onFokusAus(ev) {
-        const ziel = ev.relatedTarget;
+    /** True, wenn ``el`` im Panel (nicht das Panel selbst) oder im „Mehr“-Menü liegt. */
+    _innen(el) {
         const panel = this.panel.el;
-        if (ziel && panel?.contains(ziel) && ziel !== panel) {
+        if (!el || !panel || el === panel) {
+            return false;
+        }
+        return panel.contains(el) || Boolean(el.closest?.(MENUE));
+    }
+
+    onFokusAus(ev) {
+        if (this._innen(ev.relatedTarget)) {
             return;
         }
         this._fokusInnen = false;
