@@ -34,6 +34,7 @@ RICHTUNGEN = ('eingehend', 'ausgehend')
 # Endzustand eines nicht angenommenen Anrufs je SIP-Grund; alles andere -> fehlgeschlagen
 SIP_GRUND_ZUSTAND = {
     '603': 'abgelehnt',  # Decline: abgelehnt
+    '480': 'abgelehnt',  # Temporarily Unavailable: manche Anlagen melden so die Ablehnung
     '487': 'abgelehnt',  # Request Terminated: vor der Annahme abgebrochen
     '486': 'besetzt',    # Busy Here
     '600': 'besetzt',    # Busy Everywhere
@@ -338,7 +339,7 @@ class WbVoipAnruf(models.Model):
         * answered before (``annahme`` set)          -> ``beendet``
         * ``angenommen`` True but ``annahme`` empty  -> ``annahme`` now, ``beendet``
           (the client saw the answer, ``wb_voip_angenommen`` lost the race)
-        * not answered, ``sip_grund`` ``603``/``487`` -> ``abgelehnt``
+        * not answered, ``sip_grund`` ``603``/``480``/``487`` -> ``abgelehnt``
         * not answered, ``486`` or ``600``            -> ``besetzt``
         * not answered, anything else / no reason     -> ``fehlgeschlagen``
 

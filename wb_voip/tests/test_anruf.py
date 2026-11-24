@@ -53,6 +53,15 @@ class TestAnruf(WbVoipCase):
         anruf = self.env['wb.voip.anruf'].with_user(self.user_a).browse(daten['id'])
         self.assertEqual(anruf.wb_voip_beendet(False, '486')['zustand'], 'besetzt')
 
+    def test_ablehnen_480(self):
+        # Manche Telefonanlagen melden die Ablehnung des Gerufenen als 480 statt 603
+        daten = self._beginnen()
+        anruf = self.env['wb.voip.anruf'].with_user(self.user_a).browse(daten['id'])
+        ergebnis = anruf.wb_voip_beendet(False, '480')
+        self.assertEqual(ergebnis['zustand'], 'abgelehnt')
+        protokoll = self.env['wb.voip.protokoll'].browse(ergebnis['protokoll_id'])
+        self.assertEqual(protokoll.ergebnis, 'nicht_erreicht')
+
     def test_ohne_grund_fehlgeschlagen(self):
         daten = self._beginnen()
         anruf = self.env['wb.voip.anruf'].with_user(self.user_a).browse(daten['id'])

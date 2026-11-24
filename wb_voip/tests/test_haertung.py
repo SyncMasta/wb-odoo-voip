@@ -246,6 +246,7 @@ class TestHaertung(WbVoipCase):
         SIP_GRUND_ZUSTAND = getattr(wb_voip_anruf, 'SIP_GRUND_ZUSTAND', {})
         self.assertEqual(SIP_GRUND_ZUSTAND['603'], 'abgelehnt')
         self.assertEqual(SIP_GRUND_ZUSTAND['487'], 'abgelehnt')
+        self.assertEqual(SIP_GRUND_ZUSTAND['480'], 'abgelehnt')
         self.assertEqual(SIP_GRUND_ZUSTAND['486'], 'besetzt')
         self.assertEqual(SIP_GRUND_ZUSTAND['600'], 'besetzt')
 
