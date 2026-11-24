@@ -1,9 +1,10 @@
 import ast
 import re
+from urllib.parse import urlsplit
 
 from odoo import api, fields, models
 from odoo.fields import Domain
-from odoo.exceptions import ValidationError
+from odoo.exceptions import AccessError, ValidationError
 
 ICON_MUSTER = re.compile(r'^fa-[a-z0-9-]{1,40}$')
 URL_MAX = 500
@@ -47,17 +48,17 @@ class WbVoipAktion(models.Model):
         'res.groups', 'wb_voip_aktion_res_groups_rel', 'aktion_id', 'group_id',
         string='Gruppen', help="Leer = alle Benutzer von WB VoIP.")
     partner_domain = fields.Char(
-        string='Bedingung für Kontakte',
+        string='Bedingung für Kontakte', groups='wb_voip.group_wb_voip_manager',
         help="Domain auf Kontakte, z. B. [('is_company', '=', True)]. Leer = immer; "
              "ohne Kontakt am Anruf passt eine Bedingung nie.")
     art = fields.Selection(
         [('fenster', 'Fenster öffnen'), ('serveraktion', 'Serveraktion'),
          ('url', 'Webadresse öffnen'), ('neuer_kontakt', 'Neuer Kontakt')],
         string='Art', required=True, default='fenster')
-    act_window_id = fields.Many2one('ir.actions.act_window', string='Fensteraktion', ondelete='restrict')
-    server_action_id = fields.Many2one('ir.actions.server', string='Serveraktion', ondelete='restrict')
+    act_window_id = fields.Many2one('ir.actions.act_window', string='Fensteraktion', ondelete='cascade')
+    server_action_id = fields.Many2one('ir.actions.server', string='Serveraktion', ondelete='cascade')
     url_vorlage = fields.Char(
-        string='Webadresse',
+        string='Webadresse', groups='wb_voip.group_wb_voip_manager',
         help="Nur https://. Platzhalter: {nummer}, {nummer_e164}, {partner_id}.")
 
     # --- Prüfungen ---
@@ -75,7 +76,7 @@ class WbVoipAktion(models.Model):
     @api.constrains('icon')
     def _check_icon(self):
         for aktion in self:
-            if aktion.icon and not ICON_MUSTER.match(aktion.icon):
+            if aktion.icon and not ICON_MUSTER.fullmatch(aktion.icon):
                 raise ValidationError(self.env._(
                     "Das Symbol muss eine Font-Awesome-Klasse sein, z. B. fa-user."))
 
@@ -94,11 +95,23 @@ class WbVoipAktion(models.Model):
             if (len(url) > URL_MAX or not url.startswith('https://')
                     or any(p not in URL_PLATZHALTER for p in URL_PLATZHALTER_MUSTER.findall(url))
                     or '{' in URL_PLATZHALTER_MUSTER.sub('', url)
-                    or '}' in URL_PLATZHALTER_MUSTER.sub('', url)):
+                    or '}' in URL_PLATZHALTER_MUSTER.sub('', url)
+                    or not self._wb_voip_url_ok(url)):
                 raise ValidationError(self.env._(
                     "Die Webadresse muss mit https:// beginnen, höchstens %(max)s Zeichen lang sein "
                     "und darf nur {nummer}, {nummer_e164} und {partner_id} als Platzhalter enthalten.",
                     max=URL_MAX))
+
+    @staticmethod
+    def _wb_voip_url_ok(url):
+        """Return True for an https URL without whitespace/control chars and with a fixed host."""
+        if any(ord(c) <= 32 or ord(c) == 127 for c in url):
+            return False
+        try:
+            teile = urlsplit(url)
+        except ValueError:
+            return False
+        return teile.scheme == 'https' and bool(teile.netloc) and '{' not in teile.netloc
 
     @api.constrains('partner_domain')
     def _check_partner_domain(self):
@@ -123,7 +136,9 @@ class WbVoipAktion(models.Model):
             if not isinstance(wert, list):
                 return None
             domain = Domain(wert)
-            if not self._wb_voip_domain_pruefen(domain, self.env['res.partner'], 0):
+            # constraints run as sudo: check with the rights of the acting user
+            akteur = self.with_user(self.env.uid).env
+            if not self._wb_voip_domain_pruefen(domain, akteur['res.partner'], 0):
                 return None
         except Exception:  # noqa: BLE001 - any parsing problem means "invalid"
             return None
@@ -142,17 +157,22 @@ class WbVoipAktion(models.Model):
                 feld = aktuell._fields.get(name.split(':')[0])
                 if feld is None or not (feld.store or feld.search):
                     return False
+                # the author may only use what he can read himself
+                if not aktuell.has_access('read') or not aktuell._has_field_access(feld, 'read'):
+                    return False
                 if i < len(pfad) - 1:
                     if not feld.comodel_name:
                         return False
-                    aktuell = self.env[feld.comodel_name]
+                    aktuell = modell.env[feld.comodel_name]
             if bedingung.operator in ('any', 'not any'):
                 feld = aktuell._fields.get(pfad[-1].split(':')[0])
                 unter = bedingung.value
+                if isinstance(unter, (list, tuple)):
+                    unter = Domain(unter)
                 if not feld.comodel_name or not isinstance(unter, Domain):
                     return False
                 if not self._wb_voip_domain_pruefen(
-                        unter, self.env[feld.comodel_name], tiefe + 1):
+                        unter, modell.env[feld.comodel_name], tiefe + 1):
                     return False
         return True
 
@@ -168,14 +188,25 @@ class WbVoipAktion(models.Model):
                 return False
         elif self.zustand != 'immer' and self.zustand != anruf.zustand:
             return False
-        if self.group_ids and not (self.group_ids & anruf.user_id.sudo().group_ids):
+        viewer = self.env.user
+        if anruf.user_id != viewer:
             return False
-        if self.partner_domain and self.partner_domain.strip():
+        if self.group_ids and not (self.group_ids & viewer.all_group_ids):
+            return False
+        if self.sudo().partner_domain and self.sudo().partner_domain.strip():
             partner = anruf.partner_id
             if not partner:
                 return False
-            domain = self._wb_voip_domain()
-            if domain is None or not partner.sudo().filtered_domain(domain):
+            # Evaluate the stored condition as the viewer, never with sudo
+            domain = self.sudo()._wb_voip_domain()
+            if domain is None:
+                return False
+            try:
+                partner = partner.with_user(viewer)
+                if not partner.has_access('read'):
+                    return False
+                return bool(partner.filtered_domain(domain))
+            except AccessError:
                 return False
         return True
 
