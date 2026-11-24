@@ -455,6 +455,16 @@ class WbVoipAnruf(models.Model):
             'context': {'default_anruf_id': anruf.id},
         }
 
+    @nur_voip_benutzer
+    def action_wb_voip_neuer_kontakt(self):
+        """Open the form for a new contact with the number of the caller's own call.
+
+        Fixed button of the caller window (independent of configured call buttons);
+        the caller needs the right to create contacts.
+        """
+        anruf = self._wb_voip_eigener()
+        return anruf.with_user(self.env.user)._wb_voip_neuer_kontakt()
+
     def _wb_voip_partner_setzen(self, partner):
         """Set the contact on the caller's own call and on its log, then tell the browser.
 

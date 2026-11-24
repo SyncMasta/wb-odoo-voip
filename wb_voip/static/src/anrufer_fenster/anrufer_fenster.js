@@ -3,20 +3,9 @@ import { registry } from "@web/core/registry";
 import { useBus, useService } from "@web/core/utils/hooks";
 import { session } from "@web/session";
 
-import {
-    AktionsLeiste,
-    ORT_FENSTER,
-    fehlertext,
-    useAktionAusfuehren,
-} from "../aktionen/aktions_leiste";
+import { ORT_FENSTER, fehlertext, useAktionAusfuehren } from "../aktionen/aktions_leiste";
 import { MAX_NOTIZ } from "../dienste/telefon_dienst";
-import {
-    BREITEN,
-    KOPF_ARTEN,
-    LayoutBloecke,
-    STANDARD_LAYOUT,
-    breiteVon,
-} from "../layout/bloecke";
+import { BREITEN, LayoutBloecke, STANDARD_LAYOUT, breiteVon } from "../layout/bloecke";
 
 /** Nach dem Anrufende bleibt das Fenster so lange offen (Einstellung je Benutzer später). */
 export const SCHLIESSEN_NACH_MS = 10_000;
@@ -43,7 +32,7 @@ export function tipptGerade(el) {
  */
 export class AnruferFenster extends Component {
     static template = "wb_voip.AnruferFenster";
-    static components = { AktionsLeiste, LayoutBloecke };
+    static components = { LayoutBloecke };
     static props = {};
 
     setup() {
@@ -313,11 +302,6 @@ export class AnruferFenster extends Component {
         return Boolean(this.daten && !this.kontakt);
     }
 
-    /** Buttons mit festem Platz im Kopf („Neuer Kontakt“), unabhängig vom Layout. */
-    get kopfAktionen() {
-        return this.aktionen.filter((a) => KOPF_ARTEN.includes(a?.art));
-    }
-
     // --- Gesprächsknöpfe (dieselben Dienst-Methoden wie die Anrufansicht) ---------------
 
     /** Eingehender Anruf, der noch klingelt: Annehmen/Ablehnen statt Stumm/Auflegen. */
@@ -362,6 +346,14 @@ export class AnruferFenster extends Component {
         const id = this.fenster.anrufId;
         return this._ausfuehren(() =>
             this.orm.call("wb.voip.anruf", "action_wb_voip_zuordnen", [[id]])
+        );
+    }
+
+    /** Fester Knopf im Kopf, unabhängig von den eingerichteten Buttons. */
+    neuerKontakt() {
+        const id = this.fenster.anrufId;
+        return this._ausfuehren(() =>
+            this.orm.call("wb.voip.anruf", "action_wb_voip_neuer_kontakt", [[id]])
         );
     }
 

@@ -4,6 +4,11 @@
     <t t-name="wb_voip.LayoutDesigner">
         <div class="o_wb_voip_designer o_action h-100 overflow-auto bg-view p-3" t-ref="wurzel">
             <h1 class="visually-hidden">Layout-Designer</h1>
+            <!-- Live-Bereich: Verschieben und Fehler der Blöcke für Screenreader -->
+            <div class="o_wb_voip_ds_status visually-hidden" role="status">
+                <span class="o_wb_voip_ds_meldung" t-esc="state.meldung"/>
+                <span class="o_wb_voip_ds_fehlermeldung" t-if="entwurf" t-esc="fehlerMeldung"/>
+            </div>
             <div t-if="state.fehler" class="alert alert-warning" role="alert" t-esc="state.fehler"/>
 
             <t t-if="entwurf">
@@ -36,13 +41,13 @@
                             <option t-foreach="breiten" t-as="b" t-key="b[0]" t-att-value="b[0]" t-esc="b[1]"/>
                         </select>
                     </div>
-                    <div class="o_wb_voip_ds_gruppen">
-                        <span class="form-label small mb-1 d-block">Gruppen</span>
+                    <div class="o_wb_voip_ds_gruppen" role="group" aria-labelledby="wb_voip_ds_gruppen_titel">
+                        <span id="wb_voip_ds_gruppen_titel" class="form-label small mb-1 d-block">Gruppen</span>
                         <MultiRecordSelector resModel="'res.groups'" resIds="entwurf.group_ids"
                                              update.bind="gruppenSetzen" placeholder="'Alle Benutzer'"/>
                     </div>
-                    <div class="o_wb_voip_ds_beispiel">
-                        <span class="form-label small mb-1 d-block">Beispielkontakt</span>
+                    <div class="o_wb_voip_ds_beispiel" role="group" aria-labelledby="wb_voip_ds_beispiel_titel">
+                        <span id="wb_voip_ds_beispiel_titel" class="form-label small mb-1 d-block">Beispielkontakt</span>
                         <RecordSelector resModel="'res.partner'" resId="state.partnerId"
                                         update.bind="beispielSetzen"/>
                     </div>
@@ -176,6 +181,13 @@
             <section t-if="entwurf" class="o_wb_voip_ds_vorschau_bereich mt-3"
                      aria-labelledby="wb_voip_ds_vorschau_titel">
                 <h2 id="wb_voip_ds_vorschau_titel" class="h6">Vorschau</h2>
+                <p t-if="state.vorschauFehler" class="o_wb_voip_ds_vorschau_hinweis alert alert-info py-1 small">
+                    Daten des Beispielkontakts nicht verfügbar, die Vorschau zeigt Platzhalter:
+                    <t t-esc="state.vorschauFehler"/>
+                </p>
+                <p t-elif="!state.partnerId" class="o_wb_voip_ds_vorschau_hinweis text-muted small">
+                    Kein Beispielkontakt gewählt, die Vorschau zeigt Platzhalter.
+                </p>
                 <div class="o_wb_voip_ds_vorschau border rounded p-3"
                      t-att-class="vorschauKlasse">
                     <t t-set="vd" t-value="vorschauDaten"/>

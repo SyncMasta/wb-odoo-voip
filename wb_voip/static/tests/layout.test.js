@@ -363,10 +363,26 @@ test("unbekannte Nummer: „Zuordnen“ und „Neuer Kontakt“ fest im Kopf, au
     });
     expect(".o_wb_voip_af_name").toHaveText("Unbekannte Nummer");
     expect(".o_wb_voip_af_kopf .o_wb_voip_af_zuordnen").toHaveCount(1);
-    expect(".o_wb_voip_af_kopf .o_wb_voip_af_aktion").toHaveCount(1);
-    expect(".o_wb_voip_af_kopf .o_wb_voip_af_aktion").toHaveText("Neuer Kontakt");
+    expect(".o_wb_voip_af_kopf .o_wb_voip_af_neuer_kontakt").toHaveCount(1);
+    expect(".o_wb_voip_af_kopf .o_wb_voip_af_neuer_kontakt").toHaveText("Neuer Kontakt");
     // kein Buttons-Block: der Web-Button fehlt
     expect(".o_wb_voip_lb_buttons").toHaveCount(0);
+});
+
+test("„Neuer Kontakt“ im Kopf auch ohne eingerichtete Buttons, eigener Server-Aufruf", async () => {
+    onRpc("wb.voip.anruf", "action_wb_voip_neuer_kontakt", ({ args }) => {
+        expect.step(`neuer kontakt ${args[0][0]}`);
+        return false;
+    });
+    await fensterMit(() => layout([block("buttons")]), {
+        extra: () => ({ kontakt: false, protokolle: [], aktionen: [] }),
+    });
+    expect(".o_wb_voip_af_kopf .o_wb_voip_af_neuer_kontakt").toHaveCount(1);
+    expect(".o_wb_voip_af_kopf .o_wb_voip_af_neuer_kontakt").toHaveText("Neuer Kontakt");
+    expect(".o_wb_voip_lb_buttons").toHaveCount(0);
+    await click(".o_wb_voip_af_neuer_kontakt");
+    await animationFrame();
+    expect.verifySteps(["neuer kontakt 10"]);
 });
 
 test("Buttons-Block zeigt weder „Zuordnen“ noch „Neuer Kontakt“", async () => {
@@ -377,13 +393,13 @@ test("Buttons-Block zeigt weder „Zuordnen“ noch „Neuer Kontakt“", async 
     expect(".o_wb_voip_lb_buttons .o_wb_voip_af_aktion").toHaveText("Web");
     expect(".o_wb_voip_lb_buttons .o_wb_voip_af_zuordnen").toHaveCount(0);
     expect(".o_wb_voip_af_kopf .o_wb_voip_af_zuordnen").toHaveCount(1);
-    expect(".o_wb_voip_af_kopf .o_wb_voip_af_aktion").toHaveText("Neuer Kontakt");
+    expect(".o_wb_voip_af_kopf .o_wb_voip_af_neuer_kontakt").toHaveText("Neuer Kontakt");
 });
 
 test("bekannter Kontakt: kein „Zuordnen“ im Kopf", async () => {
     await fensterMit(() => layout([block("buttons")]), { extra: () => ({ aktionen: [WEB] }) });
     expect(".o_wb_voip_af_zuordnen").toHaveCount(0);
-    expect(".o_wb_voip_af_kopf .o_wb_voip_af_aktion").toHaveCount(0);
+    expect(".o_wb_voip_af_kopf .o_wb_voip_af_neuer_kontakt").toHaveCount(0);
     expect(".o_wb_voip_lb_buttons .o_wb_voip_af_aktion").toHaveText("Web");
 });
 

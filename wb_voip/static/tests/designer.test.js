@@ -105,6 +105,7 @@ async function designerMit({
     speichern,
     ladenSchritte = false,
     vorschauSchritte = false,
+    vorschauFn = vorschau,
 } = {}) {
     onRpc("wb.voip.layout", "wb_voip_designer_laden", ({ args }) => {
         if (ladenSchritte) {
@@ -119,7 +120,7 @@ async function designerMit({
                 .map((b) => b.feld_ids.join("+"));
             expect.step(`vorschau ${args[0]} ${args[1]} ${felder.join(",")}`.trim());
         }
-        return vorschau(args[2]);
+        return vorschauFn(args[2]);
     });
     if (speichern) {
         onRpc("wb.voip.layout", "wb_voip_designer_speichern", speichern);
@@ -154,6 +155,12 @@ test("lädt das Layout: Palette je Ort, Blöcke und Vorschau", async () => {
     // eigenes Layout: kein Zurücksetzen
     expect(".o_wb_voip_ds_zuruecksetzen").toHaveCount(0);
     expect(".o_wb_voip_ds_speichern").toHaveAttribute("disabled");
+    // Auswahlfelder von Gruppen und Beispielkontakt haben einen Namen
+    expect(".o_wb_voip_ds_gruppen input").toHaveAttribute("aria-label", "Gruppen");
+    expect(".o_wb_voip_ds_beispiel input").toHaveAttribute("aria-label", "Beispielkontakt");
+    expect(".o_wb_voip_ds_gruppen").toHaveAttribute("role", "group");
+    expect(".o_wb_voip_ds_status").toHaveAttribute("role", "status");
+    expect(".o_wb_voip_ds_vorschau_hinweis").toHaveCount(0);
     // Popup: nur vier Arten, die Notiz ist dort nicht erlaubt
     await select("protokoll_popup", { target: ".o_wb_voip_ds_ort" });
     await animationFrame();
@@ -207,6 +214,7 @@ test("Feldblock: Suche, Auswahl, Vorschau lädt die Werte", async () => {
     await animationFrame();
     // ohne Feld nicht speicherbar, kein Vorschau-Aufruf für den leeren Block
     expect(".o_wb_voip_ds_speichern").toHaveAttribute("disabled");
+    expect(".o_wb_voip_ds_fehlermeldung").toHaveText(/Kontaktfelder: Bitte mindestens ein Feld/);
     expect(".o_wb_voip_ds_feld").toHaveCount(3);
     await click(".o_wb_voip_ds_feldsuche");
     await edit("mail");
@@ -235,6 +243,7 @@ test("Verschieben per Knopf (Tastatur), Fokus bleibt am Block", async () => {
     await click(".o_wb_voip_ds_block:eq(0) .o_wb_voip_ds_runter");
     await animationFrame();
     expect(blockArten()).toEqual(["text", "kontaktkopf", "notiz"]);
+    expect(".o_wb_voip_ds_meldung").toHaveText("Block Kontaktkopf an Position 2");
     expect(vorschauArten()).toEqual(["o_wb_voip_lb_text", "o_wb_voip_lb_kontaktkopf", "o_wb_voip_lb_notiz"]);
     expect(".o_wb_voip_ds_block:eq(1) .o_wb_voip_ds_runter").toBeFocused();
     await click(".o_wb_voip_ds_block:eq(2) .o_wb_voip_ds_hoch");
@@ -373,4 +382,53 @@ test("Standard-Layout: Ort fest, Zurücksetzen nach Rückfrage", async () => {
     await animationFrame();
     await animationFrame();
     expect.verifySteps(["zuruecksetzen 5", "laden 5"]);
+});
+
+test("Layout wechseln fragt bei ungespeicherten Änderungen nach", async () => {
+    await designerMit({
+        ladenSchritte: true,
+        laden: (id) => {
+            const daten = ladeDaten({ layout: { id: id || 5, name: `Layout ${id}` } });
+            daten.layouts = [
+                { id: 5, name: "Layout 5", ort: "anrufer_fenster", ist_standard: false },
+                { id: 6, name: "Layout 6", ort: "anrufer_fenster", ist_standard: false },
+            ];
+            return daten;
+        },
+    });
+    expect.verifySteps(["laden 5"]);
+    await click(".o_wb_voip_ds_block:eq(0) .o_wb_voip_ds_entfernen");
+    await animationFrame();
+    await select("6", { target: ".o_wb_voip_ds_layout" });
+    await animationFrame();
+    expect(".modal").toHaveCount(1);
+    await click(".modal .btn-secondary");
+    await animationFrame();
+    expect.verifySteps([]);
+    expect(".o_wb_voip_ds_layout").toHaveValue("5");
+    expect(blockArten()).toEqual(["text", "notiz"]);
+    await select("6", { target: ".o_wb_voip_ds_layout" });
+    await animationFrame();
+    await click(".modal .btn-primary");
+    await animationFrame();
+    await animationFrame();
+    expect.verifySteps(["laden 6"]);
+    expect(".o_wb_voip_ds_name").toHaveValue("Layout 6");
+    // ohne Änderungen kein Rückfrage-Dialog
+    await select("5", { target: ".o_wb_voip_ds_layout" });
+    await animationFrame();
+    await animationFrame();
+    expect(".modal").toHaveCount(0);
+    expect.verifySteps(["laden 5"]);
+});
+
+test("Vorschau: nicht lesbarer Beispielkontakt ergibt einen Hinweis", async () => {
+    await designerMit({
+        vorschauFn: () => {
+            throw new Error("Kontakt nicht lesbar");
+        },
+    });
+    expect(".o_wb_voip_ds_vorschau_hinweis").toHaveText(/Kontakt nicht lesbar/);
+    // Platzhalter statt Kontaktdaten
+    expect(".o_wb_voip_ds_vorschau .o_wb_voip_lb_kontaktkopf").toHaveText(/\+49 …/);
 });

@@ -52,7 +52,10 @@ export function artLabel(art) {
     );
 }
 
-/** Buttons mit eigenem Platz in der Kopfzeile (nie im Buttons-Block). */
+/**
+ * Button-Arten, die der Fensterkopf fest anbietet: im Buttons-Block wären sie doppelt
+ * (der Server liefert „Neuer Kontakt“ nur ohne Kontakt, dann zeigt ihn der Kopf).
+ */
 export const KOPF_ARTEN = ["neuer_kontakt"];
 
 let naechsteId = 0;

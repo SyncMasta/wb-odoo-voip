@@ -6,6 +6,7 @@ import { RecordSelector } from "@web/core/record_selectors/record_selector";
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 import { useSortable } from "@web/core/utils/sortable_owl";
+import { useSetupAction } from "@web/search/action_hook";
 
 import { ORT_FENSTER, ORT_POPUP, fehlertext } from "../aktionen/aktions_leiste";
 import { BREITEN, LayoutBloecke, artLabel } from "../layout/bloecke";
@@ -101,6 +102,9 @@ export class LayoutDesigner extends Component {
             vorschau: null,
             speichert: false,
             fehler: null,
+            // Live-Bereich für Screenreader (Verschieben)
+            meldung: "",
+            vorschauFehler: "",
         });
         this.beispielAnruf = useState({ id: 0, notiz: "" });
         this.original = "";
@@ -129,7 +133,53 @@ export class LayoutDesigner extends Component {
             () => [this.state.partnerId, this.vorschauSignatur]
         );
 
-        onPatched(() => this._fokusSetzen());
+        onPatched(() => {
+            this._fokusSetzen();
+            this._ariaSetzen();
+        });
+        useEffect(() => this._ariaSetzen());
+
+        // ungespeicherte Änderungen nicht stillschweigend verlieren
+        useSetupAction({
+            beforeLeave: () => (this.geaendert ? this.verwerfenBestaetigen() : true),
+            beforeUnload: (ev) => {
+                if (this.geaendert) {
+                    ev.preventDefault();
+                    ev.returnValue = "";
+                }
+            },
+        });
+    }
+
+    /** Fragt, ob ungespeicherte Änderungen verworfen werden dürfen (Promise auf true/false). */
+    verwerfenBestaetigen() {
+        return new Promise((resolve) => {
+            this.dialog.add(
+                ConfirmationDialog,
+                {
+                    title: _t("Ungespeicherte Änderungen"),
+                    body: _t("Die Änderungen am Layout sind nicht gespeichert. Verwerfen?"),
+                    confirmLabel: _t("Verwerfen"),
+                    confirm: () => resolve(true),
+                    cancel: () => resolve(false),
+                },
+                { onClose: () => resolve(false) }
+            );
+        });
+    }
+
+    /** Zugänglicher Name für die Eingabefelder der Odoo-Auswahlkomponenten. */
+    _ariaSetzen() {
+        const wurzel = this.wurzel.el;
+        for (const [klasse, name] of [
+            [".o_wb_voip_ds_gruppen", _t("Gruppen")],
+            [".o_wb_voip_ds_beispiel", _t("Beispielkontakt")],
+        ]) {
+            const eingabe = wurzel?.querySelector(`${klasse} input`);
+            if (eingabe && eingabe.getAttribute("aria-label") !== name) {
+                eingabe.setAttribute("aria-label", name);
+            }
+        }
     }
 
     // --- Laden, Speichern, Verwerfen -------------------------------------------------
@@ -225,11 +275,18 @@ export class LayoutDesigner extends Component {
         });
     }
 
-    layoutWechseln(ev) {
-        const id = parseInt(ev.target.value, 10);
-        if (Number.isInteger(id)) {
-            this.laden(id);
+    async layoutWechseln(ev) {
+        const auswahl = ev.target;
+        const id = parseInt(auswahl.value, 10);
+        if (!Number.isInteger(id)) {
+            return;
         }
+        if (this.geaendert && !(await this.verwerfenBestaetigen())) {
+            // Auswahl zurück auf das bearbeitete Layout
+            auswahl.value = String(this.entwurf.id);
+            return;
+        }
+        this.laden(id);
     }
 
     // --- Abgeleitete Werte -----------------------------------------------------------
@@ -418,6 +475,30 @@ export class LayoutDesigner extends Component {
         bloecke[a] = zweiter;
         bloecke[z] = erster;
         this._fokus = { uid, knopf: richtung < 0 ? "hoch" : "runter" };
+        this._positionMelden(uid);
+    }
+
+    /** Meldet die neue Position eines Blocks in seiner Spalte (Live-Bereich). */
+    _positionMelden(uid) {
+        const block = this.entwurf.bloecke.find((b) => b.uid === uid);
+        if (!block) {
+            return;
+        }
+        const pos = this.nachbarn(block).findIndex((b) => b.uid === uid) + 1;
+        const art = this.artName(block.art);
+        this.state.meldung = this.zweispaltig
+            ? _t("Block %(art)s an Position %(pos)s in Spalte %(spalte)s", {
+                  art,
+                  pos,
+                  spalte: block.spalte,
+              })
+            : _t("Block %(art)s an Position %(pos)s", { art, pos });
+    }
+
+    /** Erster Fehler eines Blocks für den Live-Bereich (leer, wenn alles gültig ist). */
+    get fehlerMeldung() {
+        const block = this.entwurf?.bloecke.find((b) => this.blockFehler(b));
+        return block ? _t("%(art)s: %(fehler)s", { art: this.artName(block.art), fehler: this.blockFehler(block) }) : "";
     }
 
     /** Ablegen per Maus: neue Position aus der Reihenfolge in der Zielspalte. */
@@ -461,6 +542,7 @@ export class LayoutDesigner extends Component {
             index = bloecke.findIndex((b) => b.uid === davor) + 1;
         }
         bloecke.splice(index, 0, kopie);
+        this._positionMelden(uid);
     }
 
     feldUmschalten(feldId, an) {
@@ -536,20 +618,24 @@ export class LayoutDesigner extends Component {
         const nr = ++this._vorschauNr;
         if (!Number.isInteger(partnerId)) {
             this.state.vorschau = null;
+            this.state.vorschauFehler = "";
             return;
         }
         let daten;
+        let fehler = "";
         try {
             daten = await this.orm.call("wb.voip.layout", "wb_voip_designer_vorschau", [
                 this.entwurf.id,
                 partnerId,
                 this.vorschauEntwurf(),
             ]);
-        } catch {
+        } catch (e) {
             daten = null;
+            fehler = fehlertext(e);
         }
         if (nr === this._vorschauNr) {
             this.state.vorschau = daten;
+            this.state.vorschauFehler = fehler;
         }
     }
 

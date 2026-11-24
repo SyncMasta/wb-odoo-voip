@@ -1,4 +1,6 @@
 import importlib
+import importlib.util
+import os
 from unittest.mock import patch
 
 from odoo.exceptions import AccessError, UserError, ValidationError
@@ -566,3 +568,109 @@ class TestLayoutDesigner(WbVoipCase):
         for schlecht in (False, '3', 0, -1, 99999999, 2.0):
             with self.assertRaises(UserError, msg=repr(schlecht)):
                 self._als_manager().wb_voip_designer_vorschau(self.eigenes.id, schlecht)
+
+    def test_titel_und_text_nur_leerzeichen_sind_leer(self):
+        daten = self._daten(bloecke=[{'art': 'text', 'titel': '   ', 'text': ' \n '},
+                                     {'art': 'kontaktkopf', 'titel': '  Kunde  '}])
+        self._als_manager().wb_voip_designer_speichern(self.eigenes.id, daten)
+        text, kopf = self.eigenes.block_ids.sorted('sequence')
+        self.assertFalse(text.titel)
+        self.assertFalse(text.text)
+        self.assertEqual(kopf.titel, 'Kunde')
+
+
+@tagged('wb_voip', 'post_install', '-at_install')
+class TestLayoutAltdaten(WbVoipCase):
+    """Blocks a place no longer allows (data from before the constraint)."""
+
+    def _verbotene_bloecke(self):
+        layout = self.env['wb.voip.layout'].create(
+            {'name': 'Alt-Popup', 'ort': 'protokoll_popup', 'sequence': 1})
+        Block = self.env['wb.voip.layout.block']
+        bloecke = Block.browse([Block.create({'layout_id': layout.id, 'sequence': nr, 'art': 'text',
+                                              'text': str(nr)}).id for nr in (1, 2, 3)])
+        fenster = self.env['wb.voip.layout'].create(
+            {'name': 'Alt-Fenster', 'ort': 'anrufer_fenster', 'sequence': 1})
+        notiz1 = Block.create({'layout_id': fenster.id, 'sequence': 1, 'art': 'notiz'})
+        notiz2 = Block.create({'layout_id': fenster.id, 'sequence': 2, 'art': 'text', 'text': 'x'})
+        # wie Altdaten: an den Constraints vorbei
+        self.env.cr.execute("UPDATE wb_voip_layout_block SET art = 'buttons' WHERE id = %s", [bloecke[0].id])
+        self.env.cr.execute("UPDATE wb_voip_layout_block SET art = 'notiz' WHERE id IN %s",
+                            [(bloecke[2].id, notiz2.id)])
+        self.env.invalidate_all()
+        return layout, bloecke, fenster, notiz1, notiz2
+
+    def test_laufzeit_ueberspringt_verbotene(self):
+        layout, bloecke, fenster, notiz1, _notiz2 = self._verbotene_bloecke()
+        daten = layout._wb_voip_fuer_client(self.env['res.partner'])
+        self.assertEqual([(b['art'], b['text']) for b in daten['bloecke']], [('text', '2')])
+        daten = fenster._wb_voip_fuer_client(self.env['res.partner'])
+        self.assertEqual([b['art'] for b in daten['bloecke']], ['notiz'])
+
+    def test_migration_entfernt_verbotene(self):
+        layout, bloecke, fenster, notiz1, notiz2 = self._verbotene_bloecke()
+        pfad = os.path.join(os.path.dirname(__file__), '..', 'migrations', '19.0.2.4.1',
+                            'post-migration.py')
+        spec = importlib.util.spec_from_file_location('wb_voip_mig_19_0_2_4_1', pfad)
+        modul = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(modul)
+        modul.migrate(self.env.cr, '19.0.2.4.0')
+        self.env.invalidate_all()
+        self.assertEqual(layout.block_ids, bloecke[1])
+        self.assertEqual(fenster.block_ids, notiz1)
+        self.assertFalse(notiz2.exists())
+        # danach wieder bearbeitbar, zweiter Lauf ändert nichts
+        layout.write({'name': 'Neu'})
+        modul.migrate(self.env.cr, '19.0.2.4.0')
+        self.assertEqual(layout.block_ids, bloecke[1])
+
+
+@tagged('wb_voip', 'post_install', '-at_install')
+class TestNeuerKontaktKopf(WbVoipCase):
+    """Fixed "new contact" button of the caller window header."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        Users = cls.env['res.users'].with_context(no_reset_password=True)
+        cls.user_lesen = Users.create({
+            'name': 'VoIP nur lesen', 'login': 'wb_voip_kopf_lesen',
+            'group_ids': [(6, 0, [cls.env.ref('base.group_user').id,
+                                  cls.env.ref('wb_voip.group_wb_voip_user').id])]})
+        cls.user_ohne = Users.create({
+            'name': 'Ohne VoIP', 'login': 'wb_voip_kopf_ohne',
+            'group_ids': [(6, 0, [cls.env.ref('base.group_user').id])]})
+        # auch ohne konfigurierten Button
+        cls.env.ref('wb_voip.wb_voip_aktion_neuer_kontakt').active = False
+
+    def _anruf(self, benutzer):
+        return self.env['wb.voip.anruf'].sudo().create({
+            'user_id': benutzer.id, 'richtung': 'eingehend', 'zustand': 'klingelt',
+            'nummer': '0170 9998887', 'nummer_e164': '+491709998887'})
+
+    def test_eigener_anruf(self):
+        anruf = self._anruf(self.user_a)
+        aktion = anruf.with_user(self.user_a).action_wb_voip_neuer_kontakt()
+        self.assertEqual(aktion['type'], 'ir.actions.act_window')
+        self.assertEqual(aktion['res_model'], 'res.partner')
+        self.assertEqual(aktion['views'], [[False, 'form']])
+        self.assertEqual(aktion['context'], {'default_phone': '0170 9998887', 'wb_voip_anruf_id': anruf.id})
+        # dieselbe Aktion wie die Button-Art „Neuer Kontakt“
+        self.assertEqual(aktion, anruf.with_user(self.user_a)._wb_voip_neuer_kontakt())
+
+    def test_fremder_anruf(self):
+        anruf = self._anruf(self.user_b)
+        with self.assertRaises(AccessError):
+            anruf.with_user(self.user_a).action_wb_voip_neuer_kontakt()
+
+    def test_ohne_anlegerecht(self):
+        if self.env['res.partner'].with_user(self.user_lesen).has_access('create'):
+            self.skipTest("Benutzer dürfen hier Kontakte anlegen")
+        anruf = self._anruf(self.user_lesen)
+        with self.assertRaises(AccessError):
+            anruf.with_user(self.user_lesen).action_wb_voip_neuer_kontakt()
+
+    def test_ohne_voip(self):
+        anruf = self._anruf(self.user_a)
+        with self.assertRaises(AccessError):
+            anruf.with_user(self.user_ohne).action_wb_voip_neuer_kontakt()

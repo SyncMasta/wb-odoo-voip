@@ -68,8 +68,10 @@
                             t-on-click="zuordnen">
                         <i class="fa fa-link me-1" aria-hidden="true"/>Zuordnen
                     </button>
-                    <AktionsLeiste t-if="kopfAktionen.length" aktionen="kopfAktionen" ort="ort"
-                                   itemKlasse="'o_wb_voip_af_aktion btn-sm'" onAusfuehren.bind="aktionAusfuehren"/>
+                    <button type="button" class="o_wb_voip_af_neuer_kontakt btn btn-sm btn-primary"
+                            t-on-click="neuerKontakt">
+                        <i class="fa fa-user-plus me-1" aria-hidden="true"/>Neuer Kontakt
+                    </button>
                 </div>
             </header>
 

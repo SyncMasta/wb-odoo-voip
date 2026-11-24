@@ -52,8 +52,10 @@ STANDARD_BLOECKE = {
 
 
 def _leer_zu_false(wert):
-    """Return False for an empty optional text (None, False, ''), else the value unchanged."""
-    return False if wert is None or wert is False or wert == '' else wert
+    """Return False for an empty optional text (None, False, only whitespace), else the value."""
+    if wert is None or wert is False or (isinstance(wert, str) and not wert.strip()):
+        return False
+    return wert
 
 
 class WbVoipLayout(models.Model):
@@ -181,7 +183,8 @@ class WbVoipLayout(models.Model):
     def _wb_voip_anzahl(self, art):
         """Return how many entries the blocks of ``art`` show (0 = no such block, max 20)."""
         self.ensure_one()
-        anzahlen = [block.anzahl for block in self.sudo().block_ids if block.art == art]
+        anzahlen = [block.anzahl for block in self.sudo()._wb_voip_gueltige_bloecke()
+                    if block.art == art]
         return min(max(anzahlen), ANZAHL_MAX) if anzahlen else 0
 
     def _wb_voip_fuer_client(self, partner):
@@ -196,8 +199,31 @@ class WbVoipLayout(models.Model):
         bloecke = [
             self._wb_voip_block_fuer_client(block.art, block.titel, block.spalte, block.anzahl,
                                             block.text, block.feld_ids, partner)
-            for block in layout.block_ids.sorted(lambda b: (b.sequence, b.id))]
+            for block in layout._wb_voip_gueltige_bloecke()]
         return {'id': layout.id, 'breite': layout.breite, 'bloecke': bloecke}
+
+    def _wb_voip_gueltige_bloecke(self):
+        """Return the blocks in order that the place allows (first note only).
+
+        Older data may hold blocks a place no longer allows; they are skipped at runtime.
+        """
+        self.ensure_one()
+        erlaubt = ERLAUBTE_ARTEN.get(self.ort, ())
+        ergebnis = self.env['wb.voip.layout.block']
+        notiz = False
+        for block in self.block_ids.sorted(lambda b: (b.sequence, b.id)):
+            if block.art not in erlaubt or (block.art == 'notiz' and notiz):
+                continue
+            notiz = notiz or block.art == 'notiz'
+            ergebnis |= block
+        return ergebnis
+
+    @api.model
+    def _wb_voip_unerlaubte_bloecke_entfernen(self):
+        """Delete blocks a place does not allow and notes beyond the first (migration)."""
+        layouts = self.sudo().with_context(active_test=False).search([])
+        for layout in layouts:
+            (layout.block_ids - layout._wb_voip_gueltige_bloecke()).unlink()
 
     @api.model
     def _wb_voip_block_fuer_client(self, art, titel, spalte, anzahl, text, felder, partner):
@@ -317,7 +343,8 @@ class WbVoipLayout(models.Model):
                 raise ungueltig(self.env._("Felder"))
             if (art == 'felder') != bool(feld_ids):
                 raise ungueltig(self.env._("Felder"))
-            vals = {'sequence': nr * 10, 'art': art, 'titel': titel, 'spalte': spalte}
+            vals = {'sequence': nr * 10, 'art': art, 'titel': titel and titel.strip(),
+                    'spalte': spalte}
             if art in GEZAEHLT:
                 anzahl = 5 if anzahl is False else anzahl
                 if not ANZAHL_MIN <= anzahl <= ANZAHL_MAX:

@@ -279,8 +279,8 @@ test("unbekannte Nummer: „Zuordnen“ und „Neuer Kontakt“", async () => {
         expect.step(`zuordnen ${args[0][0]}`);
         return { type: "ir.actions.act_window", res_model: "wb.voip.zuordnen", target: "new" };
     });
-    onRpc("wb.voip.anruf", "wb_voip_aktion_ausfuehren", ({ args }) => {
-        expect.step(`ausfuehren ${args[0][0]} ${args[1]}`);
+    onRpc("wb.voip.anruf", "action_wb_voip_neuer_kontakt", ({ args }) => {
+        expect.step(`neuer kontakt ${args[0][0]}`);
         return { type: "ir.actions.act_window", res_model: "res.partner", target: "current" };
     });
     const w = welt();
@@ -291,17 +291,19 @@ test("unbekannte Nummer: „Zuordnen“ und „Neuer Kontakt“", async () => {
     expect(".o_wb_voip_af_name").toHaveText("Unbekannte Nummer");
     expect(".o_wb_voip_af_bild").toHaveCount(0);
     expect(".o_wb_voip_af_zuordnen").toHaveCount(1);
-    expect(".o_wb_voip_af_aktion").toHaveCount(1);
-    expect(".o_wb_voip_af_aktion").toHaveText("Neuer Kontakt");
-    expect(".o_wb_voip_af_aktion").toHaveClass("btn-primary");
-    expect(".o_wb_voip_af_aktion i").toHaveClass("fa-user-plus");
+    expect(".o_wb_voip_af_neuer_kontakt").toHaveCount(1);
+    expect(".o_wb_voip_af_neuer_kontakt").toHaveText("Neuer Kontakt");
+    expect(".o_wb_voip_af_neuer_kontakt").toHaveClass("btn-primary");
+    expect(".o_wb_voip_af_neuer_kontakt i").toHaveClass("fa-user-plus");
+    // der eingerichtete Button gleicher Art erscheint nicht doppelt
+    expect(".o_wb_voip_af_aktion").toHaveCount(0);
     await click(".o_wb_voip_af_zuordnen");
     await animationFrame();
     expect.verifySteps(["zuordnen 10"]);
     expect(aktionen.at(-1).res_model).toBe("wb.voip.zuordnen");
-    await click(".o_wb_voip_af_aktion");
+    await click(".o_wb_voip_af_neuer_kontakt");
     await animationFrame();
-    expect.verifySteps(["ausfuehren 10 1"]);
+    expect.verifySteps(["neuer kontakt 10"]);
     expect(aktionen.at(-1).res_model).toBe("res.partner");
     w.aufraeumen();
 });
@@ -594,7 +596,7 @@ test("Annahme lädt die Buttons neu (Zustand „Während des Gesprächs“)", as
     onRpc("wb.voip.anruf", "wb_voip_kontext", ({ args }) => {
         expect.step(`kontext ${args[0][0]} ${zustand}`);
         return kontext(args[0][0], {
-            aktionen: [{ ...NEUER_KONTAKT, id: zustand === "laeuft" ? 2 : 1, name: zustand }],
+            aktionen: [{ ...NEUER_KONTAKT, art: "url", id: zustand === "laeuft" ? 2 : 1, name: zustand }],
         });
     });
     const w = welt();
@@ -621,7 +623,7 @@ test("Anrufende lädt die Buttons einmal neu (Zustand „Nach dem Anruf“)", as
     onRpc("wb.voip.anruf", "wb_voip_kontext", ({ args }) => {
         expect.step(`kontext ${args[0][0]} ${zustand}`);
         return kontext(args[0][0], {
-            aktionen: [{ ...NEUER_KONTAKT, id: zustand === "beendet" ? 3 : 1, name: zustand }],
+            aktionen: [{ ...NEUER_KONTAKT, art: "url", id: zustand === "beendet" ? 3 : 1, name: zustand }],
         });
     });
     const w = welt();
