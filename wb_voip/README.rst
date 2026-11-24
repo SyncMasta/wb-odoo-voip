@@ -42,6 +42,10 @@ Anrufer-Fenster
 Bei einem eingehenden oder ausgehenden Anruf öffnet sich im Telefon-Tab ein Seitenpanel rechts. Es zeigt
 Kontakt (Bild, Name, Firma, Telefon, E-Mail, „Kontakt öffnen“), die letzten Gespräche mit dem Kontakt
 (nur eigene), offene Aufgaben am Kontakt, die Notiz zum laufenden Gespräch und die Anruf-Buttons.
+Im Kopf stehen die Gesprächsknöpfe (beim Klingeln „Annehmen“ und „Ablehnen“, sonst „Stumm“ und
+„Auflegen“), damit sie auch dann erreichbar sind, wenn das Panel auf schmaleren Bildschirmen das Softphone
+verdeckt. Bei der Annahme und nach dem Auflegen lädt das Panel die Anruf-Buttons neu (Zustand „Während des
+Gesprächs“ bzw. „Nach dem Anruf“).
 Ist die Nummer keinem Kontakt zugeordnet, steht dort „Unbekannte Nummer“ mit „Zuordnen“. Das Panel schließt
 sich mit der Escape-Taste, über das Kreuz oder zehn Sekunden nach dem Auflegen; solange der Mauszeiger darüber
 steht oder der Fokus im Panel liegt, bleibt es offen. Es nimmt keinen Fokus aus einem Eingabefeld und
@@ -66,7 +70,10 @@ Je Button einstellbar:
   * *Webadresse öffnen*: öffnet eine Adresse in einem neuen Tab. Nur ``https://``, höchstens 500 Zeichen,
     Platzhalter ``{nummer}``, ``{nummer_e164}`` und ``{partner_id}`` (werden URL-kodiert eingesetzt). Keine
     Zugangsdaten, Tokens oder Schlüssel in die Adresse schreiben: Sie ist für jeden Benutzer der Gruppe
-    im Browser sichtbar.
+    im Browser sichtbar. Datenschutz: Rufnummer und Kontakt-ID gehen an den Betreiber der Webadresse. Ist
+    das ein externer Dienst, braucht es in der Regel einen Vertrag zur Auftragsverarbeitung (Art. 28
+    DSGVO); bei Anbietern außerhalb der EU/des EWR zusätzlich die Regeln für Drittlandübermittlungen
+    prüfen.
   * *Neuer Kontakt*: öffnet ein Kontaktformular mit der Rufnummer; erscheint nur, solange der Anruf noch
     keinem Kontakt zugeordnet ist.
 
@@ -82,7 +89,13 @@ Je Button einstellbar:
 Alles läuft mit den Rechten des Benutzers, der den Button drückt: Serveraktionen und Fensteraktionen sehen und
 ändern nur, was dieser Benutzer auch sonst darf. Der Server prüft bei jedem Klick erneut, ob der Button zu
 Anruf, Richtung, Zustand, Gruppe und Kontakt passt; ein ausgeblendeter Button lässt sich nicht per Aufruf
-umgehen. Die mitgelieferten Beispiel-Buttons lassen sich ändern oder archivieren.
+umgehen. Ausnahme: Code oder Formeln, die der Administrator in einer Serveraktion selbst mit ``.sudo()``
+schreibt, laufen mit erhöhten Rechten; dafür ist der Administrator verantwortlich. Der mitgelieferte
+Beispiel-Button „Neuer Kontakt“ lässt sich ändern oder archivieren; der damit angelegte Kontakt wird dem
+Anruf zugeordnet.
+
+Das Menü Einstellungen › Technisch erscheint nur im Entwicklermodus (Einstellungen › „Entwicklermodus
+aktivieren“).
 
 Rufnummer zuordnen
 ------------------

@@ -34,6 +34,7 @@ am richtigen Datensatz.
 **Anrufer-Fenster**
 - Seitenpanel bei jedem Anruf, nur im Tab, der telefoniert: Kontakt mit Bild, letzte Gespräche, offene Aufgaben,
   Notiz zum laufenden Gespräch
+- Gesprächsknöpfe im Kopf: Annehmen/Ablehnen beim Klingeln, Stumm/Auflegen im Gespräch
 - Schließt sich zehn Sekunden nach dem Auflegen, solange nicht Maus oder Tastaturfokus im Panel sind;
   nimmt keinen Fokus aus einem Eingabefeld
 - Unbekannte Nummer: „Zuordnen“ und „Neuer Kontakt“
@@ -92,7 +93,12 @@ am richtigen Datensatz.
    und Nebenstellen.
 4. **Löschfrist** (Einstellungen › WB VoIP): Monate bis zur Löschung beendeter Anrufe, `0` = nie.
 5. **Anruf-Buttons** (Einstellungen › Technisch › WB VoIP › Anruf-Buttons, optional): eigene Schaltflächen für
-   Anrufer-Fenster, Protokoll-Popup und Softphone anlegen.
+   Anrufer-Fenster, Protokoll-Popup und Softphone anlegen. Buttons vom Typ „Webadresse“ geben Rufnummer und
+   Kontakt-ID an den Betreiber der Adresse weiter: Bei externen Diensten einen Vertrag zur Auftragsverarbeitung
+   (Art. 28 DSGVO) schließen und bei Anbietern außerhalb der EU/des EWR die Drittlandübermittlung prüfen.
+
+Das Menü Einstellungen › Technisch erscheint nur im Entwicklermodus (Einstellungen › „Entwicklermodus
+aktivieren“).
 
 Details stehen in [`wb_voip/README.rst`](wb_voip/README.rst).
 
