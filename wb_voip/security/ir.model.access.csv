@@ -7,3 +7,4 @@ wb_voip_protokoll_user,wb.voip.protokoll Benutzer,model_wb_voip_protokoll,group_
 wb_voip_protokoll_manager,wb.voip.protokoll Administrator,model_wb_voip_protokoll,group_wb_voip_manager,1,1,1,1
 wb_voip_aktion_user,wb.voip.aktion Benutzer,model_wb_voip_aktion,group_wb_voip_user,1,0,0,0
 wb_voip_aktion_manager,wb.voip.aktion Administrator,model_wb_voip_aktion,group_wb_voip_manager,1,1,1,1
+wb_voip_zuordnen_user,wb.voip.zuordnen Benutzer,model_wb_voip_zuordnen,group_wb_voip_user,1,1,1,1

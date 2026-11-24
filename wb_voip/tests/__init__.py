@@ -14,3 +14,4 @@ from . import test_tour_softphone
 from . import test_abschluss
 from . import test_aktion
 from . import test_kontext
+from . import test_zuordnen

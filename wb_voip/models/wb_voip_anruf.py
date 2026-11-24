@@ -430,6 +430,38 @@ class WbVoipAnruf(models.Model):
         except Exception:  # noqa: BLE001 - Chatter darf das Beenden nie verhindern
             _logger.exception("[wb_voip] Chatter-Eintrag fehlgeschlagen (Anruf %s)", anruf.id)
 
+    # --- Rufnummer zuordnen ---
+
+    @nur_voip_benutzer
+    def action_wb_voip_zuordnen(self):
+        """Open the wizard that assigns the number of the caller's own call to a contact."""
+        anruf = self._wb_voip_eigener()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': self.env._("Rufnummer zuordnen"),
+            'res_model': 'wb.voip.zuordnen',
+            'view_mode': 'form',
+            'views': [[False, 'form']],
+            'target': 'new',
+            'context': {'default_anruf_id': anruf.id},
+        }
+
+    def _wb_voip_partner_setzen(self, partner):
+        """Set the contact on the caller's own call and on its log, then tell the browser.
+
+        Private: the call must be the caller's own and the contact readable by the
+        caller; only after these checks the values are written with sudo.
+        """
+        anruf = self._wb_voip_eigener()
+        partner = partner.with_user(self.env.user)
+        partner.ensure_one()
+        if not partner.has_access('read'):
+            raise AccessError(self.env._("Sie dürfen diesen Kontakt nicht lesen."))
+        anruf.write({'partner_id': partner.id})
+        if anruf.protokoll_id:
+            anruf.protokoll_id.write({'partner_id': partner.id})
+        anruf._wb_voip_kontext_melden()
+
     # --- Anrufer-Kontext und Anruf-Buttons ---
 
     def _wb_voip_kontext_melden(self):
