@@ -92,15 +92,30 @@ def _kontext_mischen(text, zusatz):
     if not isinstance(dict_knoten, ast.Dict) or None in dict_knoten.keys \
             or dict_knoten.end_lineno is None:
         return dict(zusatz)
-    # Position der schließenden Klammer aus dem Syntaxbaum (Kommentare dahinter bleiben außen vor)
-    # (end_col_offset zählt UTF-8-Bytes)
+    # Einfügestelle aus dem Syntaxbaum: direkt hinter dem letzten Wert (bei leerem Dict hinter
+    # der öffnenden Klammer). So bleiben Kommentare und ein Komma dahinter unberührt.
+    # (col_offset zählt UTF-8-Bytes)
     quelle = text.strip().encode('utf-8')
     zeilen = quelle.split(b'\n')
-    ende = sum(len(z) + 1 for z in zeilen[:dict_knoten.end_lineno - 1]) \
-        + dict_knoten.end_col_offset - 1
-    innen = quelle[:ende].decode('utf-8').rstrip()
-    trenner = '' if innen.endswith(('{', ',')) else ', '
-    return innen + trenner + ', '.join(f'{k!r}: {v!r}' for k, v in zusatz.items()) + '}'
+
+    def versatz(zeile, spalte):
+        return sum(len(z) + 1 for z in zeilen[:zeile - 1]) + spalte
+
+    extra = ', '.join(f'{k!r}: {v!r}' for k, v in zusatz.items())
+    if dict_knoten.values:
+        letzter = dict_knoten.values[-1]
+        if letzter.end_lineno is None:
+            return dict(zusatz)
+        stelle = versatz(letzter.end_lineno, letzter.end_col_offset)
+        extra = ', ' + extra
+    else:
+        stelle = versatz(dict_knoten.lineno, dict_knoten.col_offset) + 1
+    ergebnis = quelle[:stelle].decode('utf-8') + extra + quelle[stelle:].decode('utf-8')
+    try:  # z. B. ein eingeklammerter letzter Wert würde hier ungültig: dann nur ``zusatz``
+        ast.parse(ergebnis, mode='eval')
+    except (SyntaxError, ValueError, MemoryError, RecursionError):
+        return dict(zusatz)
+    return ergebnis
 
 
 class WbVoipAnruf(models.Model):

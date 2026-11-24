@@ -439,3 +439,16 @@ class TestKontext(WbVoipCase):
         self.assertEqual(meldungen, [{'type': 'wb_voip/kontext', 'payload': {'anruf_id': anruf.id}}])
         kanal = json.loads(neu.filtered(lambda n: 'wb_voip/kontext' in n.message).channel)
         self.assertEqual(kanal[1:], ['res.partner', self.user_a.partner_id.id])
+
+    def test_kontext_mischen_kommentar_am_ende(self):
+        from ..models.wb_voip_anruf import _kontext_mischen
+        zusatz = {'default_partner_id': 7}
+        for text in ("{'a': uid, # c\n}", "{'a': uid # c\n}", "{\n 'a': uid,  # c\n # d\n}",
+                     "{'a': uid}", "{}", "{'a': (uid)}"):
+            ergebnis = _kontext_mischen(text, zusatz)
+            if isinstance(ergebnis, str):
+                baum = ast.parse(ergebnis, mode='eval').body
+                schluessel = [k.value for k in baum.keys]
+                self.assertIn('default_partner_id', schluessel, text)
+            else:
+                self.assertEqual(ergebnis['default_partner_id'], 7)
