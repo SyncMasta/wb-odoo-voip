@@ -71,10 +71,17 @@ class WbVoipLayout(models.Model):
             if not layout.active:
                 raise ValidationError(self.env._("Das Standard-Layout muss aktiv bleiben."))
 
+    def _wb_voip_daten_laden(self):
+        """Return True only while the module data loader runs (superuser plus install_mode).
+
+        ``install_mode`` alone is a plain context key that an RPC client could send.
+        """
+        return bool(self.env.su and self.env.context.get('install_mode'))
+
     @api.model_create_multi
     def create(self, vals_list):
         # Standard layouts only come from the module data (install/update)
-        if not self.env.context.get('install_mode') \
+        if not self._wb_voip_daten_laden() \
                 and any(vals.get('ist_standard') for vals in vals_list):
             raise UserError(self.env._("Standard-Layouts kommen nur aus den Moduldaten."))
         return super().create(vals_list)
@@ -87,7 +94,7 @@ class WbVoipLayout(models.Model):
                 if feld in vals and any(vals[feld] != layout[feld] for layout in self):
                     raise UserError(self.env._(
                         "Beim Standard-Layout lassen sich Standard-Kennzeichen und Fenster nicht ändern."))
-        elif vals.get('ist_standard') and not self.env.context.get('install_mode'):
+        elif vals.get('ist_standard') and not self._wb_voip_daten_laden():
             raise UserError(self.env._("Standard-Layouts kommen nur aus den Moduldaten."))
         return super().write(vals)
 

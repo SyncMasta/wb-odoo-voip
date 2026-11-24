@@ -288,3 +288,12 @@ class TestLayout(WbVoipCase):
         self.assertTrue(nicht_gespeichert)
         with self.assertRaises(ValidationError):
             self._block(layout, art='felder', feld_ids=[(6, 0, [nicht_gespeichert.id])])
+
+    def test_install_mode_vom_client_reicht_nicht(self):
+        manager = self.Layout.with_user(self.user_manager).with_context(install_mode=True)
+        with self.assertRaises(UserError):
+            manager.create({'name': 'X', 'ort': 'anrufer_fenster', 'ist_standard': True})
+        eigenes = self._layout()
+        with self.assertRaises(UserError):
+            eigenes.with_user(self.user_manager).with_context(install_mode=True).write(
+                {'ist_standard': True})
