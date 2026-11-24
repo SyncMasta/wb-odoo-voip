@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Nur bei der Installation: Änderungen und Löschen durch den Administrator bleiben -->
+    <data noupdate="1">
+        <record id="wb_voip_aktion_neuer_kontakt" model="wb.voip.aktion">
+            <field name="name">Neuer Kontakt</field>
+            <field name="sequence">10</field>
+            <field name="icon">fa-user-plus</field>
+            <field name="farbe">primary</field>
+            <field name="art">neuer_kontakt</field>
+            <field name="ort_anrufer_fenster" eval="True"/>
+            <field name="richtung">beide</field>
+            <field name="zustand">immer</field>
+        </record>
+    </data>
+</odoo>

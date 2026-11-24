@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="wb_voip_aktion_view_list" model="ir.ui.view">
+        <field name="name">wb.voip.aktion.list</field>
+        <field name="model">wb.voip.aktion</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="art"/>
+                <field name="richtung"/>
+                <field name="zustand"/>
+                <field name="ort_anrufer_fenster" optional="show"/>
+                <field name="ort_protokoll_popup" optional="show"/>
+                <field name="ort_softphone" optional="show"/>
+                <field name="active" column_invisible="True"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="wb_voip_aktion_view_form" model="ir.ui.view">
+        <field name="name">wb.voip.aktion.form</field>
+        <field name="model">wb.voip.aktion</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <widget name="web_ribbon" title="Archiviert" bg_color="text-bg-danger"
+                            invisible="active"/>
+                    <group>
+                        <group string="Darstellung">
+                            <field name="name"/>
+                            <field name="icon" placeholder="fa-user"/>
+                            <field name="farbe"/>
+                            <field name="sequence"/>
+                            <field name="active" invisible="1"/>
+                        </group>
+                        <group string="Wo wird der Button gezeigt?">
+                            <field name="ort_anrufer_fenster"/>
+                            <field name="ort_protokoll_popup"/>
+                            <field name="ort_softphone"/>
+                        </group>
+                    </group>
+                    <group string="Wann?">
+                        <group>
+                            <field name="richtung"/>
+                            <field name="zustand"/>
+                        </group>
+                        <group>
+                            <field name="group_ids" widget="many2many_tags"/>
+                            <field name="partner_domain" placeholder="[('is_company', '=', True)]"/>
+                        </group>
+                    </group>
+                    <group string="Was passiert?">
+                        <field name="art"/>
+                        <field name="act_window_id" invisible="art != 'fenster'"
+                               required="art == 'fenster'"/>
+                        <field name="server_action_id" invisible="art != 'serveraktion'"
+                               required="art == 'serveraktion'"/>
+                        <field name="url_vorlage" invisible="art != 'url'" required="art == 'url'"
+                               placeholder="https://beispiel.example/suche?nr={nummer_e164}"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="wb_voip_aktion_action" model="ir.actions.act_window">
+        <field name="name">Anruf-Buttons</field>
+        <field name="res_model">wb.voip.aktion</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>

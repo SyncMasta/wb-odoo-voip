@@ -1,6 +1,6 @@
 {
     'name': 'WB VoIP',
-    'version': '19.0.1.4.1',
+    'version': '19.0.1.5.0',
     'category': 'Productivity/VoIP',
     'summary': 'Softphone, Anrufprotokoll und Telefonanlagen-Anbindung für Odoo',
     'description': """
@@ -17,12 +17,14 @@ Softphone im Browser, Anrufprotokoll und Anbindung an SIP-Telefonanlagen.
         'security/wb_voip_security.xml',
         'security/ir.model.access.csv',
         'views/wb_voip_anlage_views.xml',
+        'views/wb_voip_aktion_views.xml',
         'views/res_users_views.xml',
         'views/wb_voip_anruf_views.xml',
         'views/wb_voip_protokoll_views.xml',
         'views/res_partner_views.xml',
         'data/ir_config_parameter.xml',
         'data/ir_cron.xml',
+        'data/wb_voip_aktion_data.xml',
         'views/res_config_settings_views.xml',
         'views/menus.xml',
     ],

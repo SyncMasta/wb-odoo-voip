@@ -12,3 +12,4 @@ from . import test_haertung
 from . import test_softphone_rpc
 from . import test_tour_softphone
 from . import test_abschluss
+from . import test_aktion

@@ -11,4 +11,7 @@
     <menuitem id="wb_voip_menu_protokoll" name="Anrufprotokolle" parent="wb_voip_menu_root"
               action="wb_voip_protokoll_action" sequence="30"
               groups="wb_voip.group_wb_voip_manager"/>
+    <menuitem id="wb_voip_menu_aktion" name="Anruf-Buttons" parent="wb_voip_menu_root"
+              action="wb_voip_aktion_action" sequence="40"
+              groups="wb_voip.group_wb_voip_manager"/>
 </odoo>
