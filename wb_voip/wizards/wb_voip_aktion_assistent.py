@@ -138,9 +138,12 @@ class WbVoipAktionAssistent(models.TransientModel):
     @api.model
     def _selection_modell(self):
         """Return the models the caller may target (technical name and label)."""
-        modelle = self.env['ir.model'].sudo().search([('transient', '=', False)])
+        # Schreibrecht aus Odoos gecachter ACL-Liste (je Benutzer), dann nur noch billige Prüfungen
+        schreibbar = self.env['ir.model.access']._get_allowed_models('write')
+        modelle = self.env['ir.model'].sudo().search(
+            [('transient', '=', False), ('model', 'in', list(schreibbar))])
         return [(modell.model, f'{modell.name} ({modell.model})') for modell in modelle
-                if self._wb_voip_modell_erlaubt(modell.model)]
+                if self._wb_voip_modell_erlaubt(modell.model, schreibbar)]
 
     # --- Berechnete Angaben ---
 
@@ -217,8 +220,11 @@ class WbVoipAktionAssistent(models.TransientModel):
         return self.modell or False
 
     @api.model
-    def _wb_voip_modell_erlaubt(self, modell):
-        """Return True if the caller may target ``modell`` (regular, writable, not technical)."""
+    def _wb_voip_modell_erlaubt(self, modell, schreibbar=None):
+        """Return True if the caller may target ``modell`` (regular, writable, not technical).
+
+        ``schreibbar`` is the caller's set of writable models, if already known.
+        """
         if not isinstance(modell, str) or modell not in self.env:
             return False
         Modell = self.env[modell]
@@ -226,6 +232,8 @@ class WbVoipAktionAssistent(models.TransientModel):
             return False
         if modell.startswith(GESPERRTE_MODELLE):
             return False
+        if schreibbar is not None:
+            return modell in schreibbar
         return Modell.has_access('write')
 
     @api.model

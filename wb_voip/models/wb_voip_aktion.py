@@ -26,6 +26,9 @@ GRUPPE_BUTTON_AKTION = 'wb_voip.group_wb_voip_button_aktion'
 _NUR_SERVER = ('wb_voip_assistent',)
 # An Buttons aus dem Assistenten nur über den Assistenten änderbar
 _NUR_ASSISTENT = ('art', 'server_action_id')
+# Wer einen Code-Button aus dem Assistenten sieht und wann: nur Systemadministratoren
+_CODE_PUBLIKUM = ('group_ids', 'partner_domain', 'ort_anrufer_fenster', 'ort_protokoll_popup',
+                  'ort_softphone', 'richtung', 'zustand')
 
 
 def assistenten_aktion(server):
@@ -123,12 +126,18 @@ class WbVoipAktion(models.Model):
                 raise UserError(self.env._(
                     "Die Aktion dieses Buttons wurde mit dem Assistenten angelegt. "
                     "Bitte mit „Mit Assistent bearbeiten“ ändern."))
+            if set(vals) & set(_CODE_PUBLIKUM) and not self.env.user.has_group(GRUPPE_SYSTEM) \
+                    and self.sudo().filtered(lambda a: a.wb_voip_assistent
+                                             and a.server_action_id.state == 'code'):
+                raise AccessError(self.env._(
+                    "Bei Buttons mit Python-Code dürfen nur Systemadministratoren ändern, "
+                    "wer den Button sieht und wann."))
         return super().write(vals)
 
     def unlink(self):
         # Serveraktionen aus dem Assistenten merken; gelöscht wird erst nach dem Löschen der
         # Buttons (das prüft die Rechte) und nur, wenn kein anderer Button sie nutzt
-        server = self.sudo().filtered('wb_voip_assistent').server_action_id
+        server = self.sudo().server_action_id.filtered(assistenten_aktion)
         ergebnis = super().unlink()
         self.env['wb.voip.aktion']._wb_voip_serveraktionen_aufraeumen(server)
         return ergebnis

@@ -11,3 +11,4 @@ from . import res_partner  # noqa: E402
 from . import mail_activity  # noqa: E402
 from . import ir_http  # noqa: E402
 from . import res_config_settings  # noqa: E402
+from . import wb_voip_button_schutz  # noqa: E402

@@ -17,7 +17,7 @@
          für alle ab. Nie Benutzern zuweisen. -->
     <record id="group_wb_voip_button_aktion" model="res.groups">
         <field name="name">WB VoIP: Button-Serveraktionen (technisch)</field>
-        <field name="comment">Technische Gruppe ohne Mitglieder. Serveraktionen aus dem Button-Assistenten laufen nur über die Anruf-Buttons. Bitte niemandem zuweisen.</field>
+        <field name="comment">Technische Gruppe – nie Benutzern zuweisen. Serveraktionen aus dem Button-Assistenten laufen nur über die Anruf-Buttons; Odoo lehnt Mitglieder dieser Gruppe ab.</field>
     </record>
 
     <!-- Nur bei der Installation: entfernt ein Administrator die Mitgliedschaft, setzt ein

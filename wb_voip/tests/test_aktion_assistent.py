@@ -390,6 +390,9 @@ class TestAktionAssistent(WbVoipCase):
         self.assertFalse(zweiter.wb_voip_assistent)
         aktion.with_user(self.manager).unlink()
         self.assertTrue(server.exists())
+        # der letzte (nicht gekennzeichnete) Button räumt die Assistenten-Aktion auf
+        zweiter.with_user(self.manager).unlink()
+        self.assertFalse(server.exists())
 
     def test_loeschen_hand_aktion_bleibt(self):
         hand_server = self.env['ir.actions.server'].create({
@@ -488,3 +491,78 @@ class TestAktionAssistent(WbVoipCase):
         assistent.write({'ort_softphone': True, 'icon': 'kein icon'})
         with self.assertRaises(UserError):
             assistent.action_weiter()
+
+    # --- Zweite Verteidigungslinie: technische Gruppe ---
+
+    def test_technische_gruppe_nicht_zuweisbar(self):
+        with self.assertRaises(ValidationError):
+            self.user_a.sudo().write({'group_ids': [(4, self.technisch.id)]})
+        with self.assertRaises(ValidationError):
+            self.technisch.sudo().write({'user_ids': [(4, self.user_b.id)]})
+        with self.assertRaises(ValidationError):
+            self.env.ref('wb_voip.group_wb_voip_user').sudo().write(
+                {'implied_ids': [(4, self.technisch.id)]})
+        with self.assertRaises(ValidationError):
+            self.env['res.users'].sudo().with_context(no_reset_password=True).create({
+                'name': 'Technik', 'login': 'wb_voip_assistent_technik',
+                'group_ids': [(6, 0, [self.env.ref('base.group_user').id, self.technisch.id])]})
+        # in der Datenbank weder Mitglieder noch übergeordnete Gruppen (Caches nach den
+        # zurückgerollten Versuchen nicht maßgeblich)
+        feld = self.env['res.users']._fields['group_ids']
+        self.env.cr.execute(f'SELECT count(*) FROM "{feld.relation}" WHERE "{feld.column2}" = %s',
+                            (self.technisch.id,))
+        self.assertEqual(self.env.cr.fetchone()[0], 0)
+        self.env.cr.execute('SELECT count(*) FROM res_groups_implied_rel WHERE hid = %s',
+                            (self.technisch.id,))
+        self.assertEqual(self.env.cr.fetchone()[0], 0)
+
+    def _mitglied_per_sql(self, benutzer):
+        feld = self.env['res.users']._fields['group_ids']
+        self.env.cr.execute(
+            f'INSERT INTO "{feld.relation}" ("{feld.column1}", "{feld.column2}") VALUES (%s, %s)',
+            (benutzer.id, self.technisch.id))
+        self.env.invalidate_all()
+        self.assertIn(self.technisch, benutzer.all_group_ids)
+
+    def test_run_trotz_mitgliedschaft_verweigert(self):
+        feld = self._anlegen()
+        code = self._anlegen(self.systemadmin, art='code', feld_name=False,
+                             code="record.write({'function': 'Code'})")
+        self._mitglied_per_sql(self.user_a)
+        for aktion in (feld, code):
+            server = aktion.sudo().server_action_id
+            with self.assertRaises(AccessError, msg=server.state):
+                server.with_user(self.user_a).with_context(
+                    active_model='res.partner', active_id=self.kontakt.id,
+                    active_ids=[self.kontakt.id]).run()
+            with self.assertRaises(AccessError, msg=server.state):
+                server.sudo().with_context(
+                    active_model='res.partner', active_id=self.kontakt.id).run()
+        self.assertFalse(self.kontakt.function)
+        # der Button selbst läuft weiter, als Benutzer
+        self._ausfuehren(feld)
+        self.assertEqual(self.kontakt.function, 'Geändert')
+        self._ausfuehren(code)
+        self.assertEqual(self.kontakt.function, 'Code')
+
+    # --- Code-Buttons: Publikum nur durch Systemadministratoren ---
+
+    def test_code_button_publikum_nur_systemadmin(self):
+        aktion = self._anlegen(self.systemadmin, art='code', feld_name=False, code='pass')
+        als_manager = aktion.with_user(self.manager)
+        for werte in ({'group_ids': [(6, 0, [self.env.ref('base.group_user').id])]},
+                      {'partner_domain': "[('is_company', '=', True)]"},
+                      {'ort_softphone': True}, {'richtung': 'eingehend'},
+                      {'zustand': 'laeuft'}):
+            with self.assertRaises(AccessError, msg=str(werte)):
+                als_manager.write(werte)
+        als_manager.write({'name': 'Neuer Name', 'icon': 'fa-star'})
+        als_manager.write({'active': False})
+        aktion.with_user(self.systemadmin).write({
+            'active': True, 'group_ids': [(6, 0, [self.env.ref('base.group_user').id])],
+            'richtung': 'eingehend'})
+        self.assertEqual(aktion.richtung, 'eingehend')
+        # bei Feld-Buttons bleibt das Publikum Sache des VoIP-Administrators
+        feld = self._anlegen()
+        feld.with_user(self.manager).write({'richtung': 'ausgehend'})
+        aktion.with_user(self.manager).unlink()

@@ -105,15 +105,17 @@ Button zusammen mit seiner Serveraktion an, immer in einer erlaubten Form:
   einen festen Wert. Wählbar sind nur Modelle, die der Administrator selbst ändern darf (keine technischen
   Modelle wie ``ir.*``, ``res.users``, ``res.groups``, ``mail.*``, ``bus.*``), und nur gespeicherte, nicht
   berechnete Felder der Typen Text, Auswahl, Ja/Nein, Zahl, Datum, Many2one und Many2many (Many2many:
-  „hinzufügen“), die er selbst schreiben darf. Ein Datensatz als Wert muss für ihn lesbar sein.
+  „hinzufügen“), die er selbst schreiben darf. Ein Datensatz als Wert muss beim Anlegen für den
+  Administrator lesbar sein; beim Klick schreibt Odoo dessen ID als der Benutzer, der klickt.
 * **Vorlage**: „Kategorie am Kontakt hinzufügen“ und „Sprache des Kontakts setzen“; intern ebenfalls
   „Feld setzen“.
 * **Python-Code**: nur für Systemadministratoren (``base.group_system``), auch per Aufruf nicht umgehbar.
 
 Die erzeugte Serveraktion bekommt die technische Gruppe „WB VoIP: Button-Serveraktionen (technisch)“, der
 niemand angehört, und keinen Eintrag im Aktionsmenü. Außerhalb der Anruf-Buttons lässt Odoo sie deshalb von
-niemandem ausführen. Am Button läuft sie mit den Rechten des Benutzers, der klickt. Diese Gruppe niemandem
-zuweisen. Ändern lässt sich die Aktion nur über „Mit Assistent bearbeiten“ am Button (Python-Code nur durch
+niemandem ausführen, auch nicht, wenn jemand der Gruppe doch angehören sollte (Mitglieder lehnt das Modul
+ab). Am Button läuft sie mit den Rechten des Benutzers, der klickt. Bei Buttons mit Python-Code dürfen nur
+Systemadministratoren Gruppen, Bedingung, Orte, Richtung und Zustand ändern. Ändern lässt sich die Aktion nur über „Mit Assistent bearbeiten“ am Button (Python-Code nur durch
 Systemadministratoren); Bezeichnung, Orte und Gruppen auch direkt im Formular. Beim Löschen des Buttons wird
 seine Serveraktion mitgelöscht, sofern kein anderer Button sie nutzt.
 
