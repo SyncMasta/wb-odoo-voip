@@ -8,9 +8,11 @@ Notizen und findet später nicht mehr, wer wann mit wem gesprochen hat. WB VoIP 
 Klick aus jedem Telefonfeld, eingehende Anrufe mit Namen des Kontakts, und nach jedem Gespräch ein Protokolleintrag
 am richtigen Datensatz.
 
-> **Stand:** Phase 2 (Version 19.0.2.x). Softphone, Anrufprotokoll, Anrufer-Fenster, eigene Anruf-Buttons,
-> Rufnummer zuordnen und Lizenzanbindung sind fertig und mit automatischen Tests abgesichert. Der Betrieb gegen eine echte Telefonanlage wird gerade erprobt; bis dahin gilt
-> das Modul als Vorabversion.
+> **Stand:** Phase 3 (Version 19.0.3.x). Softphone, Anrufprotokoll, Anrufer-Fenster mit Layout-Designer, eigene
+> Anruf-Buttons mit Assistent, Rufnummer zuordnen und Lizenzanbindung sind fertig und mit automatischen Tests
+> abgesichert. Gegen eine echte Telefonanlage getestet ist die Signalisierung aus Phase 1 und 2 (Anmelden,
+> Anrufe, Annehmen, Auflegen); das Weiterleiten von Gesprächen noch nicht. Bis dahin gilt das Modul als
+> Vorabversion.
 
 ---
 
@@ -39,12 +41,23 @@ am richtigen Datensatz.
   nimmt keinen Fokus aus einem Eingabefeld
 - Unbekannte Nummer: „Zuordnen“ und „Neuer Kontakt“
 
+**Layout-Designer**
+- Aufbau von Anrufer-Fenster und Protokoll-Popup aus Blöcken (Kontaktkopf, Kontaktfelder, letzte Protokolle,
+  offene Aufgaben, Notiz, Buttons, Text), grafisch mit Vorschau; Breite, ein oder zwei Spalten
+- Layouts je Benutzergruppe mit Reihenfolge; Standard-Layout je Fenster mit „Auf Standard zurücksetzen“
+- Felder erscheinen nur, wenn der Benutzer sie auch sonst lesen darf; Zugangsdaten sind ausgeschlossen
+
 **Eigene Anruf-Buttons**
 - Selbst konfigurierbar unter Einstellungen › Technisch › WB VoIP › Anruf-Buttons: Fenster öffnen,
   Serveraktion, Webadresse (nur `https://`) oder neuer Kontakt
 - Anzeige im Anrufer-Fenster, im Protokoll-Popup und im Softphone, einstellbar nach Richtung, Anrufzustand,
   Benutzergruppen und einer Bedingung am Kontakt
 - Läuft mit den Rechten des Benutzers; als Serveraktion nur Python-Code und „Feld schreiben“ am Datensatz selbst
+
+**Button-Assistent**
+- Button und Serveraktion in einem Schritt anlegen: Feld setzen, Vorlage (Kategorie hinzufügen, Sprache setzen)
+  oder Python-Code (nur Systemadministratoren)
+- Erzeugte Serveraktionen laufen nur aus WB VoIP heraus; Bearbeiten über „Bearbeiten mit Assistent“
 
 **Rufnummer zuordnen**
 - Unbekannte Nummer einem Kontakt zuordnen und auf Wunsch in dessen Telefonfeld speichern; danach erkennt
@@ -104,7 +117,6 @@ Details stehen in [`wb_voip/README.rst`](wb_voip/README.rst).
 
 ## Geplant
 
-- Designer für den Aufbau des Anrufer-Fensters
 - Verpasste Anrufe mit Rückruf-Liste
 - CRM-Anbindung (Anrufe am Vorgang)
 - Adapter für Telefonanlagen, beginnend mit Ansitel (Rufumleitung, Anrufbeantworter, Anrufliste)

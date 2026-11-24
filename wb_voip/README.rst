@@ -52,12 +52,46 @@ steht oder der Fokus im Panel liegt, bleibt es offen. Es nimmt keinen Fokus aus 
 öffnet sich nur in dem Tab, der den Anruf führt. Gezeigt werden nur Daten, die der angemeldete Benutzer
 auch sonst lesen darf.
 
+Fenster-Layouts und Designer
+----------------------------
+
+Was im Anrufer-Fenster und im Protokoll-Popup steht, bestimmt ein Layout aus Blöcken. Administratoren
+(„WB VoIP: Administrator“) pflegen es unter Einstellungen › Technisch › WB VoIP › „Layout-Designer“ (grafisch,
+mit Vorschau an einem Beispielkontakt) oder „Fenster-Layouts“ (Liste); in der Liste öffnet „Designer öffnen“
+das gewählte Layout im Designer. Das Menü erscheint nur im Entwicklermodus.
+
+* **Fenster**: Anrufer-Fenster oder Protokoll-Popup.
+* **Blöcke je Fenster**: Anrufer-Fenster: Kontaktkopf, Kontaktfelder, Letzte Protokolle, Offene Aufgaben,
+  Notiz, Buttons und Text. Protokoll-Popup: Kontaktkopf, Kontaktfelder, Letzte Protokolle und Text (dort
+  gibt es keine Buttons, keine Notiz und keine Aufgaben). Blöcke lassen sich ordnen, mit Titel versehen und
+  bei den Breiten ab „Breit“ auf zwei Spalten verteilen. Bei Protokollen und Aufgaben stellt man die Anzahl
+  ein (1 bis 20).
+* **Breite**: Normal, Breit oder Sehr breit. Im Anrufer-Fenster 720, 960 oder 1200 Pixel (höchstens
+  Bildschirmbreite), im Popup große, extra große oder Vollbild-Dialoggröße.
+* **Gruppen und Reihenfolge**: Ein Layout ohne Gruppen gilt für alle WB-VoIP-Benutzer, sonst nur für
+  Mitglieder der gewählten Gruppen. Passen mehrere Layouts, gewinnt die kleinste Reihenfolge; passt keines,
+  gilt das Standard-Layout.
+* **Standard-Layout**: Je Fenster liefert das Modul genau eines mit. Es lässt sich bearbeiten, aber nicht
+  löschen oder archivieren; „Auf Standard zurücksetzen“ stellt seine Blöcke wieder auf den ausgelieferten
+  Stand.
+* **Nur lesbare Felder**: Kontaktfelder erscheinen nur, wenn der angemeldete Benutzer sie auch sonst lesen
+  darf; andere Felder bleiben für ihn weg. Zugangsdaten- und Systemfelder (Passwörter, Tokens, Schlüssel,
+  Anmeldelinks) lassen sich nie einbinden, Verknüpfungen nur auf eine feste Liste unkritischer Modelle.
+
+Die Schaltflächen „Zuordnen“ und „Neuer Kontakt“ bei unbekannter Nummer stehen immer im Kopf des Fensters,
+unabhängig vom Layout, damit sich ein Anruf nie ohne Zuordnungsmöglichkeit verirrt.
+
 Anruf-Buttons
 -------------
 
 Einstellungen › Technisch › WB VoIP › Anruf-Buttons (Administrator). Jeder Button erscheint an den gewählten
 Orten: Anrufer-Fenster, Protokoll-Popup nach dem Auflegen und Softphone-Anrufansicht. Im Softphone sind
 höchstens vier Buttons sichtbar, der Rest steht unter „Mehr“.
+
+Am einfachsten legt man Buttons mit dem Button-Assistenten an (siehe unten): Er erzeugt Button und
+Serveraktion zusammen und lässt nur erlaubte Formen zu. Von Hand angelegte Buttons mit Serveraktionen aus der
+Odoo-Oberfläche funktionieren weiter und unterliegen unverändert den hier beschriebenen Regeln; der
+Assistent ist die empfohlene Variante.
 
 Je Button einstellbar:
 
@@ -99,7 +133,8 @@ Button-Assistent
 ~~~~~~~~~~~~~~~~
 
 „Button mit Assistent anlegen“ (Knopf in der Button-Liste und Menü, nur WB-VoIP-Administratoren) legt den
-Button zusammen mit seiner Serveraktion an, immer in einer erlaubten Form:
+Button zusammen mit seiner Serveraktion an, immer in einer erlaubten Form. Es gibt drei Wege; die ersten
+beiden stehen allen WB-VoIP-Administratoren offen, der dritte nur Systemadministratoren:
 
 * **Feld setzen**: ein Feld am Kontakt des Anrufs oder am Datensatz, aus dem heraus angerufen wurde, bekommt
   einen festen Wert. Wählbar sind nur Modelle, die der Administrator selbst ändern darf (keine technischen
@@ -115,7 +150,7 @@ Die erzeugte Serveraktion bekommt die technische Gruppe „WB VoIP: Button-Serve
 niemand angehört, und keinen Eintrag im Aktionsmenü. Außerhalb der Anruf-Buttons lässt Odoo sie deshalb von
 niemandem ausführen, auch nicht, wenn jemand der Gruppe doch angehören sollte (Mitglieder lehnt das Modul
 ab). Am Button läuft sie mit den Rechten des Benutzers, der klickt. Bei Buttons mit Python-Code dürfen nur
-Systemadministratoren Gruppen, Bedingung, Orte, Richtung und Zustand ändern. Ändern lässt sich die Aktion nur über „Mit Assistent bearbeiten“ am Button (Python-Code nur durch
+Systemadministratoren Gruppen, Bedingung, Orte, Richtung und Zustand ändern. Ändern lässt sich die Aktion nur über „Bearbeiten mit Assistent“ am Button (Python-Code nur durch
 Systemadministratoren); Bezeichnung, Orte und Gruppen auch direkt im Formular. Beim Löschen des Buttons wird
 seine Serveraktion mitgelöscht, sofern kein anderer Button sie nutzt.
 

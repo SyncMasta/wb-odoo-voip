@@ -1,6 +1,6 @@
 {
     'name': 'WB VoIP',
-    'version': '19.0.2.5.1',
+    'version': '19.0.3.0.0',
     'category': 'Productivity/VoIP',
     'summary': 'Softphone, Anrufprotokoll und Telefonanlagen-Anbindung für Odoo',
     'description': """
