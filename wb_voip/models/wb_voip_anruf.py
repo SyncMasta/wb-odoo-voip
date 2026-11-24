@@ -1,5 +1,7 @@
+import ast
 import logging
 from datetime import timedelta
+from urllib.parse import quote, urlsplit
 
 from dateutil.relativedelta import relativedelta
 
@@ -8,8 +10,9 @@ import psycopg2
 from markupsafe import Markup
 
 from odoo import api, fields, models
-from odoo.exceptions import UserError
-from odoo.tools import plaintext2html
+from odoo.exceptions import AccessError, UserError
+from odoo.fields import Domain
+from odoo.tools import html2plaintext, plaintext2html
 
 from odoo.addons.wb_license_client.models.wb_license_client import license_required
 
@@ -18,6 +21,7 @@ from ..tools.eingaben import limit_pruefen
 from ..tools.rechte import nur_voip_benutzer
 from ..tools.nummer import e164
 from . import PRODUKT_CODE
+from .wb_voip_aktion import URL_PLATZHALTER_MUSTER, WbVoipAktion
 
 _logger = logging.getLogger(__name__)
 
@@ -43,6 +47,13 @@ MAX_SIP_GRUND = 8
 AUFBEWAHRUNG_PARAMETER = 'wb_voip.aufbewahrung_monate'
 AUFBEWAHRUNG_STANDARD = 12
 LOESCH_STAPEL = 1000
+# Anrufer-Kontext: Obergrenzen je Abruf
+KONTEXT_PROTOKOLLE = 5
+KONTEXT_AUFGABEN = 10
+KONTEXT_AKTIONEN = 100
+KONTEXT_TEXT_MAX = 300
+# Kontext-Schlüssel des Aufrufers, die an eine Serveraktion weitergehen (alles andere nicht)
+SERVERAKTION_KONTEXT = ('lang', 'tz', 'allowed_company_ids')
 
 
 def _text_pruefen(env, wert, bezeichnung, hoechstens, pflicht):
@@ -367,6 +378,228 @@ class WbVoipAnruf(models.Model):
                     author_id=benutzer.partner_id.id)
         except Exception:  # noqa: BLE001 - Chatter darf das Beenden nie verhindern
             _logger.exception("[wb_voip] Chatter-Eintrag fehlgeschlagen (Anruf %s)", anruf.id)
+
+    # --- Anrufer-Kontext und Anruf-Buttons ---
+
+    def _wb_voip_kontext_melden(self):
+        """Tell the owner's browser tabs that the context of these calls changed.
+
+        Payload is only the call id; the client fetches the data via ``wb_voip_kontext``.
+        """
+        for anruf in self.sudo():
+            anruf.user_id._bus_send('wb_voip/kontext', {'anruf_id': anruf.id})
+
+    def _wb_voip_lesbarer_kontakt(self):
+        """Return the call's contact as the caller (empty unless the caller may read it)."""
+        self.ensure_one()
+        partner = self.sudo().partner_id.with_user(self.env.user)
+        if partner and not partner.has_access('read'):
+            return partner.browse()
+        return partner
+
+    @nur_voip_benutzer
+    def wb_voip_kontext(self):
+        """Return the caller window data of the caller's own call.
+
+        ``{anruf, kontakt, protokolle, aufgaben, aktionen}``; everything is read as the
+        caller, ``kontakt`` is False (and lists stay empty) unless the contact is readable.
+        """
+        anruf = self._wb_voip_eigener()
+        eigen = anruf.with_user(self.env.user)
+        partner = eigen._wb_voip_lesbarer_kontakt()
+        return {
+            'anruf': eigen._wb_voip_client_daten(),
+            'kontakt': eigen._wb_voip_kontakt_daten(partner),
+            'protokolle': eigen._wb_voip_kontakt_protokolle(partner),
+            'aufgaben': eigen._wb_voip_kontakt_aufgaben(partner),
+            'aktionen': eigen._wb_voip_aktionen(),
+        }
+
+    def _wb_voip_kontakt_daten(self, partner):
+        """Return the contact card (``partner`` is readable or empty)."""
+        if not partner:
+            return False
+        firma = partner.parent_id._filtered_access('read')
+        return {
+            'id': partner.id,
+            'name': partner.name or partner.display_name,
+            'firma': firma.name if firma else (partner.company_name or False),
+            'telefon': partner.phone or False,
+            'email': partner.email or False,
+            'bild_url': f'/web/image/res.partner/{partner.id}/avatar_128',
+        }
+
+    def _wb_voip_kontakt_protokolle(self, partner):
+        """Return the caller's latest call logs of the contact (plain text, shortened)."""
+        if not partner:
+            return []
+        Protokoll = self.env['wb.voip.protokoll']
+        texte = dict(Protokoll._fields['ergebnis']._description_selection(self.env))
+        protokolle = Protokoll.search([
+            ('user_id', '=', self.env.uid), ('partner_id', '=', partner.id),
+        ], limit=KONTEXT_PROTOKOLLE)
+        ergebnis = []
+        for protokoll in protokolle:
+            text = html2plaintext(protokoll.beschreibung) if protokoll.beschreibung else ''
+            ergebnis.append({
+                'id': protokoll.id,
+                'datum': fields.Datetime.to_string(protokoll.datum) if protokoll.datum else False,
+                'ergebnis_label': texte.get(protokoll.ergebnis, False),
+                'dauer_sek': protokoll.dauer_sek,
+                'beschreibung_text': text.strip()[:KONTEXT_TEXT_MAX],
+            })
+        return ergebnis
+
+    def _wb_voip_kontakt_aufgaben(self, partner):
+        """Return the caller's open activities on the contact or on the call's record."""
+        self.ensure_one()
+        orte = []
+        if partner:
+            orte.append(Domain('res_model', '=', 'res.partner') & Domain('res_id', '=', partner.id))
+        ziel = self._wb_voip_ziel(self.sudo().res_model, self.sudo().res_id)
+        if ziel is not None:
+            orte.append(Domain('res_model', '=', ziel._name) & Domain('res_id', '=', ziel.id))
+        if not orte:
+            return []
+        aktivitaeten = self.env['mail.activity'].search(
+            Domain('user_id', '=', self.env.uid) & Domain.OR(orte),
+            order='date_deadline, id', limit=KONTEXT_AUFGABEN)
+        return [{
+            'id': aktivitaet.id,
+            'titel': aktivitaet.summary or aktivitaet.activity_type_id.name or '',
+            'faellig': str(aktivitaet.date_deadline) if aktivitaet.date_deadline else False,
+            'res_model': aktivitaet.res_model,
+            'res_id': aktivitaet.res_id,
+        } for aktivitaet in aktivitaeten]
+
+    def _wb_voip_aktionen(self):
+        """Return the buttons that apply to this call for the caller (client data)."""
+        self.ensure_one()
+        aktionen = self.env['wb.voip.aktion'].search([], limit=KONTEXT_AKTIONEN)
+        return [aktion._wb_voip_fuer_client() for aktion in aktionen
+                if aktion._wb_voip_passend(self)]
+
+    @nur_voip_benutzer
+    @license_required(PRODUKT_CODE)
+    def wb_voip_aktion_ausfuehren(self, aktion_id):
+        """Run the call button ``aktion_id`` on the caller's own call, as the caller.
+
+        Returns an action dict for the web client (or False). Never runs anything with
+        more rights than the caller has without WB VoIP.
+        """
+        if type(aktion_id) is not int or aktion_id <= 0:
+            raise UserError(self.env._("Ungültige Angabe: %s.", self.env._("Button")))
+        anruf = self._wb_voip_eigener()
+        eigen = anruf.with_user(self.env.user)
+        aktion = self.env['wb.voip.aktion'].browse(aktion_id).exists()
+        if not aktion or not aktion.active or not aktion._wb_voip_passend(eigen):
+            raise UserError(self.env._("Dieser Button passt nicht zu diesem Anruf."))
+        partner = eigen._wb_voip_lesbarer_kontakt()
+        if aktion.art == 'fenster':
+            return eigen._wb_voip_fenster(aktion, partner)
+        if aktion.art == 'serveraktion':
+            return eigen._wb_voip_serveraktion(aktion, partner)
+        if aktion.art == 'url':
+            return eigen._wb_voip_url(aktion, partner)
+        if aktion.art == 'neuer_kontakt':
+            return eigen._wb_voip_neuer_kontakt()
+        raise UserError(self.env._("Dieser Button passt nicht zu diesem Anruf."))
+
+    def _wb_voip_fenster(self, aktion, partner):
+        """Return the button's window action as a cleaned dict (only readable models)."""
+        # Fensteraktionen darf nur der Administrator lesen: sudo nur zum Zusammenbauen,
+        # die Rechte prüfen wir vorher als Benutzer.
+        fenster = aktion.sudo().act_window_id
+        res_model = fenster.res_model
+        if not fenster or not res_model or res_model not in self.env:
+            raise UserError(self.env._("Die Fensteraktion des Buttons ist ungültig."))
+        if fenster.group_ids and not (fenster.group_ids & self.env.user.all_group_ids):
+            raise AccessError(self.env._("Sie dürfen diese Fensteraktion nicht öffnen."))
+        self.env[res_model].check_access('read')
+        daten = fenster.read(
+            ['name', 'res_model', 'view_mode', 'views', 'target', 'domain', 'context'])[0]
+        kontext = {}
+        try:
+            wert = ast.literal_eval(daten['context'] or '{}')
+            if isinstance(wert, dict):
+                kontext = wert
+        except (ValueError, SyntaxError, TypeError, MemoryError, RecursionError):
+            pass  # Kontext mit Ausdrücken (z. B. uid) wird nicht übernommen
+        if partner:
+            kontext['default_partner_id'] = partner.id
+        kontext['wb_voip_anruf_id'] = self.id
+        return {
+            'type': 'ir.actions.act_window',
+            'name': daten['name'],
+            'res_model': res_model,
+            'view_mode': daten['view_mode'],
+            'views': daten['views'],
+            'target': daten['target'] or 'current',
+            'domain': daten['domain'] or False,
+            'context': kontext,
+        }
+
+    def _wb_voip_serveraktion(self, aktion, partner):
+        """Run the button's server action as the caller on the call, contact or record.
+
+        Odoo's ``run()`` checks the action's groups, or (without groups) write access to
+        the model and records. With groups it runs ``object_write``/``object_create``/
+        ``object_copy`` as superuser without a record check, so the write access to the
+        target record is always checked here first.
+        """
+        server = aktion.sudo().server_action_id
+        modell = server.model_id.model
+        if modell == self._name:
+            datensatz = self
+        elif modell == 'res.partner' and partner:
+            datensatz = partner
+        else:
+            ziel = self._wb_voip_ziel(self.sudo().res_model, self.sudo().res_id)
+            if ziel is None or ziel._name != modell:
+                raise UserError(self.env._("Die Serveraktion passt nicht zu diesem Anruf."))
+            datensatz = ziel
+        datensatz = datensatz.with_user(self.env.user)
+        datensatz.check_access('write')
+        kontext = {k: self.env.context[k] for k in SERVERAKTION_KONTEXT if k in self.env.context}
+        kontext.update({
+            'active_model': modell,
+            'active_id': datensatz.id,
+            'active_ids': [datensatz.id],
+            'wb_voip_anruf_id': self.id,
+            'wb_voip_partner_id': partner.id or False,
+        })
+        ergebnis = self.env['ir.actions.server'].browse(server.id).with_context(kontext).run()
+        return ergebnis if isinstance(ergebnis, dict) and ergebnis else False
+
+    def _wb_voip_url(self, aktion, partner):
+        """Return the button's web address with URL-encoded placeholder values."""
+        vorlage = aktion.sudo().url_vorlage or ''
+        anruf = self.sudo()
+        werte = {
+            'nummer': anruf.nummer or '',
+            'nummer_e164': anruf.nummer_e164 or '',
+            'partner_id': str(partner.id) if partner else '',
+        }
+        url = URL_PLATZHALTER_MUSTER.sub(
+            lambda treffer: quote(werte.get(treffer.group(1), ''), safe=''), vorlage)
+        if not WbVoipAktion._wb_voip_url_ok(url) \
+                or urlsplit(url).netloc != urlsplit(vorlage).netloc:
+            raise UserError(self.env._("Die Webadresse des Buttons ist ungültig."))
+        return {'type': 'ir.actions.act_url', 'url': url, 'target': 'new'}
+
+    def _wb_voip_neuer_kontakt(self):
+        """Return the form for a new contact with the call's number."""
+        self.env['res.partner'].check_access('create')
+        return {
+            'type': 'ir.actions.act_window',
+            'name': self.env._("Neuer Kontakt"),
+            'res_model': 'res.partner',
+            'view_mode': 'form',
+            'views': [[False, 'form']],
+            'target': 'current',
+            'context': {'default_phone': self.sudo().nummer or False,
+                        'wb_voip_anruf_id': self.id},
+        }
 
     @nur_voip_benutzer
     def wb_voip_lebenszeichen(self):
