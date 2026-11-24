@@ -27,7 +27,7 @@ class TestLayout(WbVoipCase):
         return self.Layout.create(vals)
 
     def _block(self, layout, **werte):
-        vals = {'layout_id': layout.id, 'art': 'notiz'}
+        vals = {'layout_id': layout.id, 'art': 'text'}
         vals.update(werte)
         return self.Block.create(vals)
 
@@ -128,7 +128,7 @@ class TestLayout(WbVoipCase):
     def test_manager_darf_alles(self):
         layout = self.Layout.with_user(self.user_manager).create(
             {'name': 'M', 'ort': 'protokoll_popup', 'group_ids': [(6, 0, [self.gruppe_a.id])]})
-        self.Block.with_user(self.user_manager).create({'layout_id': layout.id, 'art': 'notiz'})
+        self.Block.with_user(self.user_manager).create({'layout_id': layout.id, 'art': 'text'})
         layout.with_user(self.user_manager).unlink()
 
     # --- Validierungen ---
@@ -226,7 +226,7 @@ class TestLayout(WbVoipCase):
 
     def test_zuruecksetzen_popup(self):
         vorher = self._bloecke(self.std_popup)
-        self._block(self.std_popup, art='notiz')
+        self._block(self.std_popup, art='text', text='Hallo')
         self.std_popup.action_auf_standard_zuruecksetzen()
         self.assertEqual(self._bloecke(self.std_popup), vorher)
 
@@ -297,3 +297,272 @@ class TestLayout(WbVoipCase):
         with self.assertRaises(UserError):
             eigenes.with_user(self.user_manager).with_context(install_mode=True).write(
                 {'ist_standard': True})
+
+    # --- Erlaubte Blockarten je Fenster ---
+
+    def test_popup_nur_erlaubte_arten(self):
+        layout = self._layout(ort='protokoll_popup')
+        for art in ('kontaktkopf', 'felder', 'protokolle', 'text'):
+            werte = {'feld_ids': [(6, 0, [self._feld('email').id])]} if art == 'felder' else {}
+            self._block(layout, art=art, **werte)
+        for art in ('buttons', 'notiz', 'aufgaben'):
+            with self.assertRaises(ValidationError, msg=art):
+                self._block(layout, art=art)
+
+    def test_fenster_alle_arten(self):
+        layout = self._layout()
+        for art in ('kontaktkopf', 'protokolle', 'aufgaben', 'notiz', 'buttons', 'text'):
+            self._block(layout, art=art)
+        self._block(layout, art='felder', feld_ids=[(6, 0, [self._feld('email').id])])
+
+    def test_notiz_hoechstens_einmal(self):
+        layout = self._layout()
+        self._block(layout, art='notiz')
+        with self.assertRaises(ValidationError):
+            self._block(layout, art='notiz')
+        # ein anderes Layout darf seine eigene Notiz haben
+        self._block(self._layout(name='Zweites'), art='notiz')
+
+    def test_ort_wechsel_prueft_bloecke(self):
+        layout = self._layout()
+        self._block(layout, art='buttons')
+        with self.assertRaises(ValidationError):
+            layout.write({'ort': 'protokoll_popup'})
+        layout.block_ids.unlink()
+        self._block(layout, art='text', text='x')
+        layout.write({'ort': 'protokoll_popup'})
+
+
+@tagged('wb_voip', 'post_install', '-at_install')
+class TestLayoutDesigner(WbVoipCase):
+    """Server side of the layout designer (managers only, strict input)."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.Layout = cls.env['wb.voip.layout']
+        cls.std_fenster = cls.env.ref('wb_voip.wb_voip_layout_anrufer_fenster_standard')
+        cls.std_popup = cls.env.ref('wb_voip.wb_voip_layout_protokoll_popup_standard')
+        cls.eigenes = cls.Layout.create({'name': 'Eigenes', 'ort': 'anrufer_fenster', 'sequence': 90})
+        cls.env['wb.voip.layout.block'].create(
+            {'layout_id': cls.eigenes.id, 'art': 'text', 'text': 'Vorher'})
+        cls.gruppe = cls.env['res.groups'].create({'name': 'Designer-Gruppe'})
+        cls.erika = cls.env['res.partner'].create({
+            'name': 'Erika Designer', 'email': 'erika.designer@example.com',
+            'phone': '+49 170 1112223', 'city': 'Holdorf', 'ref': 'K-77'})
+        cls.feld_email = cls.env['ir.model.fields']._get('res.partner', 'email')
+        cls.feld_city = cls.env['ir.model.fields']._get('res.partner', 'city')
+        cls.feld_ref = cls.env['ir.model.fields']._get('res.partner', 'ref')
+
+    def _als_manager(self):
+        return self.Layout.with_user(self.user_manager)
+
+    def _daten(self, **werte):
+        daten = {
+            'name': 'Neu', 'ort': 'anrufer_fenster', 'breite': 'breit',
+            'group_ids': [self.gruppe.id],
+            'bloecke': [
+                {'art': 'kontaktkopf', 'titel': False, 'spalte': '1'},
+                {'art': 'felder', 'titel': 'Daten', 'spalte': '2',
+                 'feld_ids': [self.feld_city.id, self.feld_email.id]},
+                {'art': 'protokolle', 'titel': False, 'spalte': '1', 'anzahl': 3},
+                {'art': 'text', 'titel': 'Hinweis', 'spalte': '2', 'text': 'Zeile 1\nZeile 2'},
+                {'art': 'notiz', 'spalte': '1'},
+            ],
+        }
+        daten.update(werte)
+        return daten
+
+    def _bloecke(self, layout):
+        return [(b.art, b.titel or False, b.spalte, b.anzahl if b.art in ('protokolle', 'aufgaben') else 0,
+                 b.text or False, b.feld_ids.ids)
+                for b in layout.block_ids.sorted(lambda b: (b.sequence, b.id))]
+
+    # --- Rechte ---
+
+    def test_nur_manager(self):
+        for benutzer in (self.user_a, self.env['res.users'].create({
+                'name': 'Ohne VoIP', 'login': 'wb_voip_designer_ohne',
+                'group_ids': [(6, 0, [self.env.ref('base.group_user').id])]})):
+            Layout = self.Layout.with_user(benutzer)
+            with self.assertRaises(AccessError):
+                Layout.wb_voip_designer_laden(self.eigenes.id)
+            with self.assertRaises(AccessError):
+                Layout.wb_voip_designer_speichern(self.eigenes.id, self._daten())
+            with self.assertRaises(AccessError):
+                Layout.wb_voip_designer_vorschau(self.eigenes.id, self.erika.id)
+        with self.assertRaises(AccessError):
+            self.eigenes.with_user(self.user_a).action_wb_voip_designer()
+        self.assertEqual(self._bloecke(self.eigenes)[0][4], 'Vorher')
+
+    def test_designer_aktion(self):
+        aktion = self.eigenes.with_user(self.user_manager).action_wb_voip_designer()
+        self.assertEqual(aktion['type'], 'ir.actions.client')
+        self.assertEqual(aktion['tag'], 'wb_voip.layout_designer')
+        self.assertEqual(aktion['params'], {'layout_id': self.eigenes.id})
+        menue = self.env.ref('wb_voip.wb_voip_menu_layout_designer')
+        self.assertEqual(menue.group_ids, self.env.ref('wb_voip.group_wb_voip_manager'))
+
+    # --- Laden ---
+
+    def test_laden(self):
+        daten = self._als_manager().wb_voip_designer_laden(self.std_fenster.id)
+        self.assertEqual(set(daten), {'layout', 'arten', 'felder', 'orte', 'breiten', 'layouts',
+                                      'beispielkontakt_id'})
+        layout = daten['layout']
+        self.assertEqual(layout['id'], self.std_fenster.id)
+        self.assertTrue(layout['ist_standard'])
+        self.assertEqual([b['art'] for b in layout['bloecke']],
+                         ['kontaktkopf', 'buttons', 'protokolle', 'aufgaben', 'notiz'])
+        self.assertEqual(set(layout['bloecke'][0]),
+                         {'art', 'titel', 'spalte', 'anzahl', 'text', 'feld_ids'})
+        self.assertEqual([a['art'] for a in daten['arten']['protokoll_popup']],
+                         ['kontaktkopf', 'felder', 'protokolle', 'text'])
+        self.assertEqual(len(daten['arten']['anrufer_fenster']), 7)
+        namen = {f['name'] for f in daten['felder']}
+        self.assertIn('email', namen)
+        self.assertIn('country_id', namen)
+        for gesperrt in ('user_ids', 'signup_token', 'image_1920', 'child_ids', 'user_id', 'company_id'):
+            self.assertNotIn(gesperrt, namen)
+        self.assertEqual(daten['beispielkontakt_id'], self.user_manager.partner_id.id)
+        self.assertIn(self.eigenes.id, [l['id'] for l in daten['layouts']])
+        # ohne Angabe: Standard des Anrufer-Fensters
+        self.assertEqual(self._als_manager().wb_voip_designer_laden(False)['layout']['id'],
+                         self.std_fenster.id)
+
+    def test_laden_ungueltig(self):
+        for schlecht in ('1', 1.5, True, -3, 999999, [1]):
+            with self.assertRaises(UserError, msg=repr(schlecht)):
+                self._als_manager().wb_voip_designer_laden(schlecht)
+
+    # --- Speichern ---
+
+    def test_speichern_ersetzt_bloecke(self):
+        antwort = self._als_manager().wb_voip_designer_speichern(self.eigenes.id, self._daten())
+        self.assertEqual(antwort['layout']['id'], self.eigenes.id)
+        self.assertEqual(self.eigenes.name, 'Neu')
+        self.assertEqual(self.eigenes.breite, 'breit')
+        self.assertEqual(self.eigenes.group_ids, self.gruppe)
+        self.assertEqual(self._bloecke(self.eigenes), [
+            ('kontaktkopf', False, '1', 0, False, []),
+            ('felder', 'Daten', '2', 0, False, [self.feld_city.id, self.feld_email.id]),
+            ('protokolle', False, '1', 3, False, []),
+            ('text', 'Hinweis', '2', 0, 'Zeile 1\nZeile 2', []),
+            ('notiz', False, '1', 0, False, []),
+        ])
+        # leere Liste entfernt alle Blöcke
+        self._als_manager().wb_voip_designer_speichern(self.eigenes.id, self._daten(bloecke=[]))
+        self.assertFalse(self.eigenes.block_ids)
+
+    def test_speichern_ungueltig_aendert_nichts(self):
+        feld_login = self.env['ir.model.fields']._get('res.users', 'login')
+        feld_user_ids = self.env['ir.model.fields']._get('res.partner', 'user_ids')
+        gut = self._daten()['bloecke']
+        schlechte = {
+            'kein dict': [1, 2],
+            'fremder Schlüssel': self._daten(sequence=1),
+            'bloecke kein list': self._daten(bloecke={'art': 'text'}),
+            'zu viele': self._daten(bloecke=[{'art': 'text', 'text': str(i)} for i in range(31)]),
+            'Block kein dict': self._daten(bloecke=['text']),
+            'Block fremder Schlüssel': self._daten(bloecke=[{'art': 'text', 'sequence': 3}]),
+            'Art unbekannt': self._daten(bloecke=[{'art': 'html'}]),
+            'Art im Popup nicht erlaubt': self._daten(ort='protokoll_popup', bloecke=[{'art': 'buttons'}]),
+            'zwei Notizen': self._daten(bloecke=[{'art': 'notiz'}, {'art': 'notiz'}]),
+            'Feld anderes Modell': self._daten(bloecke=[{'art': 'felder', 'feld_ids': [feld_login.id]}]),
+            'Feld gesperrt': self._daten(bloecke=[{'art': 'felder', 'feld_ids': [feld_user_ids.id]}]),
+            'Feld-ID kein int': self._daten(bloecke=[{'art': 'felder', 'feld_ids': [str(self.feld_email.id)]}]),
+            'Feld-ID unbekannt': self._daten(bloecke=[{'art': 'felder', 'feld_ids': [99999999]}]),
+            'Felder ohne Feld': self._daten(bloecke=[{'art': 'felder', 'feld_ids': []}]),
+            'Felder an anderer Art': self._daten(bloecke=[{'art': 'text', 'feld_ids': [self.feld_email.id]}]),
+            'Text zu lang': self._daten(bloecke=[{'art': 'text', 'text': 'x' * 2001}]),
+            'Text kein str': self._daten(bloecke=[{'art': 'text', 'text': ['x']}]),
+            'Titel zu lang': self._daten(bloecke=[{'art': 'text', 'titel': 'x' * 201}]),
+            'Anzahl 0': self._daten(bloecke=[{'art': 'protokolle', 'anzahl': 0}]),
+            'Anzahl 21': self._daten(bloecke=[{'art': 'aufgaben', 'anzahl': 21}]),
+            'Anzahl Text': self._daten(bloecke=[{'art': 'protokolle', 'anzahl': '5'}]),
+            'Anzahl bool': self._daten(bloecke=[{'art': 'protokolle', 'anzahl': True}]),
+            'Spalte 3': self._daten(bloecke=[{'art': 'text', 'spalte': '3'}]),
+            'Breite falsch': self._daten(breite='riesig'),
+            'Ort falsch': self._daten(ort='softphone'),
+            'Name leer': self._daten(name='  '),
+            'Name zu lang': self._daten(name='x' * 201),
+            'Gruppe unbekannt': self._daten(group_ids=[99999999]),
+            'Gruppe kein int': self._daten(group_ids=['1']),
+            'gültig, dann ungültig': self._daten(bloecke=gut + [{'art': 'html'}]),
+        }
+        vorher = self._bloecke(self.eigenes)
+        for name, daten in schlechte.items():
+            with self.assertRaises(UserError, msg=name):  # ValidationError ist ein UserError
+                self._als_manager().wb_voip_designer_speichern(self.eigenes.id, daten)
+            self.assertEqual(self._bloecke(self.eigenes), vorher, name)
+            self.assertEqual(self.eigenes.name, 'Eigenes', name)
+            self.assertFalse(self.eigenes.group_ids, name)
+
+    def test_speichern_atomar_bei_constraint(self):
+        # ein Fehler erst beim Anlegen der Blöcke (hier: erzwungen) lässt Layout und Blöcke unverändert
+        vorher = self._bloecke(self.eigenes)
+        Block = type(self.env['wb.voip.layout.block'])
+        anlegen = Block.create
+
+        def kaputt(modell, vals_list):
+            anlegen(modell, vals_list)
+            raise ValidationError('kaputt')
+
+        with patch.object(Block, 'create', kaputt):
+            with self.assertRaises(ValidationError):
+                self._als_manager().wb_voip_designer_speichern(self.eigenes.id, self._daten())
+        self.assertEqual(self._bloecke(self.eigenes), vorher)
+        self.assertEqual(self.eigenes.name, 'Eigenes')
+
+    def test_speichern_standard_ort_fest(self):
+        with self.assertRaises(UserError):
+            self._als_manager().wb_voip_designer_speichern(
+                self.std_fenster.id, self._daten(ort='protokoll_popup', bloecke=[]))
+        self.assertEqual(self.std_fenster.ort, 'anrufer_fenster')
+        self.assertTrue(self.std_fenster.block_ids)
+        # Popup-Standard mit erlaubten Arten speicherbar
+        self._als_manager().wb_voip_designer_speichern(self.std_popup.id, {
+            'name': 'Popup', 'ort': 'protokoll_popup', 'breite': 'normal', 'group_ids': [],
+            'bloecke': [{'art': 'text', 'text': 'Hallo'}]})
+        self.assertEqual([b.art for b in self.std_popup.block_ids], ['text'])
+
+    # --- Vorschau ---
+
+    def test_vorschau_format_wie_kontext(self):
+        self.env['wb.voip.layout.block'].create({
+            'layout_id': self.eigenes.id, 'art': 'felder',
+            'feld_ids': [(6, 0, [self.feld_city.id, self.feld_ref.id])]})
+        daten = self._als_manager().wb_voip_designer_vorschau(self.eigenes.id, self.erika.id)
+        self.assertEqual(set(daten), {'layout', 'kontakt', 'protokolle', 'aufgaben'})
+        erwartet = self.eigenes.with_user(self.user_manager)._wb_voip_fuer_client(
+            self.erika.with_user(self.user_manager))
+        self.assertEqual(daten['layout'], erwartet)
+        self.assertEqual(daten['kontakt']['name'], 'Erika Designer')
+        felder = daten['layout']['bloecke'][1]['felder']
+        self.assertEqual([(f['name'], f['wert']) for f in felder], [('city', 'Holdorf'), ('ref', 'K-77')])
+
+    def test_vorschau_entwurf(self):
+        entwurf = self._daten(bloecke=[
+            {'art': 'felder', 'feld_ids': [self.feld_email.id]}, {'art': 'text', 'text': 'Entwurf'}])
+        daten = self._als_manager().wb_voip_designer_vorschau(self.eigenes.id, self.erika.id, entwurf)
+        self.assertEqual(daten['layout']['breite'], 'breit')
+        self.assertEqual([b['art'] for b in daten['layout']['bloecke']], ['felder', 'text'])
+        self.assertEqual(daten['layout']['bloecke'][0]['felder'][0]['wert'], 'erika.designer@example.com')
+        self.assertEqual(daten['layout']['bloecke'][1]['text'], 'Entwurf')
+        # nichts gespeichert
+        self.assertEqual([b.art for b in self.eigenes.block_ids], ['text'])
+        # Entwurf wird genauso streng geprüft
+        with self.assertRaises(UserError):
+            self._als_manager().wb_voip_designer_vorschau(
+                self.eigenes.id, self.erika.id, self._daten(bloecke=[{'art': 'html'}]))
+
+    def test_vorschau_nur_lesbarer_kontakt(self):
+        firma_b = self.env['res.company'].create({'name': 'Fremdfirma Designer'})
+        fremd = self.env['res.partner'].create({'name': 'Fremd', 'company_id': firma_b.id})
+        if fremd.with_user(self.user_manager).has_access('read'):
+            self.skipTest("Kontakte anderer Firmen sind hier lesbar")
+        with self.assertRaises(AccessError):
+            self._als_manager().wb_voip_designer_vorschau(self.eigenes.id, fremd.id)
+        for schlecht in (False, '3', 0, -1, 99999999, 2.0):
+            with self.assertRaises(UserError, msg=repr(schlecht)):
+                self._als_manager().wb_voip_designer_vorschau(self.eigenes.id, schlecht)

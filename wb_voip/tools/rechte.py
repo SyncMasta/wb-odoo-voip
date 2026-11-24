@@ -23,3 +23,13 @@ def nur_voip_benutzer(methode):
             raise AccessError(self.env._("Nur für Benutzer von WB VoIP."))
         return methode(self, *args, **kwargs)
     return huelle
+
+
+def nur_voip_manager(methode):
+    """Decorator: raise ``AccessError`` unless the caller is a WB VoIP manager."""
+    @functools.wraps(methode)
+    def huelle(self, *args, **kwargs):
+        if not self.env.user.has_group(GRUPPE_MANAGER):
+            raise AccessError(self.env._("Nur für Administratoren von WB VoIP."))
+        return methode(self, *args, **kwargs)
+    return huelle

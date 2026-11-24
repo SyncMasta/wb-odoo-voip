@@ -22,6 +22,8 @@
         <field name="arch" type="xml">
             <form>
                 <header>
+                    <button name="action_wb_voip_designer" type="object" string="Designer öffnen"
+                            class="btn-primary"/>
                     <button name="action_auf_standard_zuruecksetzen" type="object"
                             string="Auf Standard zurücksetzen"
                             invisible="not ist_standard"
@@ -64,5 +66,11 @@
         <field name="name">Fenster-Layouts</field>
         <field name="res_model">wb.voip.layout</field>
         <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Designer als Client-Aktion; ohne Angabe öffnet er das Standard-Layout des Anrufer-Fensters -->
+    <record id="wb_voip_layout_designer_action" model="ir.actions.client">
+        <field name="name">Layout-Designer</field>
+        <field name="tag">wb_voip.layout_designer</field>
     </record>
 </odoo>

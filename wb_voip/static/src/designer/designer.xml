@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <!-- Alle Serverwerte nur als Text (t-esc / t-model), nie als Markup oder Klasse -->
+    <t t-name="wb_voip.LayoutDesigner">
+        <div class="o_wb_voip_designer o_action h-100 overflow-auto bg-view p-3" t-ref="wurzel">
+            <h1 class="visually-hidden">Layout-Designer</h1>
+            <div t-if="state.fehler" class="alert alert-warning" role="alert" t-esc="state.fehler"/>
+
+            <t t-if="entwurf">
+                <!-- Kopf: Layout, Name, Fenster, Breite, Gruppen, Beispielkontakt, Aktionen -->
+                <div class="o_wb_voip_ds_kopf d-flex flex-wrap align-items-end gap-3 mb-3">
+                    <div>
+                        <label class="form-label small mb-1" for="wb_voip_ds_layout">Layout</label>
+                        <select id="wb_voip_ds_layout" class="o_wb_voip_ds_layout form-select"
+                                t-on-change="layoutWechseln">
+                            <option t-foreach="layouts" t-as="l" t-key="l.id" t-att-value="l.id"
+                                    t-att-selected="l.id === entwurf.id" t-esc="l.name"/>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label small mb-1" for="wb_voip_ds_name">Name</label>
+                        <input id="wb_voip_ds_name" class="o_wb_voip_ds_name form-control" type="text"
+                               maxlength="200" t-model="entwurf.name"/>
+                    </div>
+                    <div>
+                        <label class="form-label small mb-1" for="wb_voip_ds_ort">Fenster</label>
+                        <select id="wb_voip_ds_ort" class="o_wb_voip_ds_ort form-select"
+                                t-model="entwurf.ort" t-att-disabled="entwurf.ist_standard">
+                            <option t-foreach="orte" t-as="o" t-key="o[0]" t-att-value="o[0]" t-esc="o[1]"/>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label small mb-1" for="wb_voip_ds_breite">Breite</label>
+                        <select id="wb_voip_ds_breite" class="o_wb_voip_ds_breite form-select"
+                                t-model="entwurf.breite">
+                            <option t-foreach="breiten" t-as="b" t-key="b[0]" t-att-value="b[0]" t-esc="b[1]"/>
+                        </select>
+                    </div>
+                    <div class="o_wb_voip_ds_gruppen">
+                        <span class="form-label small mb-1 d-block">Gruppen</span>
+                        <MultiRecordSelector resModel="'res.groups'" resIds="entwurf.group_ids"
+                                             update.bind="gruppenSetzen" placeholder="'Alle Benutzer'"/>
+                    </div>
+                    <div class="o_wb_voip_ds_beispiel">
+                        <span class="form-label small mb-1 d-block">Beispielkontakt</span>
+                        <RecordSelector resModel="'res.partner'" resId="state.partnerId"
+                                        update.bind="beispielSetzen"/>
+                    </div>
+                    <div class="d-flex gap-2 ms-auto">
+                        <button type="button" class="o_wb_voip_ds_speichern btn btn-primary"
+                                t-att-disabled="!geaendert or !gueltig or state.speichert"
+                                t-on-click="speichern">Speichern</button>
+                        <button type="button" class="o_wb_voip_ds_verwerfen btn btn-secondary"
+                                t-att-disabled="!geaendert" t-on-click="verwerfen">Verwerfen</button>
+                        <button t-if="entwurf.ist_standard" type="button"
+                                class="o_wb_voip_ds_zuruecksetzen btn btn-outline-danger"
+                                t-on-click="zuruecksetzen">Auf Standard zurücksetzen</button>
+                    </div>
+                </div>
+            </t>
+
+            <div class="o_wb_voip_ds_raster" t-att-class="{'d-none': !entwurf}">
+                <!-- Palette -->
+                <section class="o_wb_voip_ds_palette" aria-labelledby="wb_voip_ds_palette_titel">
+                    <h2 id="wb_voip_ds_palette_titel" class="h6">Blockarten</h2>
+                    <div class="d-flex flex-column gap-1" t-if="entwurf">
+                        <button t-foreach="arten" t-as="a" t-key="a.art" type="button"
+                                class="o_wb_voip_ds_neu btn btn-outline-secondary btn-sm text-start"
+                                t-att-data-art="a.art" t-att-disabled="!neuMoeglich(a.art)"
+                                t-on-click="() => this.hinzufuegen(a.art)">
+                            <i class="fa fa-plus me-1" aria-hidden="true"/><t t-esc="a.label"/>
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Spalten mit den Blöcken (Ziehen am Griff oder Hoch/Runter) -->
+                <section class="o_wb_voip_ds_mitte" aria-labelledby="wb_voip_ds_mitte_titel">
+                    <h2 id="wb_voip_ds_mitte_titel" class="h6">Aufbau</h2>
+                    <div class="o_wb_voip_ds_spalten d-flex gap-3" t-ref="spalten">
+                        <t t-if="entwurf">
+                            <div t-foreach="spalten" t-as="spalte" t-key="spalte.spalte"
+                                 class="o_wb_voip_ds_spalte flex-grow-1">
+                                <h3 class="small text-muted" t-esc="spalte.titel"/>
+                                <ul class="o_wb_voip_ds_liste list-unstyled border rounded p-2 mb-0"
+                                    t-att-data-spalte="spalte.spalte">
+                                    <li t-foreach="spalte.bloecke" t-as="block" t-key="block.uid"
+                                        class="o_wb_voip_ds_block d-flex align-items-center gap-1 border rounded bg-view p-1 mb-1"
+                                        t-att-class="{
+                                            o_wb_voip_ds_gewaehlt: block.uid === state.gewaehlt,
+                                            o_wb_voip_ds_unerlaubt: !erlaubt(block),
+                                        }"
+                                        t-att-data-uid="block.uid" t-att-data-art="block.art">
+                                        <span class="o_wb_voip_ds_griff px-1 text-muted" title="Ziehen zum Verschieben"
+                                              aria-hidden="true"><i class="fa fa-arrows"/></span>
+                                        <button type="button"
+                                                class="o_wb_voip_ds_block_wahl btn btn-link text-start flex-grow-1 p-0 text-truncate"
+                                                t-att-aria-pressed="block.uid === state.gewaehlt ? 'true' : 'false'"
+                                                t-on-click="() => this.waehlen(block.uid)">
+                                            <span t-esc="artName(block.art)"/>
+                                            <span t-if="block.titel" class="text-muted ms-1">· <t t-esc="block.titel"/></span>
+                                            <span t-if="blockFehler(block)" class="o_wb_voip_ds_fehler text-danger small ms-1"
+                                                  t-esc="blockFehler(block)"/>
+                                        </button>
+                                        <button type="button" class="o_wb_voip_ds_hoch btn btn-sm btn-light"
+                                                t-att-disabled="!kannVerschieben(block, -1)"
+                                                t-att-aria-label="knopfLabel('hoch', block)" title="Nach oben"
+                                                t-on-click="() => this.verschieben(block.uid, -1)">
+                                            <i class="fa fa-arrow-up" aria-hidden="true"/>
+                                        </button>
+                                        <button type="button" class="o_wb_voip_ds_runter btn btn-sm btn-light"
+                                                t-att-disabled="!kannVerschieben(block, 1)"
+                                                t-att-aria-label="knopfLabel('runter', block)" title="Nach unten"
+                                                t-on-click="() => this.verschieben(block.uid, 1)">
+                                            <i class="fa fa-arrow-down" aria-hidden="true"/>
+                                        </button>
+                                        <button type="button" class="o_wb_voip_ds_entfernen btn btn-sm btn-light"
+                                                t-att-aria-label="knopfLabel('entfernen', block)" title="Entfernen"
+                                                t-on-click="() => this.entfernen(block.uid)">
+                                            <i class="fa fa-trash" aria-hidden="true"/>
+                                        </button>
+                                    </li>
+                                </ul>
+                            </div>
+                        </t>
+                    </div>
+                </section>
+
+                <!-- Eigenschaften des gewählten Blocks -->
+                <section class="o_wb_voip_ds_eigenschaften" aria-labelledby="wb_voip_ds_eig_titel">
+                    <h2 id="wb_voip_ds_eig_titel" class="h6">Eigenschaften</h2>
+                    <t t-set="block" t-value="gewaehlterBlock"/>
+                    <p t-if="!block" class="text-muted small">Block in der Mitte wählen.</p>
+                    <t t-else="">
+                        <p class="fw-bold mb-2" t-esc="artName(block.art)"/>
+                        <div class="mb-2">
+                            <label class="form-label small mb-1" for="wb_voip_ds_titel">Titel</label>
+                            <input id="wb_voip_ds_titel" class="o_wb_voip_ds_titel form-control" type="text"
+                                   maxlength="200" t-model="block.titel"/>
+                        </div>
+                        <div t-if="zweispaltig" class="mb-2">
+                            <label class="form-label small mb-1" for="wb_voip_ds_spalte">Spalte</label>
+                            <select id="wb_voip_ds_spalte" class="o_wb_voip_ds_spalte_wahl form-select"
+                                    t-model="block.spalte">
+                                <option value="1">Spalte 1</option>
+                                <option value="2">Spalte 2</option>
+                            </select>
+                        </div>
+                        <div t-if="block.art === 'protokolle' or block.art === 'aufgaben'" class="mb-2">
+                            <label class="form-label small mb-1" for="wb_voip_ds_anzahl">Anzahl</label>
+                            <input id="wb_voip_ds_anzahl" class="o_wb_voip_ds_anzahl form-control" type="number"
+                                   min="1" max="20" step="1" t-model.number="block.anzahl"/>
+                        </div>
+                        <div t-if="block.art === 'text'" class="mb-2">
+                            <label class="form-label small mb-1" for="wb_voip_ds_text">Text (nur Klartext)</label>
+                            <textarea id="wb_voip_ds_text" class="o_wb_voip_ds_text form-control" rows="4"
+                                      maxlength="2000" t-model="block.text"/>
+                        </div>
+                        <div t-if="block.art === 'felder'" class="mb-2">
+                            <label class="form-label small mb-1" for="wb_voip_ds_feldsuche">Felder</label>
+                            <input id="wb_voip_ds_feldsuche" class="o_wb_voip_ds_feldsuche form-control mb-1"
+                                   type="search" placeholder="Feld suchen …" t-model="state.feldsuche"/>
+                            <div class="o_wb_voip_ds_feldliste border rounded p-1">
+                                <label t-foreach="gefilterteFelder" t-as="feld" t-key="feld.id"
+                                       class="o_wb_voip_ds_feld d-flex align-items-center gap-2 small">
+                                    <input type="checkbox" class="form-check-input mt-0"
+                                           t-att-checked="block.feld_ids.includes(feld.id)"
+                                           t-on-change="(ev) => this.feldUmschalten(feld.id, ev.target.checked)"/><t t-esc="feld.label"/>
+                                </label>
+                            </div>
+                        </div>
+                    </t>
+                </section>
+            </div>
+
+            <!-- Live-Vorschau mit denselben Komponenten wie Fenster und Popup -->
+            <section t-if="entwurf" class="o_wb_voip_ds_vorschau_bereich mt-3"
+                     aria-labelledby="wb_voip_ds_vorschau_titel">
+                <h2 id="wb_voip_ds_vorschau_titel" class="h6">Vorschau</h2>
+                <div class="o_wb_voip_ds_vorschau border rounded p-3"
+                     t-att-class="vorschauKlasse">
+                    <t t-set="vd" t-value="vorschauDaten"/>
+                    <LayoutBloecke layout="vorschauLayout" ort="entwurf.ort" kontakt="vd.kontakt"
+                                   protokolle="vd.protokolle" aufgaben="vd.aufgaben" aktionen="vd.aktionen"
+                                   anruf="beispielAnruf" mitName="istPopup" einspaltig="istPopup"
+                                   onAktion.bind="vorschauAktion"/>
+                </div>
+            </section>
+        </div>
+    </t>
+</templates>

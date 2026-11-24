@@ -17,4 +17,7 @@
     <menuitem id="wb_voip_menu_layout" name="Fenster-Layouts" parent="wb_voip_menu_root"
               action="wb_voip_layout_action" sequence="50"
               groups="wb_voip.group_wb_voip_manager"/>
+    <menuitem id="wb_voip_menu_layout_designer" name="Layout-Designer" parent="wb_voip_menu_root"
+              action="wb_voip_layout_designer_action" sequence="55"
+              groups="wb_voip.group_wb_voip_manager"/>
 </odoo>

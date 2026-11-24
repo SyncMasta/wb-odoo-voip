@@ -1,0 +1,54 @@
+// WB VoIP Layout-Designer: Palette | Aufbau | Eigenschaften, darunter die Vorschau
+.o_wb_voip_designer {
+    .o_wb_voip_ds_raster {
+        display: grid;
+        grid-template-columns: minmax(10rem, 14rem) minmax(16rem, 1fr) minmax(14rem, 20rem);
+        gap: 1rem;
+
+        @include media-breakpoint-down(lg) {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .o_wb_voip_ds_liste {
+        // leere Spalte bleibt ein Ziel zum Ablegen
+        min-height: 3rem;
+    }
+
+    .o_wb_voip_ds_griff {
+        cursor: grab;
+    }
+
+    .o_wb_voip_ds_block.o_wb_voip_ds_gewaehlt {
+        border-color: $primary !important;
+        box-shadow: 0 0 0 1px $primary;
+    }
+
+    .o_wb_voip_ds_block.o_wb_voip_ds_unerlaubt {
+        border-color: $danger !important;
+    }
+
+    .o_wb_voip_ds_feldliste {
+        max-height: 16rem;
+        overflow-y: auto;
+    }
+
+    .o_wb_voip_ds_gruppen,
+    .o_wb_voip_ds_beispiel {
+        min-width: 14rem;
+    }
+
+    // Vorschau so breit wie das Fenster später (höchstens verfügbare Breite)
+    .o_wb_voip_ds_vorschau {
+        max-width: 100%;
+        width: 720px;
+
+        &.o_wb_voip_ds_vorschau_breit {
+            width: 960px;
+        }
+
+        &.o_wb_voip_ds_vorschau_sehr_breit {
+            width: 1200px;
+        }
+    }
+}
