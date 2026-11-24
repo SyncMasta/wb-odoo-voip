@@ -15,13 +15,14 @@ from odoo.fields import Domain
 from odoo.tools import html2plaintext, plaintext2html
 
 from odoo.addons.wb_license_client.models.wb_license_client import license_required
+from odoo.addons.web.controllers.utils import clean_action
 
 from ..tools import serverfelder
 from ..tools.eingaben import limit_pruefen
 from ..tools.rechte import nur_voip_benutzer
 from ..tools.nummer import e164
 from . import PRODUKT_CODE
-from .wb_voip_aktion import URL_PLATZHALTER_MUSTER, WbVoipAktion
+from .wb_voip_aktion import URL_PLATZHALTER_MUSTER, WbVoipAktion, serveraktion_erlaubt
 
 _logger = logging.getLogger(__name__)
 
@@ -52,6 +53,7 @@ KONTEXT_PROTOKOLLE = 5
 KONTEXT_AUFGABEN = 10
 KONTEXT_AKTIONEN = 100
 KONTEXT_TEXT_MAX = 300
+KONTEXT_HTML_MAX = 10_000
 # Kontext-Schlüssel des Aufrufers, die an eine Serveraktion weitergehen (alles andere nicht)
 SERVERAKTION_KONTEXT = ('lang', 'tz', 'allowed_company_ids')
 
@@ -65,6 +67,40 @@ def _text_pruefen(env, wert, bezeichnung, hoechstens, pflicht):
         return
     if not isinstance(wert, str) or len(wert) > hoechstens or (pflicht and not wert.strip()):
         raise UserError(env._("Ungültige Angabe: %s.", bezeichnung))
+
+
+def _kontext_mischen(text, zusatz):
+    """Return the context of a window action with ``zusatz`` added.
+
+    A literal dict is merged here. A dict with expressions (e.g. ``uid``) stays a string
+    for the web client to evaluate; ``zusatz`` (ints/strings only) is appended inside its
+    braces. Anything else is dropped (only ``zusatz`` remains). Nothing is evaluated here.
+    """
+    if not text:
+        return dict(zusatz)
+    try:
+        wert = ast.literal_eval(text)
+    except (ValueError, SyntaxError, TypeError, MemoryError, RecursionError):
+        wert = None
+    if isinstance(wert, dict):
+        return {**wert, **zusatz}
+    try:
+        baum = ast.parse(text.strip(), mode='eval')
+    except (SyntaxError, ValueError, MemoryError, RecursionError):
+        return dict(zusatz)
+    dict_knoten = baum.body
+    if not isinstance(dict_knoten, ast.Dict) or None in dict_knoten.keys \
+            or dict_knoten.end_lineno is None:
+        return dict(zusatz)
+    # Position der schließenden Klammer aus dem Syntaxbaum (Kommentare dahinter bleiben außen vor)
+    # (end_col_offset zählt UTF-8-Bytes)
+    quelle = text.strip().encode('utf-8')
+    zeilen = quelle.split(b'\n')
+    ende = sum(len(z) + 1 for z in zeilen[:dict_knoten.end_lineno - 1]) \
+        + dict_knoten.end_col_offset - 1
+    innen = quelle[:ende].decode('utf-8').rstrip()
+    trenner = '' if innen.endswith(('{', ',')) else ', '
+    return innen + trenner + ', '.join(f'{k!r}: {v!r}' for k, v in zusatz.items()) + '}'
 
 
 class WbVoipAnruf(models.Model):
@@ -420,12 +456,17 @@ class WbVoipAnruf(models.Model):
         if not partner:
             return False
         firma = partner.parent_id._filtered_access('read')
+
+        def lesbar(name):
+            return partner[name] or False if partner._has_field_access(
+                partner._fields[name], 'read') else False
+
         return {
             'id': partner.id,
             'name': partner.name or partner.display_name,
-            'firma': firma.name if firma else (partner.company_name or False),
-            'telefon': partner.phone or False,
-            'email': partner.email or False,
+            'firma': firma.name if firma else lesbar('company_name'),
+            'telefon': lesbar('phone'),
+            'email': lesbar('email'),
             'bild_url': f'/web/image/res.partner/{partner.id}/avatar_128',
         }
 
@@ -440,7 +481,8 @@ class WbVoipAnruf(models.Model):
         ], limit=KONTEXT_PROTOKOLLE)
         ergebnis = []
         for protokoll in protokolle:
-            text = html2plaintext(protokoll.beschreibung) if protokoll.beschreibung else ''
+            html = (protokoll.beschreibung or '')[:KONTEXT_HTML_MAX]
+            text = html2plaintext(html) if html else ''
             ergebnis.append({
                 'id': protokoll.id,
                 'datum': fields.Datetime.to_string(protokoll.datum) if protokoll.datum else False,
@@ -475,7 +517,14 @@ class WbVoipAnruf(models.Model):
     def _wb_voip_aktionen(self):
         """Return the buttons that apply to this call for the caller (client data)."""
         self.ensure_one()
-        aktionen = self.env['wb.voip.aktion'].search([], limit=KONTEXT_AKTIONEN)
+        anruf = self.sudo()
+        zustand = 'beendet' if anruf.zustand in FINALE_ZUSTAENDE else anruf.zustand
+        aktionen = self.env['wb.voip.aktion'].search([
+            '|', '|', ('ort_anrufer_fenster', '=', True), ('ort_protokoll_popup', '=', True),
+            ('ort_softphone', '=', True),
+            ('richtung', 'in', ['beide', anruf.richtung]),
+            ('zustand', 'in', ['immer', zustand]),
+        ], limit=KONTEXT_AKTIONEN)
         return [aktion._wb_voip_fuer_client() for aktion in aktionen
                 if aktion._wb_voip_passend(self)]
 
@@ -518,16 +567,11 @@ class WbVoipAnruf(models.Model):
         self.env[res_model].check_access('read')
         daten = fenster.read(
             ['name', 'res_model', 'view_mode', 'views', 'target', 'domain', 'context'])[0]
-        kontext = {}
-        try:
-            wert = ast.literal_eval(daten['context'] or '{}')
-            if isinstance(wert, dict):
-                kontext = wert
-        except (ValueError, SyntaxError, TypeError, MemoryError, RecursionError):
-            pass  # Kontext mit Ausdrücken (z. B. uid) wird nicht übernommen
+        zusatz = {}
         if partner:
-            kontext['default_partner_id'] = partner.id
-        kontext['wb_voip_anruf_id'] = self.id
+            zusatz['default_partner_id'] = partner.id
+        zusatz['wb_voip_anruf_id'] = self.id
+        kontext = _kontext_mischen(daten['context'], zusatz)
         return {
             'type': 'ir.actions.act_window',
             'name': daten['name'],
@@ -542,12 +586,21 @@ class WbVoipAnruf(models.Model):
     def _wb_voip_serveraktion(self, aktion, partner):
         """Run the button's server action as the caller on the call, contact or record.
 
-        Odoo's ``run()`` checks the action's groups, or (without groups) write access to
-        the model and records. With groups it runs ``object_write``/``object_create``/
-        ``object_copy`` as superuser without a record check, so the write access to the
-        target record is always checked here first.
+        Odoo 19 runs most server action types with superuser rights (``object_write``,
+        ``object_create``, ``object_copy``, ``multi`` children, webhooks, mail types).
+        Allowed are only ``code`` (``run()`` evaluates it with the caller's env) and
+        ``object_write`` on a field of the target itself, which is written here with
+        ``write()`` as the caller (ACL, record rules, field groups apply), not via ``run()``.
         """
         server = aktion.sudo().server_action_id
+        if not serveraktion_erlaubt(server):
+            raise UserError(self.env._(
+                "Diese Art von Serveraktion ist für Anruf-Buttons nicht erlaubt."))
+        if server.warning:
+            raise UserError(self.env._("Die Serveraktion des Buttons ist fehlerhaft."))
+        # wie run(): Gruppen der Serveraktion (gilt auch für object_write ohne run())
+        if server.group_ids and not (server.group_ids & self.env.user.all_group_ids):
+            raise AccessError(self.env._("Sie dürfen diese Serveraktion nicht ausführen."))
         modell = server.model_id.model
         if modell == self._name:
             datensatz = self
@@ -568,8 +621,18 @@ class WbVoipAnruf(models.Model):
             'wb_voip_anruf_id': self.id,
             'wb_voip_partner_id': partner.id or False,
         })
-        ergebnis = self.env['ir.actions.server'].browse(server.id).with_context(kontext).run()
-        return ergebnis if isinstance(ergebnis, dict) and ergebnis else False
+        Server = self.env['ir.actions.server'].with_context(kontext)
+        if server.state == 'object_write':
+            # Wert mit Odoos eigener Auswertung bestimmen (Kontext als Benutzer),
+            # geschrieben wird als Benutzer
+            auswertung = Server._get_eval_context(server)
+            wert = server.with_context(kontext)._eval_value(eval_context=auswertung)[server.id]
+            datensatz.with_context(kontext).write({server.update_field_id.name: wert})
+            return False
+        ergebnis = Server.browse(server.id).run()
+        if isinstance(ergebnis, dict) and ergebnis:
+            return clean_action(ergebnis, env=self.env)
+        return False
 
     def _wb_voip_url(self, aktion, partner):
         """Return the button's web address with URL-encoded placeholder values."""

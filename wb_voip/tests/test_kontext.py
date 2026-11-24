@@ -1,6 +1,10 @@
+import ast
 import json
+from datetime import timedelta
+from unittest.mock import patch
 
-from odoo.exceptions import AccessError, UserError
+from odoo import fields
+from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tests import tagged
 
 from .common import WbVoipCase
@@ -98,6 +102,16 @@ class TestKontext(WbVoipCase):
         self.assertEqual(kontakt['email'], 'erika@example.com')
         self.assertEqual(kontakt['bild_url'], f'/web/image/res.partner/{self.kontakt.id}/avatar_128')
 
+    def test_kontext_feldgruppe(self):
+        # Telefon/E-Mail hinter einer Gruppe, die A fehlt: nicht ausgeben
+        felder = type(self.env['res.partner'])._fields
+        with patch.object(felder['email'], 'groups', 'base.group_system'), \
+                patch.object(felder['phone'], 'groups', 'base.group_system'):
+            kontakt = self._kontext(self._anruf())['kontakt']
+        self.assertIs(kontakt['email'], False)
+        self.assertIs(kontakt['telefon'], False)
+        self.assertEqual(kontakt['name'], 'Erika Muster')
+
     def test_kontext_ohne_kontakt(self):
         daten = self._kontext(self._anruf(partner_id=False))
         self.assertIs(daten['kontakt'], False)
@@ -113,13 +127,18 @@ class TestKontext(WbVoipCase):
         self.assertEqual(daten['aufgaben'], [])
 
     def test_kontext_protokolle(self):
+        erzeugt = []
         for i in range(7):
-            self._protokoll(beschreibung=f'<p>Gespräch <b>{i}</b></p>' + 'x' * 400)
+            erzeugt.append(self._protokoll(
+                beschreibung=f'<p>Gespräch <b>{i}</b></p>' + 'x' * 400,
+                datum=fields.Datetime.now() - timedelta(hours=10 - i)))
         fremd = self._protokoll(benutzer=self.user_b)
         anderer = self._protokoll(partner_id=self.firma.id)
         daten = self._kontext(self._anruf())
         protokolle = daten['protokolle']
         self.assertEqual(len(protokolle), 5)
+        # neueste zuerst
+        self.assertEqual([p['id'] for p in protokolle], [p.id for p in reversed(erzeugt[2:])])
         ids = {p['id'] for p in protokolle}
         self.assertNotIn(fremd.id, ids)
         self.assertNotIn(anderer.id, ids)
@@ -231,6 +250,23 @@ class TestKontext(WbVoipCase):
         self.assertLessEqual(set(ergebnis), {
             'type', 'res_model', 'view_mode', 'views', 'target', 'name', 'domain', 'context'})
 
+    def test_fenster_kontext_mit_ausdruck(self):
+        fenster = self.env['ir.actions.act_window'].create({
+            'name': 'Kontakte', 'res_model': 'res.partner',
+            'context': "{'default_user_id': uid}", 'domain': "[('user_id', '=', uid)]"})
+        aktion = self._aktion(art='fenster', act_window_id=fenster.id)
+        anruf = self._anruf()
+        ergebnis = self._ausfuehren(anruf, aktion.id)
+        self.assertEqual(ergebnis['domain'], "[('user_id', '=', uid)]")
+        kontext = ergebnis['context']
+        self.assertIsInstance(kontext, str)
+        baum = ast.parse(kontext, mode='eval').body
+        self.assertIsInstance(baum, ast.Dict)
+        werte = {k.value: v for k, v in zip(baum.keys, baum.values)}
+        self.assertIsInstance(werte['default_user_id'], ast.Name)
+        self.assertEqual(werte['default_partner_id'].value, self.kontakt.id)
+        self.assertEqual(werte['wb_voip_anruf_id'].value, anruf.id)
+
     def test_fenster_ohne_leserecht(self):
         fenster = self.env['ir.actions.act_window'].create({
             'name': 'Parameter', 'res_model': 'ir.config_parameter'})
@@ -288,6 +324,74 @@ class TestKontext(WbVoipCase):
         with self.assertRaises(AccessError):
             self._ausfuehren(self._anruf(), aktion.id)
         self.assertFalse(self.kontakt.function)
+
+    def test_serveraktion_relationspfad_abgelehnt(self):
+        server = self._serveraktion_schreiben(update_path='parent_id.function')
+        with self.assertRaisesRegex(ValidationError, 'nicht erlaubt'):
+            self._aktion(art='serveraktion', server_action_id=server.id)
+        # später geändert: zur Laufzeit abgelehnt und nicht angeboten
+        server2 = self._serveraktion_schreiben()
+        aktion = self._aktion(art='serveraktion', server_action_id=server2.id)
+        anruf = self._anruf()
+        server2.update_path = 'parent_id.function'
+        self.assertNotIn(aktion.id, [a['id'] for a in self._kontext(anruf)['aktionen']])
+        with self.assertRaises(UserError):
+            self._ausfuehren(anruf, aktion.id)
+        self.assertFalse(self.firma.function)
+
+    def test_serveraktion_laufzeit_meldung(self):
+        server = self._serveraktion_schreiben()
+        aktion = self._aktion(art='serveraktion', server_action_id=server.id)
+        anruf = self._anruf().with_user(self.user_a)
+        server.state = 'object_create'
+        with self.assertRaisesRegex(UserError, 'nicht erlaubt'):
+            anruf._wb_voip_serveraktion(aktion, self.kontakt.with_user(self.user_a))
+
+    def test_serveraktion_arten_abgelehnt(self):
+        kind = self.env['ir.actions.server'].create({
+            'name': 'Kind', 'model_id': self.env.ref('base.model_res_partner').id,
+            'state': 'code', 'code': "record.write({'function': 'Kind'})"})
+        multi = self.env['ir.actions.server'].create({
+            'name': 'Multi', 'model_id': self.env.ref('base.model_res_partner').id,
+            'state': 'multi', 'child_ids': [(6, 0, [kind.id])]})
+        anlegen = self.env['ir.actions.server'].create({
+            'name': 'Anlegen', 'model_id': self.env.ref('base.model_res_partner').id,
+            'state': 'object_create', 'crud_model_id': self.env.ref('base.model_res_partner').id,
+            'value': 'Neu'})
+        for server in (multi, anlegen):
+            with self.assertRaisesRegex(ValidationError, 'nicht erlaubt', msg=server.state):
+                self._aktion(art='serveraktion', server_action_id=server.id)
+
+    def test_serveraktion_serverfeld(self):
+        server = self.env['ir.actions.server'].create({
+            'name': 'Zustand', 'model_id': self.env.ref('wb_voip.model_wb_voip_anruf').id,
+            'state': 'object_write', 'update_path': 'zustand',
+            'evaluation_type': 'value', 'value': 'beendet'})
+        aktion = self._aktion(art='serveraktion', server_action_id=server.id)
+        anruf = self._anruf()
+        with self.assertRaises(UserError):
+            self._ausfuehren(anruf, aktion.id)
+        self.assertEqual(anruf.zustand, 'klingelt')
+
+    def test_serveraktion_code_als_benutzer(self):
+        server = self.env['ir.actions.server'].create({
+            'name': 'Wer', 'model_id': self.env.ref('base.model_res_partner').id,
+            'state': 'code',
+            'code': "record.write({'function': '%s/%s' % (env.uid, env.su)})"})
+        aktion = self._aktion(art='serveraktion', server_action_id=server.id)
+        self._ausfuehren(self._anruf(), aktion.id)
+        self.assertEqual(self.kontakt.function, f'{self.user_a.id}/False')
+
+    def test_serveraktion_ergebnis_bereinigt(self):
+        server = self.env['ir.actions.server'].create({
+            'name': 'Fenster', 'model_id': self.env.ref('wb_voip.model_wb_voip_anruf').id,
+            'state': 'code',
+            'code': "action = {'type': 'ir.actions.act_window', 'res_model': 'res.partner', "
+                    "'view_mode': 'form', 'views': [[False, 'form']], 'res_id': record.partner_id.id}"})
+        aktion = self._aktion(art='serveraktion', server_action_id=server.id)
+        ergebnis = self._ausfuehren(self._anruf(), aktion.id)
+        self.assertEqual(ergebnis['res_model'], 'res.partner')
+        self.assertEqual(ergebnis['res_id'], self.kontakt.id)
 
     def test_serveraktion_am_anruf(self):
         server = self.env['ir.actions.server'].create({

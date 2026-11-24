@@ -19,6 +19,24 @@ DOMAIN_MAX = 2000
 DOMAIN_TIEFE = 3
 
 
+def serveraktion_erlaubt(server):
+    """Return True if a button may run this server action.
+
+    Odoo 19 runs ``object_create``, ``object_copy``, ``multi`` children, webhooks and the
+    mail types with superuser rights; only ``code`` (runs with the caller's env) and
+    ``object_write`` on a field of the record itself (we write it as the caller) are allowed.
+    """
+    server = server.sudo()
+    if not server:
+        return False
+    if server.state == 'code':
+        return True
+    if server.state == 'object_write':
+        pfad = server.update_path or ''
+        return bool(pfad) and '.' not in pfad and bool(server.update_field_id)
+    return False
+
+
 class WbVoipAktion(models.Model):
     """Customer-configurable call button (shown in the caller window, log popup, softphone)."""
 
@@ -72,6 +90,14 @@ class WbVoipAktion(models.Model):
                 raise ValidationError(self.env._("Bitte eine Serveraktion wählen."))
             if aktion.art == 'url' and not aktion.url_vorlage:
                 raise ValidationError(self.env._("Bitte eine Webadresse angeben."))
+
+    @api.constrains('art', 'server_action_id')
+    def _check_serveraktion(self):
+        for aktion in self:
+            if aktion.art == 'serveraktion' and aktion.server_action_id \
+                    and not serveraktion_erlaubt(aktion.server_action_id):
+                raise ValidationError(self.env._(
+                    "Diese Art von Serveraktion ist für Anruf-Buttons nicht erlaubt."))
 
     @api.constrains('icon')
     def _check_icon(self):
@@ -192,6 +218,9 @@ class WbVoipAktion(models.Model):
         if anruf.user_id != viewer:
             return False
         if self.group_ids and not (self.group_ids & viewer.all_group_ids):
+            return False
+        # Serveraktionen können sich später ändern: hier erneut prüfen
+        if self.art == 'serveraktion' and not serveraktion_erlaubt(self.sudo().server_action_id):
             return False
         if self.sudo().partner_domain and self.sudo().partner_domain.strip():
             partner = anruf.partner_id
