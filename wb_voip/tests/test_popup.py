@@ -129,8 +129,9 @@ class TestPopup(WbVoipCase):
         return anruf, protokoll
 
     def _taste(self, **werte):
-        vals = {'name': 'Taste', 'art': 'neuer_kontakt', 'ort_protokoll_popup': True,
-                'zustand': 'beendet'}
+        # „Neuer Kontakt“ entfällt bei Anrufen mit Kontakt: hier eine Webadresse
+        vals = {'name': 'Taste', 'art': 'url', 'url_vorlage': 'https://x.example/{nummer}',
+                'ort_protokoll_popup': True, 'zustand': 'beendet'}
         vals.update(werte)
         return self.env['wb.voip.aktion'].create(vals)
 
@@ -173,7 +174,7 @@ class TestPopup(WbVoipCase):
         anruf, protokoll = self._anruf_mit_protokoll()
         taste = self._taste()
         ergebnis = anruf.with_user(self.user_a).wb_voip_aktion_ausfuehren(taste.id)
-        self.assertEqual(ergebnis['res_model'], 'res.partner')
+        self.assertEqual(ergebnis['type'], 'ir.actions.act_url')
         # Zustand „beendet“ muss der Button zulassen
         zu_frueh = self._taste(zustand='laeuft')
         with self.assertRaises(UserError):

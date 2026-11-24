@@ -155,6 +155,19 @@ class TestAktion(WbVoipCase):
             aktion.with_user(self.user_manager).read([feld])
         self.assertNotIn('url_vorlage', aktion.with_user(self.user_a)._wb_voip_fuer_client())
 
+    def test_ziele_und_gruppen_nur_manager(self):
+        # Fensteraktion, Serveraktion und Gruppen verraten Interna: nur Administratoren lesen sie
+        fenster = self._neu(art='fenster', act_window_id=self.fenster.id, group_ids=[
+            (6, 0, [self.env.ref('wb_voip.group_wb_voip_user').id])])
+        server = self._neu(art='serveraktion', server_action_id=self.server.id)
+        for aktion, feld in ((fenster, 'act_window_id'), (server, 'server_action_id'),
+                             (fenster, 'group_ids')):
+            with self.assertRaises(AccessError, msg=feld):
+                aktion.with_user(self.user_a).read([feld])
+            aktion.with_user(self.user_manager).read([feld])
+        # die Laufzeit liest sie nach den Prüfungen trotzdem (sudo)
+        self.assertTrue(fenster.with_user(self.user_a)._wb_voip_passend(self._anruf()))
+
     def test_passend_domain(self):
         aktion = self._neu(partner_domain="[('is_company', '=', True)]").with_user(self.user_a)
         self.assertTrue(aktion._wb_voip_passend(self._anruf(partner_id=self.firma.id)))

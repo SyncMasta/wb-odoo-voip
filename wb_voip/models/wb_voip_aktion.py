@@ -62,9 +62,12 @@ class WbVoipAktion(models.Model):
         [('immer', 'Immer'), ('klingelt', 'Während es klingelt'),
          ('laeuft', 'Während des Gesprächs'), ('beendet', 'Nach dem Anruf')],
         string='Zustand', required=True, default='immer')
+    # Ziele und Gruppen nur für Administratoren lesbar; die Laufzeit liest sie nach den
+    # Prüfungen per sudo
     group_ids = fields.Many2many(
         'res.groups', 'wb_voip_aktion_res_groups_rel', 'aktion_id', 'group_id',
-        string='Gruppen', help="Leer = alle Benutzer von WB VoIP.")
+        string='Gruppen', groups='wb_voip.group_wb_voip_manager',
+        help="Leer = alle Benutzer von WB VoIP.")
     partner_domain = fields.Char(
         string='Bedingung für Kontakte', groups='wb_voip.group_wb_voip_manager',
         help="Domain auf Kontakte, z. B. [('is_company', '=', True)]. Leer = immer; "
@@ -73,8 +76,12 @@ class WbVoipAktion(models.Model):
         [('fenster', 'Fenster öffnen'), ('serveraktion', 'Serveraktion'),
          ('url', 'Webadresse öffnen'), ('neuer_kontakt', 'Neuer Kontakt')],
         string='Art', required=True, default='fenster')
-    act_window_id = fields.Many2one('ir.actions.act_window', string='Fensteraktion', ondelete='cascade')
-    server_action_id = fields.Many2one('ir.actions.server', string='Serveraktion', ondelete='cascade')
+    act_window_id = fields.Many2one(
+        'ir.actions.act_window', string='Fensteraktion', ondelete='cascade',
+        groups='wb_voip.group_wb_voip_manager')
+    server_action_id = fields.Many2one(
+        'ir.actions.server', string='Serveraktion', ondelete='cascade',
+        groups='wb_voip.group_wb_voip_manager')
     url_vorlage = fields.Char(
         string='Webadresse', groups='wb_voip.group_wb_voip_manager',
         help="Nur https://. Platzhalter: {nummer}, {nummer_e164}, {partner_id}.")
@@ -217,7 +224,9 @@ class WbVoipAktion(models.Model):
         viewer = self.env.user
         if anruf.user_id != viewer:
             return False
-        if self.group_ids and not (self.group_ids & viewer.all_group_ids):
+        # Gruppen sind nur für Administratoren lesbar: nach der Eigentümerprüfung per sudo lesen
+        gruppen = self.sudo().group_ids
+        if gruppen and not (gruppen & viewer.all_group_ids):
             return False
         # Serveraktionen können sich später ändern: hier erneut prüfen
         if self.art == 'serveraktion' and not serveraktion_erlaubt(self.sudo().server_action_id):
@@ -254,7 +263,7 @@ class WbVoipAktion(models.Model):
             'name': self.name,
             'icon': self.icon or False,
             'farbe': self.farbe,
-            # nur die Art (z. B. „neuer_kontakt“ im Anrufer-Fenster ausblenden), keine Ziele
+            # nur die Art, keine Ziele (Fensteraktion, Serveraktion, Webadresse)
             'art': self.art,
             'orte': orte,
         }

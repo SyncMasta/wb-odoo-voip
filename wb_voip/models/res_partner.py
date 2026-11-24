@@ -1,8 +1,13 @@
+import logging
+
 from odoo import api, fields, models
+from odoo.exceptions import AccessError, MissingError, UserError
 
 from ..tools.eingaben import limit_pruefen, suchtext_pruefen
 from ..tools.nummer import e164
-from ..tools.rechte import nur_voip_benutzer
+from ..tools.rechte import ist_voip_benutzer, nur_voip_benutzer
+
+_logger = logging.getLogger(__name__)
 
 
 class ResPartner(models.Model):
@@ -24,6 +29,40 @@ class ResPartner(models.Model):
         anzahl = {partner.id: n for partner, n in gruppen}
         for partner in self:
             partner.wb_voip_protokoll_anzahl = anzahl.get(partner.id, 0)
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        # „Neuer Kontakt“ aus einem Anruf: der Kontext nennt den Anruf, der neue Kontakt
+        # wird mit ihm verknüpft. Unterkontakte (im selben Aufruf angelegt) sehen den
+        # Schlüssel nicht mehr.
+        anruf_id = self.env.context.get('wb_voip_anruf_id')
+        if anruf_id is not None:
+            self = self.with_context(wb_voip_anruf_id=False)
+        partner = super().create(vals_list)
+        if anruf_id and len(partner) == 1:
+            partner._wb_voip_anruf_verknuepfen(anruf_id)
+        return partner
+
+    def _wb_voip_anruf_verknuepfen(self, anruf_id):
+        """Link this new contact to the caller's own call ``anruf_id`` (from the context).
+
+        Silently ignored unless the id is an int naming the caller's own call that has
+        no contact readable by the caller yet; never raises.
+        """
+        self.ensure_one()
+        if type(anruf_id) is not int or anruf_id <= 0 or not ist_voip_benutzer(self.env):
+            return
+        anruf = self.env['wb.voip.anruf'].browse(anruf_id)
+        try:
+            with self.env.cr.savepoint():
+                if not anruf.exists():
+                    return
+                eigen = anruf._wb_voip_eigener()  # fremder Anruf: AccessError/UserError
+                if eigen.with_user(self.env.user)._wb_voip_lesbarer_kontakt():
+                    return  # schon zugeordnet: nicht umhängen
+                anruf._wb_voip_partner_setzen(self)
+        except (AccessError, UserError, MissingError):
+            _logger.debug("[wb_voip] Neuer Kontakt nicht mit Anruf %s verknüpft", anruf_id)
 
     @nur_voip_benutzer
     def action_wb_voip_protokolle(self):

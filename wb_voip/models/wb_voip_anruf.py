@@ -51,7 +51,9 @@ LOESCH_STAPEL = 1000
 # Anrufer-Kontext: Obergrenzen je Abruf
 KONTEXT_PROTOKOLLE = 5
 KONTEXT_AUFGABEN = 10
-KONTEXT_AKTIONEN = 100
+# Obergrenze der Buttons je Abruf (nach Ort, Richtung, Zustand und Gruppe vorgefiltert)
+KONTEXT_AKTIONEN = 200
+AKTION_ORTE = ('anrufer_fenster', 'protokoll_popup', 'softphone')
 KONTEXT_TEXT_MAX = 300
 KONTEXT_HTML_MAX = 10_000
 # Kontext-Schlüssel des Aufrufers, die an eine Serveraktion weitergehen (alles andere nicht)
@@ -570,22 +572,45 @@ class WbVoipAnruf(models.Model):
         """Return the buttons that apply to this call for the caller (client data).
 
         ``ort`` (``anrufer_fenster``, ``protokoll_popup``, ``softphone``) limits the list to
-        the buttons shown at that place; without it every place counts.
+        the buttons shown at that place; without it every place counts. "New contact" is
+        left out while the call has a contact the caller may read.
         """
         self.ensure_one()
         anruf = self.sudo()
+        if anruf.user_id != self.env.user:
+            return []
         zustand = 'beendet' if anruf.zustand in FINALE_ZUSTAENDE else anruf.zustand
         if ort is None:
             ort_domain = ['|', '|', ('ort_anrufer_fenster', '=', True),
                           ('ort_protokoll_popup', '=', True), ('ort_softphone', '=', True)]
         else:
             ort_domain = [(f'ort_{ort}', '=', True)]
-        aktionen = self.env['wb.voip.aktion'].search(ort_domain + [
+        domain = ort_domain + [
             ('richtung', 'in', ['beide', anruf.richtung]),
             ('zustand', 'in', ['immer', zustand]),
-        ], limit=KONTEXT_AKTIONEN)
+            # Gruppen schon in der Suche, damit fremde Buttons das Limit nicht aufbrauchen
+            '|', ('group_ids', '=', False), ('group_ids', 'in', self.env.user.all_group_ids.ids),
+        ]
+        if self._wb_voip_lesbarer_kontakt():
+            domain.append(('art', '!=', 'neuer_kontakt'))
+        # sudo nur zum Suchen: Gruppen sind für Benutzer nicht lesbar (Eigentümer oben geprüft);
+        # Obergrenze gegen übergroße Antworten, gezeigt werden ohnehin nur wenige
+        aktionen = self.env['wb.voip.aktion'].sudo().search(domain, limit=KONTEXT_AKTIONEN)
+        aktionen = aktionen.with_user(self.env.user)
         return [aktion._wb_voip_fuer_client() for aktion in aktionen
                 if aktion._wb_voip_passend(self)]
+
+    @nur_voip_benutzer
+    def wb_voip_aktionen(self, ort):
+        """Return only the buttons of place ``ort`` for the caller's own call (client data).
+
+        Lighter than ``wb_voip_kontext`` (no contact, logs or activities); used by the
+        softphone call view.
+        """
+        if not isinstance(ort, str) or ort not in AKTION_ORTE:
+            raise UserError(self.env._("Ungültige Angabe: %s.", self.env._("Ort")))
+        anruf = self._wb_voip_eigener()
+        return anruf.with_user(self.env.user)._wb_voip_aktionen(ort=ort)
 
     @nur_voip_benutzer
     @license_required(PRODUKT_CODE)
@@ -603,6 +628,9 @@ class WbVoipAnruf(models.Model):
         if not aktion or not aktion.active or not aktion._wb_voip_passend(eigen):
             raise UserError(self.env._("Dieser Button passt nicht zu diesem Anruf."))
         partner = eigen._wb_voip_lesbarer_kontakt()
+        # wie in der Auswahl: „Neuer Kontakt“ nur ohne lesbaren Kontakt
+        if aktion.art == 'neuer_kontakt' and partner:
+            raise UserError(self.env._("Dieser Button passt nicht zu diesem Anruf."))
         if aktion.art == 'fenster':
             return eigen._wb_voip_fenster(aktion, partner)
         if aktion.art == 'serveraktion':

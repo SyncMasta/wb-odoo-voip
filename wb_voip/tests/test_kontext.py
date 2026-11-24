@@ -174,7 +174,9 @@ class TestKontext(WbVoipCase):
         self.assertIn(am_datensatz.id, ids)
 
     def test_kontext_aktionen(self):
-        passt = self._aktion(name='Passt', ort_softphone=True)
+        # Webadresse: „Neuer Kontakt“ entfällt bei Anrufen mit Kontakt
+        passt = self._aktion(name='Passt', ort_softphone=True, art='url',
+                             url_vorlage='https://x.example/{nummer}')
         self._aktion(name='Falscher Zustand', zustand='laeuft')
         self._aktion(name='Falsche Richtung', richtung='ausgehend')
         self._aktion(name='Gruppe', group_ids=[
@@ -186,6 +188,77 @@ class TestKontext(WbVoipCase):
         self.assertEqual(aktionen[0]['id'], passt.id)
         self.assertEqual(aktionen[0]['orte'], ['anrufer_fenster', 'softphone'])
         self.assertNotIn('url_vorlage', aktionen[0])
+
+    def test_neuer_kontakt_nur_ohne_kontakt(self):
+        # Der Server blendet „Neuer Kontakt“ aus, sobald der Anruf einen lesbaren Kontakt hat
+        aktion = self._aktion()
+        mit = self._anruf()
+        self.assertNotIn(aktion.id, [a['id'] for a in self._kontext(mit)['aktionen']])
+        with self.assertRaises(UserError):
+            self._ausfuehren(mit, aktion.id)
+        ohne = self._anruf(partner_id=False)
+        self.assertIn(aktion.id, [a['id'] for a in self._kontext(ohne)['aktionen']])
+        # Kontakt nicht lesbar: zählt wie ohne Kontakt
+        unlesbar = self._anruf(partner_id=self.fremder_kontakt.id)
+        self.assertIn(aktion.id, [a['id'] for a in self._kontext(unlesbar)['aktionen']])
+
+    def test_aktionen_gruppen_vorgefiltert(self):
+        # Viele Buttons für eine fremde Gruppe verdrängen die passenden nicht aus dem Limit
+        manager = self.env.ref('wb_voip.group_wb_voip_manager')
+        self.env['wb.voip.aktion'].create([{
+            'name': f'Fremd {i}', 'art': 'neuer_kontakt', 'ort_anrufer_fenster': True,
+            'sequence': 1, 'group_ids': [(6, 0, [manager.id])]} for i in range(210)])
+        passt = self._aktion(name='Passt', sequence=99, art='url',
+                             url_vorlage='https://x.example/{nummer}')
+        aktionen = self._kontext(self._anruf())['aktionen']
+        self.assertEqual([a['id'] for a in aktionen], [passt.id])
+
+    # --- leichte Abfrage der Buttons (Softphone) ---
+
+    def test_aktionen_rpc(self):
+        softphone = self._aktion(name='Softphone', art='url', ort_anrufer_fenster=False,
+                                 ort_softphone=True, url_vorlage='https://x.example/{nummer}')
+        self._aktion(name='Nur Fenster', art='url', url_vorlage='https://x.example/{nummer}')
+        anruf = self._anruf()
+        aktionen = anruf.with_user(self.user_a).wb_voip_aktionen('softphone')
+        self.assertEqual([a['id'] for a in aktionen], [softphone.id])
+        self.assertEqual(set(aktionen[0]), {'id', 'name', 'icon', 'farbe', 'art', 'orte'})
+        self.assertEqual(anruf.with_user(self.user_a).wb_voip_aktionen('protokoll_popup'), [])
+        for schlecht in ('fremd', '', None, 1, ['softphone'], 'softphone' * 10):
+            with self.assertRaises(UserError, msg=repr(schlecht)):
+                anruf.with_user(self.user_a).wb_voip_aktionen(schlecht)
+        with self.assertRaises(AccessError):
+            anruf.with_user(self.user_b).wb_voip_aktionen('softphone')
+        with self.assertRaises(AccessError):
+            anruf.with_user(self.user_ohne).wb_voip_aktionen('softphone')
+
+    # --- Neuer Kontakt verknüpft den Anruf ---
+
+    def test_neuer_kontakt_verknuepft_eigenen_anruf(self):
+        anruf = self._anruf(partner_id=False)
+        protokoll = self._protokoll(partner_id=False, anruf_id=anruf.id)
+        anruf.protokoll_id = protokoll
+        neu = self.env['res.partner'].with_user(self.user_a).with_context(
+            wb_voip_anruf_id=anruf.id).create({'name': 'Neu Angelegt'})
+        self.assertEqual(anruf.partner_id, neu)
+        self.assertEqual(protokoll.partner_id, neu)
+
+    def test_neuer_kontakt_fremder_anruf_ignoriert(self):
+        fremd = self._anruf(benutzer=self.user_b, partner_id=False)
+        neu = self.env['res.partner'].with_user(self.user_a).with_context(
+            wb_voip_anruf_id=fremd.id).create({'name': 'Neu Angelegt'})
+        self.assertTrue(neu)
+        self.assertFalse(fremd.partner_id)
+        # unbekannte Id oder falscher Typ: ebenfalls kein Fehler
+        for schlecht in (fremd.id + 10_000, 'x', [fremd.id], True):
+            self.env['res.partner'].with_user(self.user_a).with_context(
+                wb_voip_anruf_id=schlecht).create({'name': 'Noch einer'})
+        self.assertFalse(fremd.partner_id)
+
+    def test_neuer_kontakt_ohne_schluessel_unveraendert(self):
+        anruf = self._anruf(partner_id=False)
+        self.env['res.partner'].with_user(self.user_a).create({'name': 'Ohne Bezug'})
+        self.assertFalse(anruf.partner_id)
 
     # --- Ausführen: Eingaben und Rechte ---
 
