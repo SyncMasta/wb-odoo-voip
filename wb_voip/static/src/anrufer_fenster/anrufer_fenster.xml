@@ -27,6 +27,31 @@
                         <div t-if="fenster.beendet" class="o_wb_voip_af_beendet small">Anruf beendet</div>
                     </div>
                 </div>
+                <!-- Gesprächsknöpfe immer im Kopf: das Panel kann die Anrufansicht verdecken -->
+                <div t-if="laufenderAnruf" class="o_wb_voip_af_gespraech d-flex gap-2 flex-shrink-0">
+                    <t t-if="klingeltEingehend">
+                        <button type="button" class="o_wb_voip_af_annehmen btn btn-success"
+                                title="Annehmen" aria-label="Annehmen" t-on-click="annehmen">
+                            <i class="fa fa-phone" aria-hidden="true"/>
+                        </button>
+                        <button type="button" class="o_wb_voip_af_ablehnen btn btn-danger"
+                                title="Ablehnen" aria-label="Ablehnen" t-on-click="ablehnen">
+                            <i class="fa fa-times" aria-hidden="true"/>
+                        </button>
+                    </t>
+                    <t t-else="">
+                        <button type="button" class="o_wb_voip_af_stumm btn btn-outline-light"
+                                t-att-class="{active: laufenderAnruf.stumm}" t-att-disabled="!imGespraech"
+                                t-att-aria-pressed="laufenderAnruf.stumm ? 'true' : 'false'"
+                                title="Stumm" aria-label="Stumm" t-on-click="stumm">
+                            <i class="fa fa-microphone-slash" aria-hidden="true"/>
+                        </button>
+                        <button type="button" class="o_wb_voip_af_auflegen btn btn-danger"
+                                title="Auflegen" aria-label="Auflegen" t-on-click="auflegen">
+                            <i class="fa fa-phone o_wb_voip_auflegen_symbol" aria-hidden="true"/>
+                        </button>
+                    </t>
+                </div>
                 <button type="button" class="o_wb_voip_af_schliessen btn btn-sm"
                         title="Anrufer-Fenster schließen" aria-label="Anrufer-Fenster schließen"
                         t-on-click="schliessen">

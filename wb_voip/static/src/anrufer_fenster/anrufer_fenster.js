@@ -1,5 +1,10 @@
 import { Component, onWillUnmount, useEffect, useRef, useState } from "@odoo/owl";
-import { deserializeDateTime, formatDateTime } from "@web/core/l10n/dates";
+import {
+    deserializeDate,
+    deserializeDateTime,
+    formatDate,
+    formatDateTime,
+} from "@web/core/l10n/dates";
 import { registry } from "@web/core/registry";
 import { useBus, useService } from "@web/core/utils/hooks";
 import { session } from "@web/session";
@@ -62,6 +67,12 @@ export class AnruferFenster extends Component {
 
         useBus(this.telefon.bus, "anruf-aktiv", ({ detail }) => this._aktiv(detail));
         useBus(this.telefon.bus, "anruf-beendet", ({ detail }) => this._beendet(detail));
+        // Buttons mit Zustand „Während des Gesprächs“ gibt der Server erst nach der Annahme
+        useBus(this.telefon.bus, "anruf-angenommen", ({ detail }) => {
+            if (this.fenster.offen && detail?.anrufId === this.fenster.anrufId) {
+                this.laden();
+            }
+        });
 
         this._beiKontext = (payload) => {
             const id = payload?.anruf_id;
@@ -139,6 +150,8 @@ export class AnruferFenster extends Component {
             return;
         }
         this.fenster.beendet = true;
+        // einmal neu laden: Buttons „Nach dem Anruf“ für die Zeit bis zum Schließen
+        this.laden();
         this._schliessenPlanen();
     }
 
@@ -278,14 +291,46 @@ export class AnruferFenster extends Component {
     }
 
     get aufgaben() {
-        return this.daten?.aufgaben || [];
+        return (this.daten?.aufgaben || []).map((a) => ({
+            ...a,
+            faellig: a.faellig ? formatDate(deserializeDate(a.faellig)) : "",
+        }));
     }
 
-    /** Buttons für das Fenster; „Neuer Kontakt“ nur ohne bekannten Kontakt. */
+    /** Buttons für das Fenster (der Server wählt aus, z. B. „Neuer Kontakt“ nur ohne Kontakt). */
     get aktionen() {
-        return (this.daten?.aktionen || []).filter(
-            (a) => !(this.kontakt && a.art === "neuer_kontakt")
-        );
+        return this.daten?.aktionen || [];
+    }
+
+    // --- Gesprächsknöpfe (dieselben Dienst-Methoden wie die Anrufansicht) ---------------
+
+    /** Eingehender Anruf, der noch klingelt: Annehmen/Ablehnen statt Stumm/Auflegen. */
+    get klingeltEingehend() {
+        const anruf = this.laufenderAnruf;
+        return Boolean(anruf && anruf.richtung === "eingehend" && !anruf.annahme);
+    }
+
+    get imGespraech() {
+        return this.laufenderAnruf?.zustand === "laeuft";
+    }
+
+    annehmen() {
+        return this.telefon.annehmen();
+    }
+
+    ablehnen() {
+        return this.telefon.ablehnen();
+    }
+
+    auflegen() {
+        return this.telefon.auflegen();
+    }
+
+    stumm() {
+        const anruf = this.laufenderAnruf;
+        if (anruf) {
+            this.telefon.stumm(!anruf.stumm);
+        }
     }
 
     // --- Bedienung --------------------------------------------------------------------

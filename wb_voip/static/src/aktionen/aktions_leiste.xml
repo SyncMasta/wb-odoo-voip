@@ -10,8 +10,9 @@
             </button>
         </t>
         <Dropdown t-if="mehr.length">
+            <!-- kein aria-label: der sichtbare Text „Mehr“ ist der zugängliche Name -->
             <button type="button" class="o_wb_voip_aktion_mehr btn btn-outline-secondary"
-                    aria-label="Weitere Aktionen">
+                    title="Weitere Aktionen">
                 Mehr
             </button>
             <t t-set-slot="content">

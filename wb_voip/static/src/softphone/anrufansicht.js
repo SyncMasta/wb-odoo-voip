@@ -62,15 +62,19 @@ export class Anrufansicht extends Component {
             this.lokal.aktionen = [];
             return;
         }
-        let daten;
+        let aktionen;
         try {
-            daten = await this.orm.call("wb.voip.anruf", "wb_voip_kontext", [[id]]);
+            // nur die Buttons des Softphones, nicht der ganze Anrufer-Kontext
+            aktionen = await this.orm.call("wb.voip.anruf", "wb_voip_aktionen", [
+                [id],
+                ORT_SOFTPHONE,
+            ]);
         } catch {
             // ohne Buttons bleibt die Anrufansicht voll benutzbar
-            daten = null;
+            aktionen = null;
         }
         if (nr === this._aktionenNr && id === this.state.anruf?.id) {
-            this.lokal.aktionen = daten?.aktionen || [];
+            this.lokal.aktionen = Array.isArray(aktionen) ? aktionen : [];
         }
     }
 

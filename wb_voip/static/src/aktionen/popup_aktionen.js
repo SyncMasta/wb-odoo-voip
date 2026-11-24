@@ -41,9 +41,15 @@ export class PopupAktionen extends Component {
         });
     }
 
-    aktionAusfuehren(aktionId) {
-        const anrufId = idVon(this.props.record?.data?.anruf_id);
+    async aktionAusfuehren(aktionId) {
+        const record = this.props.record;
+        const anrufId = idVon(record?.data?.anruf_id);
         if (!anrufId) {
+            return;
+        }
+        // Ergebnis und Notiz zuerst speichern: der Button kann ein anderes Fenster öffnen
+        // und das Popup schließen; ungültige Eingaben brechen ab (Odoo zeigt den Fehler)
+        if (typeof record.save === "function" && !(await record.save())) {
             return;
         }
         return this.ausfuehren(() =>

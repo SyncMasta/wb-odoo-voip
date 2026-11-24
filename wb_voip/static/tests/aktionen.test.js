@@ -5,6 +5,7 @@ import { EventBus, reactive } from "@odoo/owl";
 import { defineMailModels } from "@mail/../tests/mail_test_helpers";
 import {
     defineModels,
+    editSelectMenu,
     mockService,
     mountWithCleanup,
     patchWithCleanup,
@@ -91,6 +92,25 @@ test("Popup: Button führt wb_voip_aktion_ausfuehren auf dem Anruf des Protokoll
     expect(aktionen.at(-1).res_model).toBe("sale.order");
 });
 
+test("Popup: speichert Ergebnis und Notiz, bevor ein Button läuft", async () => {
+    onRpc("wb.voip.protokoll", "wb_voip_popup_aktionen", () => [
+        taste(7, "Angebot", ["protokoll_popup"]),
+    ]);
+    onRpc("wb.voip.protokoll", "web_save", ({ args }) => {
+        expect.step(`speichern ${args[0][0]} ${args[1].ergebnis}`);
+    });
+    onRpc("wb.voip.anruf", "wb_voip_aktion_ausfuehren", ({ args }) => {
+        expect.step(`ausfuehren ${args[0][0]} ${args[1]}`);
+        return false;
+    });
+    await popupOeffnen();
+    await animationFrame();
+    await editSelectMenu(".modal .o_field_widget[name=ergebnis] input", { value: "Mailbox" });
+    await click(".modal .o_wb_voip_popup_aktion");
+    await animationFrame();
+    expect.verifySteps(["speichern 1 mailbox", "ausfuehren 5 7"]);
+});
+
 test("Popup: ohne Buttons keine Leiste, Fehler beim Laden stört nicht", async () => {
     onRpc("wb.voip.protokoll", "wb_voip_popup_aktionen", () => {
         throw new Error("kaputt");
@@ -127,25 +147,27 @@ async function softphoneMitAnruf() {
     return { dienst, uhr, fabrik };
 }
 
-test("Softphone: nur Softphone-Buttons, höchstens 4, Rest unter „Mehr“, Kontext einmal je Anruf", async () => {
-    let kontexte = 0;
-    onRpc("wb.voip.anruf", "wb_voip_kontext", ({ args }) => {
-        kontexte++;
-        return {
-            anruf: { id: args[0][0] },
-            kontakt: false,
-            protokolle: [],
-            aufgaben: [],
-            aktionen: [
-                taste(1, "Eins", ["softphone"]),
-                taste(2, "Zwei", ["softphone", "anrufer_fenster"]),
-                taste(3, "Nur Fenster", ["anrufer_fenster"]),
-                taste(4, "Drei", ["softphone"]),
-                taste(5, "Vier", ["softphone"]),
-                taste(6, "Fünf", ["softphone"]),
-                taste(7, "Sechs", ["softphone"]),
-            ],
-        };
+/** Kontext fürs Anrufer-Fenster, das im Softphone-Test mitläuft (ohne Buttons). */
+function leererKontext({ args }) {
+    return { anruf: { id: args[0][0] }, kontakt: false, protokolle: [], aufgaben: [], aktionen: [] };
+}
+
+test("Softphone: nur Softphone-Buttons, höchstens 4, Rest unter „Mehr“, einmal je Anruf", async () => {
+    let abrufe = 0;
+    onRpc("wb.voip.anruf", "wb_voip_kontext", leererKontext);
+    // leichte Abfrage nur der Buttons statt des ganzen Anrufer-Kontexts
+    onRpc("wb.voip.anruf", "wb_voip_aktionen", ({ args }) => {
+        abrufe++;
+        expect(args[1]).toBe("softphone");
+        return [
+            taste(1, "Eins", ["softphone"]),
+            taste(2, "Zwei", ["softphone", "anrufer_fenster"]),
+            taste(3, "Nur Fenster", ["anrufer_fenster"]),
+            taste(4, "Drei", ["softphone"]),
+            taste(5, "Vier", ["softphone"]),
+            taste(6, "Fünf", ["softphone"]),
+            taste(7, "Sechs", ["softphone"]),
+        ];
     });
     onRpc("wb.voip.anruf", "wb_voip_aktion_ausfuehren", ({ args }) => {
         expect.step(`ausfuehren ${args[0][0]} ${args[1]}`);
@@ -173,11 +195,15 @@ test("Softphone: nur Softphone-Buttons, höchstens 4, Rest unter „Mehr“, Kon
     expect(".o_wb_voip_anrufansicht .o_wb_voip_aktion").toHaveCount(4);
     expect(".o_wb_voip_anrufansicht .o_wb_voip_aktion:eq(3)").toHaveText("Vier");
     expect(".o_wb_voip_anrufansicht .o_wb_voip_aktion_mehr").toHaveCount(1);
+    // zugänglicher Name = sichtbarer Text (kein abweichendes aria-label)
+    expect(".o_wb_voip_anrufansicht .o_wb_voip_aktion_mehr").not.toHaveAttribute("aria-label");
+    expect(".o_wb_voip_anrufansicht .o_wb_voip_aktion_mehr").toHaveText("Mehr");
+    expect(abrufe).toBe(2);
     // kein Polling: Anruf ohne Änderung fragt nicht noch einmal
-    const vorher = kontexte;
+    const vorher = abrufe;
     await uhr.vorspulen(30_000);
     await animationFrame();
-    expect(kontexte).toBe(vorher);
+    expect(abrufe).toBe(vorher);
     expect(ladungen).toBe(2);
     expect(".o_wb_voip_anrufansicht .o_wb_voip_aktion").toHaveCount(4);
     await click(".o_wb_voip_anrufansicht .o_wb_voip_aktion_mehr");
@@ -191,13 +217,10 @@ test("Softphone: nur Softphone-Buttons, höchstens 4, Rest unter „Mehr“, Kon
 });
 
 test("Softphone: ohne Softphone-Buttons weder Leiste noch „Mehr“", async () => {
-    onRpc("wb.voip.anruf", "wb_voip_kontext", ({ args }) => ({
-        anruf: { id: args[0][0] },
-        kontakt: false,
-        protokolle: [],
-        aufgaben: [],
-        aktionen: [taste(3, "Nur Fenster", ["anrufer_fenster"])],
-    }));
+    onRpc("wb.voip.anruf", "wb_voip_kontext", leererKontext);
+    onRpc("wb.voip.anruf", "wb_voip_aktionen", () => [
+        taste(3, "Nur Fenster", ["anrufer_fenster"]),
+    ]);
     const { dienst, uhr, fabrik } = await softphoneMitAnruf();
     await dienst.waehlen("0170 1234567");
     fabrik.letzterAgent.invites[0].gegenstelleNimmtAn();

@@ -10,6 +10,7 @@ import {
     onRpc,
     patchWithCleanup,
 } from "@web/../tests/web_test_helpers";
+import { deserializeDate, formatDate } from "@web/core/l10n/dates";
 import { session } from "@web/session";
 
 import { AnruferFenster } from "@wb_voip/anrufer_fenster/anrufer_fenster";
@@ -169,7 +170,8 @@ test("Dienst meldet anruf-aktiv einmal je Anruf", async () => {
 test("öffnet bei anruf-aktiv im Telefon-Tab, Fokus und Escape", async () => {
     onRpc("wb.voip.anruf", "wb_voip_kontext", ({ args }) => {
         expect.step(`kontext ${args[0][0]}`);
-        return kontext(args[0][0], { kontakt: erika() });
+        // mit Kontakt liefert der Server „Neuer Kontakt“ nicht mit
+        return kontext(args[0][0], { kontakt: erika(), aktionen: [] });
     });
     const w = welt();
     const dienst = await verbunden(w);
@@ -309,7 +311,6 @@ test("Button führt wb_voip_aktion_ausfuehren aus, Aufgabe öffnet Datensatz, Fe
         kontext(args[0][0], {
             kontakt: erika(),
             aktionen: [
-                NEUER_KONTAKT,
                 { id: 7, name: "Angebot", icon: "fa-file", farbe: "success", art: "fenster", orte: ["anrufer_fenster"] },
                 { id: 8, name: "Kaputt", icon: "fa-x\" onclick=\"x", farbe: "<b>", art: "serveraktion", orte: ["anrufer_fenster", "softphone"] },
                 { id: 9, name: "Still", icon: false, farbe: "secondary", art: "serveraktion", orte: ["anrufer_fenster"] },
@@ -334,7 +335,7 @@ test("Button führt wb_voip_aktion_ausfuehren aus, Aufgabe öffnet Datensatz, Fe
     const { aktionen, meldungen } = await fensterMit(dienst);
     w.fabrik.letzterAgent.eingehend("0170 5555");
     await weiter(w.uhr);
-    // „Neuer Kontakt“ ausgeblendet, Reihenfolge wie vom Server (sequence)
+    // Reihenfolge wie vom Server (sequence)
     expect(".o_wb_voip_af_aktion").toHaveCount(3);
     expect(".o_wb_voip_af_aktion:eq(0)").toHaveText("Angebot");
     expect(".o_wb_voip_af_aktion:eq(0)").toHaveClass("btn-success");
@@ -391,7 +392,10 @@ test("Bus-Nachricht wb_voip/kontext lädt nur den gezeigten Anruf neu", async ()
     await animationFrame();
     expect.verifySteps(["kontext 10"]);
     expect(".o_wb_voip_af_name").toHaveText("Erika Neu");
+    // Aufräumen beendet den Anruf: das Ende lädt noch einmal
     w.aufraeumen();
+    await weiter(w.uhr);
+    expect.verifySteps(["kontext 10"]);
 });
 
 test("Breite auf dem Desktop mindestens 720 px", async () => {
@@ -580,6 +584,158 @@ test("Zeitgeber pausiert, solange der Zeiger über dem Panel steht", async () =>
     expect(".o_wb_voip_anrufer_fenster").toHaveCount(1);
     await weiter(w.uhr, 1);
     expect(".o_wb_voip_anrufer_fenster").toHaveCount(0);
+    w.aufraeumen();
+});
+
+// --- Neu laden bei Zustandswechsel ----------------------------------------------------------
+
+test("Annahme lädt die Buttons neu (Zustand „Während des Gesprächs“)", async () => {
+    let zustand = "klingelt";
+    onRpc("wb.voip.anruf", "wb_voip_kontext", ({ args }) => {
+        expect.step(`kontext ${args[0][0]} ${zustand}`);
+        return kontext(args[0][0], {
+            aktionen: [{ ...NEUER_KONTAKT, id: zustand === "laeuft" ? 2 : 1, name: zustand }],
+        });
+    });
+    const w = welt();
+    const dienst = await verbunden(w);
+    await fensterMit(dienst);
+    w.fabrik.letzterAgent.eingehend("0170 5555");
+    await weiter(w.uhr);
+    expect.verifySteps(["kontext 10 klingelt"]);
+    expect(".o_wb_voip_af_aktion").toHaveText("klingelt");
+    zustand = "laeuft";
+    await dienst.annehmen();
+    await weiter(w.uhr);
+    await animationFrame();
+    expect.verifySteps(["kontext 10 laeuft"]);
+    expect(".o_wb_voip_af_aktion").toHaveText("laeuft");
+    // Aufräumen beendet den Anruf: das Ende lädt noch einmal
+    w.aufraeumen();
+    await weiter(w.uhr);
+    expect.verifySteps(["kontext 10 laeuft"]);
+});
+
+test("Anrufende lädt die Buttons einmal neu (Zustand „Nach dem Anruf“)", async () => {
+    let zustand = "klingelt";
+    onRpc("wb.voip.anruf", "wb_voip_kontext", ({ args }) => {
+        expect.step(`kontext ${args[0][0]} ${zustand}`);
+        return kontext(args[0][0], {
+            aktionen: [{ ...NEUER_KONTAKT, id: zustand === "beendet" ? 3 : 1, name: zustand }],
+        });
+    });
+    const w = welt();
+    const dienst = await verbunden(w);
+    await fensterMit(dienst);
+    const sitzung = w.fabrik.letzterAgent.eingehend("0170 5555");
+    await weiter(w.uhr);
+    expect.verifySteps(["kontext 10 klingelt"]);
+    zustand = "beendet";
+    sitzung.gegenstelleLegtAuf("487");
+    await weiter(w.uhr);
+    await animationFrame();
+    expect.verifySteps(["kontext 10 beendet"]);
+    expect(".o_wb_voip_af_aktion").toHaveText("beendet");
+    // genau einmal, auch während der 10 s nicht erneut
+    await weiter(w.uhr, 9000);
+    expect.verifySteps([]);
+    expect(".o_wb_voip_anrufer_fenster").toHaveCount(1);
+    w.aufraeumen();
+});
+
+// --- Gesprächsknöpfe im Kopf -----------------------------------------------------------------
+
+/** Ersetzt eine Dienst-Methode durch eine Hülle, die einen Schritt meldet. */
+function mitSchritt(dienst, name) {
+    const echt = dienst[name].bind(dienst);
+    dienst[name] = (...args) => {
+        expect.step(name);
+        return echt(...args);
+    };
+}
+
+test("Kopf: Annehmen beim Klingeln, danach Stumm und Auflegen", async () => {
+    onRpc("wb.voip.anruf", "wb_voip_kontext", ({ args }) => kontext(args[0][0]));
+    const w = welt();
+    const dienst = await verbunden(w);
+    for (const name of ["annehmen", "ablehnen", "auflegen", "stumm"]) {
+        mitSchritt(dienst, name);
+    }
+    await fensterMit(dienst);
+    const sitzung = w.fabrik.letzterAgent.eingehend("0170 5555");
+    await weiter(w.uhr);
+    expect(".o_wb_voip_af_kopf .o_wb_voip_af_annehmen").toHaveCount(1);
+    expect(".o_wb_voip_af_annehmen").toHaveAttribute("title", "Annehmen");
+    expect(".o_wb_voip_af_annehmen").toHaveAttribute("aria-label", "Annehmen");
+    expect(".o_wb_voip_af_ablehnen").toHaveAttribute("aria-label", "Ablehnen");
+    expect(".o_wb_voip_af_auflegen").toHaveCount(0);
+    await click(".o_wb_voip_af_annehmen");
+    await weiter(w.uhr);
+    await animationFrame();
+    expect.verifySteps(["annehmen"]);
+    expect(sitzung.hat("accept").length).toBe(1);
+    expect(".o_wb_voip_af_annehmen").toHaveCount(0);
+    expect(".o_wb_voip_af_kopf .o_wb_voip_af_stumm").toHaveAttribute("aria-label", "Stumm");
+    expect(".o_wb_voip_af_stumm").toHaveAttribute("aria-pressed", "false");
+    await click(".o_wb_voip_af_stumm");
+    await animationFrame();
+    expect.verifySteps(["stumm"]);
+    expect(dienst.state.anruf.stumm).toBe(true);
+    expect(".o_wb_voip_af_stumm").toHaveAttribute("aria-pressed", "true");
+    expect(".o_wb_voip_af_auflegen").toHaveAttribute("title", "Auflegen");
+    await click(".o_wb_voip_af_auflegen");
+    await weiter(w.uhr);
+    expect.verifySteps(["auflegen"]);
+    expect(sitzung.hat("bye").length).toBe(1);
+    // nach dem Ende keine Gesprächsknöpfe mehr
+    expect(".o_wb_voip_af_auflegen").toHaveCount(0);
+    expect(".o_wb_voip_af_stumm").toHaveCount(0);
+    w.aufraeumen();
+});
+
+test("Kopf: Ablehnen beim Klingeln, ausgehend nur Auflegen", async () => {
+    onRpc("wb.voip.anruf", "wb_voip_kontext", ({ args }) => kontext(args[0][0]));
+    const w = welt();
+    const dienst = await verbunden(w);
+    mitSchritt(dienst, "ablehnen");
+    mitSchritt(dienst, "auflegen");
+    await fensterMit(dienst);
+    const sitzung = w.fabrik.letzterAgent.eingehend("0170 5555");
+    await weiter(w.uhr);
+    await click(".o_wb_voip_af_ablehnen");
+    await weiter(w.uhr);
+    expect.verifySteps(["ablehnen"]);
+    expect(sitzung.hat("reject")[0][1]).toEqual({ statusCode: 603 });
+    // ausgehend, klingelt beim Gegenüber: Auflegen, Stumm erst im Gespräch
+    await dienst.waehlen("0170 1234567");
+    const raus = w.fabrik.letzterAgent.invites[0];
+    raus.fortschritt(180);
+    await weiter(w.uhr);
+    expect(".o_wb_voip_af_annehmen").toHaveCount(0);
+    expect(".o_wb_voip_af_stumm").toHaveAttribute("disabled");
+    await click(".o_wb_voip_af_auflegen");
+    await weiter(w.uhr);
+    expect.verifySteps(["auflegen"]);
+    expect(raus.hat("cancel").length).toBe(1);
+    w.aufraeumen();
+});
+
+test("Fälligkeit offener Aufgaben im Datumsformat des Benutzers", async () => {
+    onRpc("wb.voip.anruf", "wb_voip_kontext", ({ args }) =>
+        kontext(args[0][0], {
+            kontakt: erika(),
+            aufgaben: [{ id: 5, titel: "Rückruf", faellig: "2026-11-25", res_model: "crm.lead", res_id: 12 }],
+        })
+    );
+    const w = welt();
+    const dienst = await verbunden(w);
+    await fensterMit(dienst);
+    w.fabrik.letzterAgent.eingehend("0170 5555");
+    await weiter(w.uhr);
+    const erwartet = formatDate(deserializeDate("2026-11-25"));
+    expect(erwartet).not.toBe("2026-11-25");
+    // Titel und Datum stehen in getrennten Spans (ohne Leerzeichen im Text)
+    expect(".o_wb_voip_af_aufgabe").toHaveText(`Rückruf${erwartet}`);
     w.aufraeumen();
 });
 
