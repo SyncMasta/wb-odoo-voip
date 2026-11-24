@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="wb_voip.AnruferFenster">
+        <section t-if="fenster.offen" t-ref="panel"
+                 class="o_wb_voip_anrufer_fenster position-fixed d-flex flex-column bg-view shadow-lg"
+                 role="dialog" aria-label="Anrufer" tabindex="-1" t-on-keydown="onKeydown">
+            <header class="o_wb_voip_af_kopf d-flex align-items-center gap-3 p-3">
+                <img t-if="bildUrl" class="o_wb_voip_af_bild rounded" t-att-src="bildUrl"
+                     alt="" width="64" height="64"/>
+                <div t-else="" class="o_wb_voip_af_platzhalter rounded d-flex align-items-center justify-content-center">
+                    <i class="fa fa-user fa-2x" aria-hidden="true"/>
+                </div>
+                <div class="flex-grow-1 overflow-hidden">
+                    <t t-if="kontakt">
+                        <div class="o_wb_voip_af_name fs-4 fw-bold text-truncate" t-esc="kontakt.name"/>
+                        <div t-if="kontakt.firma" class="o_wb_voip_af_firma text-truncate" t-esc="kontakt.firma"/>
+                    </t>
+                    <div t-elif="daten" class="o_wb_voip_af_name fs-4 fw-bold">Unbekannte Nummer</div>
+                    <div t-else="" class="o_wb_voip_af_laedt text-truncate">
+                        <i class="fa fa-spinner fa-spin me-1" aria-hidden="true"/>Lädt …
+                    </div>
+                    <div t-if="nummer" class="o_wb_voip_af_nummer small text-truncate" t-esc="nummer"/>
+                    <div t-if="fenster.beendet" class="o_wb_voip_af_beendet small">Anruf beendet</div>
+                </div>
+                <button type="button" class="o_wb_voip_af_schliessen btn btn-sm"
+                        title="Anrufer-Fenster schließen" aria-label="Anrufer-Fenster schließen"
+                        t-on-click="schliessen">
+                    <i class="fa fa-times" aria-hidden="true"/>
+                </button>
+            </header>
+
+            <div class="o_wb_voip_af_inhalt flex-grow-1 overflow-auto p-3">
+                <div t-if="fenster.fehler" class="o_wb_voip_af_fehler alert alert-warning" role="alert"
+                     t-esc="fenster.fehler"/>
+
+                <div t-if="kontakt" class="o_wb_voip_af_kontakt mb-3">
+                    <div t-if="kontakt.telefon" class="text-truncate">
+                        <i class="fa fa-phone me-2" aria-hidden="true"/><span t-esc="kontakt.telefon"/>
+                    </div>
+                    <div t-if="kontakt.email" class="text-truncate">
+                        <i class="fa fa-envelope me-2" aria-hidden="true"/><span t-esc="kontakt.email"/>
+                    </div>
+                    <button type="button" class="o_wb_voip_af_kontakt_oeffnen btn btn-link p-0"
+                            t-on-click="kontaktOeffnen">
+                        <i class="fa fa-external-link me-1" aria-hidden="true"/>Kontakt öffnen
+                    </button>
+                </div>
+
+                <div t-if="daten" class="o_wb_voip_af_aktionen d-flex flex-wrap gap-2 mb-3">
+                    <button t-if="!kontakt" type="button"
+                            class="o_wb_voip_af_zuordnen btn btn-outline-primary"
+                            t-on-click="zuordnen">
+                        <i class="fa fa-link me-1" aria-hidden="true"/>Zuordnen
+                    </button>
+                    <t t-foreach="aktionen" t-as="aktion" t-key="aktion.id">
+                        <button type="button" class="o_wb_voip_af_aktion btn" t-att-class="aktion.klasse"
+                                t-on-click="() => this.aktionAusfuehren(aktion.id)">
+                            <i t-if="aktion.icon" class="fa me-1" t-att-class="aktion.icon" aria-hidden="true"/>
+                            <t t-esc="aktion.name"/>
+                        </button>
+                    </t>
+                </div>
+
+                <t t-if="laufenderAnruf">
+                    <label class="form-label small text-muted mb-1" for="wb_voip_af_notiz">Notiz</label>
+                    <textarea id="wb_voip_af_notiz" class="o_wb_voip_af_notiz form-control mb-3" rows="4"
+                              t-att-maxlength="maxNotiz" placeholder="Notiz zum Gespräch"
+                              t-model="state.anruf.notiz"/>
+                </t>
+
+                <div t-if="aufgaben.length" class="o_wb_voip_af_aufgaben mb-3">
+                    <h6 class="text-muted">Offene Aufgaben</h6>
+                    <ul class="list-unstyled mb-0">
+                        <li t-foreach="aufgaben" t-as="aufgabe" t-key="aufgabe.id">
+                            <button type="button" class="o_wb_voip_af_aufgabe btn btn-link p-0 text-start"
+                                    t-on-click="() => this.aufgabeOeffnen(aufgabe)">
+                                <span t-esc="aufgabe.titel"/>
+                                <span t-if="aufgabe.faellig" class="text-muted ms-2" t-esc="aufgabe.faellig"/>
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+
+                <div t-if="protokolle.length" class="o_wb_voip_af_protokolle">
+                    <h6 class="text-muted">Letzte Gespräche</h6>
+                    <ul class="list-unstyled mb-0">
+                        <li t-foreach="protokolle" t-as="protokoll" t-key="protokoll.id"
+                            class="o_wb_voip_af_protokoll border-top py-2">
+                            <div class="small text-muted">
+                                <span t-esc="protokoll.datum"/>
+                                <span t-if="protokoll.ergebnis" class="ms-2" t-esc="protokoll.ergebnis"/>
+                                <span t-if="protokoll.dauer" class="ms-2 font-monospace" t-esc="protokoll.dauer"/>
+                            </div>
+                            <div t-if="protokoll.text" class="o_wb_voip_af_protokoll_text" t-esc="protokoll.text"/>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+    </t>
+</templates>

@@ -597,6 +597,7 @@ export class TelefonDienst {
             .then((daten) => {
                 kontext.anruf.id = daten.id;
                 kontext.anruf.partner = daten.partner || false;
+                this._aktivMelden(kontext);
                 return daten.id;
             })
             .catch(async (fehler) => {
@@ -625,7 +626,23 @@ export class TelefonDienst {
         }
         if (statusCode >= 180 && statusCode < 200) {
             kontext.anruf.zustand = "klingelt";
+            this._aktivMelden(kontext);
         }
+    }
+
+    /**
+     * Meldet ``anruf-aktiv`` einmal je Anruf, sobald er eine Server-ID hat und klingelt
+     * oder läuft. Nur der Telefon-Tab führt Anrufe, andere Tabs melden nie.
+     */
+    _aktivMelden(kontext) {
+        if (kontext.beendet || kontext.aktivGemeldet || !kontext.anruf.id) {
+            return;
+        }
+        if (!["klingelt", "laeuft"].includes(kontext.anruf.zustand)) {
+            return;
+        }
+        kontext.aktivGemeldet = true;
+        this.bus.trigger("anruf-aktiv", { anrufId: kontext.anruf.id, eigenerTab: true });
     }
 
     async _angenommen(kontext) {
@@ -636,6 +653,7 @@ export class TelefonDienst {
         this.klaenge.aus();
         kontext.anruf.zustand = "laeuft";
         kontext.anruf.annahme = this.uhr.jetzt();
+        this._aktivMelden(kontext);
         this._lebenszeichenStoppen();
         this._lebenTimer = this.uhr.setInterval(
             () => this._lebenszeichen(kontext),

@@ -39,7 +39,8 @@ class TestTourSoftphone(HttpCase):
         self.start_tour(f'/odoo/res.partner/{self.kontakt.id}', 'wb_voip_softphone_tour',
                         login='admin', timeout=120)
         anruf = self.env['wb.voip.anruf'].search([
-            ('user_id', '=', self.admin.id), ('partner_id', '=', self.kontakt.id)])
+            ('user_id', '=', self.admin.id), ('partner_id', '=', self.kontakt.id),
+            ('nummer', '=', '+49 170 2223334')])
         self.assertEqual(len(anruf), 1)
         self.assertEqual(anruf.richtung, 'ausgehend')
         self.assertEqual(anruf.nummer, '+49 170 2223334')
@@ -49,3 +50,11 @@ class TestTourSoftphone(HttpCase):
         self.assertTrue(anruf.protokoll_id)
         # im Popup auf „Mailbox“ geändert und gespeichert
         self.assertEqual(anruf.protokoll_id.ergebnis, 'mailbox')
+        # zweiter Anruf an eine unbekannte Nummer, im Anrufer-Fenster zugeordnet
+        zweiter = self.env['wb.voip.anruf'].search([
+            ('user_id', '=', self.admin.id), ('nummer', '=', '+49 30 9876543')])
+        self.assertEqual(len(zweiter), 1)
+        self.assertEqual(zweiter.partner_id, self.kontakt)
+        self.assertEqual(zweiter.zustand, 'beendet')
+        # „Nicht speichern“: die Nummer des Kontakts bleibt
+        self.assertEqual(self.kontakt.phone, '+49 170 2223334')

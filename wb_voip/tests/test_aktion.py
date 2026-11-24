@@ -166,7 +166,7 @@ class TestAktion(WbVoipCase):
         daten = aktion._wb_voip_fuer_client()
         self.assertEqual(daten, {
             'id': aktion.id, 'name': 'Taste', 'icon': 'fa-user', 'farbe': 'danger',
-            'orte': ['anrufer_fenster', 'softphone']})
+            'art': aktion.art, 'orte': ['anrufer_fenster', 'softphone']})
 
     def test_standard_neuer_kontakt(self):
         aktion = self.env.ref('wb_voip.wb_voip_aktion_neuer_kontakt')

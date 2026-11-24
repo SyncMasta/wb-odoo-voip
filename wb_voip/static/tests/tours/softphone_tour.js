@@ -62,5 +62,77 @@ registry.category("web_tour.tours").add("wb_voip_softphone_tour", {
             content: "Anruf in der Liste",
             trigger: ".o_wb_voip_anrufliste .o_wb_voip_eintrag:contains(Tour Kontakt)",
         },
+        // Anrufer-Fenster: unbekannte Nummer einem Kontakt zuordnen
+        {
+            content: "Reiter Wählen öffnen",
+            trigger: ".o_wb_voip_reiter button:contains(Wählen)",
+            run: "click",
+        },
+        {
+            content: "Unbekannte Nummer eingeben",
+            trigger: ".o_wb_voip_eingabe",
+            run: "edit +49 30 9876543",
+        },
+        {
+            content: "Anrufen",
+            trigger: ".o_wb_voip_anrufen",
+            run: "click",
+        },
+        {
+            content: "Anrufer-Fenster zeigt die unbekannte Nummer",
+            trigger: ".o_wb_voip_anrufer_fenster .o_wb_voip_af_name:contains(Unbekannte Nummer)",
+        },
+        {
+            content: "Zuordnen",
+            trigger: ".o_wb_voip_anrufer_fenster .o_wb_voip_af_zuordnen",
+            run: "click",
+        },
+        {
+            content: "Kontakt wählen",
+            trigger: ".modal .o_field_widget[name=partner_id] input",
+            run: "edit Tour Kontakt",
+        },
+        {
+            content: "Tour Kontakt übernehmen",
+            trigger: ".o-autocomplete--dropdown-item:contains(Tour Kontakt)",
+            run: "click",
+        },
+        {
+            content: "Auswahl „Nummer speichern in“ öffnen",
+            trigger: ".modal .o_field_widget[name=feld] input",
+            run: "click",
+        },
+        {
+            content: "Nummer nicht speichern",
+            trigger: ".o_select_menu_item:contains(Nicht speichern)",
+            run: "click",
+        },
+        {
+            content: "Zuordnen bestätigen",
+            trigger: ".modal button[name=action_zuordnen]",
+            run: "click",
+        },
+        {
+            content: "Kopf zeigt den Namen",
+            trigger: ".o_wb_voip_anrufer_fenster .o_wb_voip_af_name:contains(Tour Kontakt)",
+        },
+        {
+            content: "Zweiter Anruf läuft",
+            trigger: ".o_wb_voip_anrufansicht .o_wb_voip_zustand:contains(Im Gespräch)",
+        },
+        {
+            content: "Auflegen",
+            trigger: ".o_wb_voip_anrufansicht .o_wb_voip_auflegen",
+            run: "click",
+        },
+        {
+            content: "Protokoll-Popup speichern",
+            trigger: ".modal .o_form_button_save",
+            run: "click",
+        },
+        {
+            content: "Popup geschlossen",
+            trigger: "body:not(:has(.modal))",
+        },
     ],
 });

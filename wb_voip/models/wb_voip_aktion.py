@@ -254,5 +254,7 @@ class WbVoipAktion(models.Model):
             'name': self.name,
             'icon': self.icon or False,
             'farbe': self.farbe,
+            # nur die Art (z. B. „neuer_kontakt“ im Anrufer-Fenster ausblenden), keine Ziele
+            'art': self.art,
             'orte': orte,
         }

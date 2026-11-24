@@ -1,0 +1,66 @@
+// WB VoIP Anrufer-Fenster: Seitenpanel rechts unter der Navigationsleiste (Systray bleibt frei)
+$wb-voip-af-navy: #1D3C6E;
+$wb-voip-af-cyan: #00C8E8;
+// als Text: libsass rechnet min() mit px und vw nicht
+$wb-voip-af-breite: unquote("min(720px, 100vw)");
+
+.o_wb_voip_anrufer_fenster {
+    top: $o-navbar-height;
+    right: 0;
+    bottom: 0;
+    width: $wb-voip-af-breite;
+    // über dem Softphone, unter Dialogen und Meldungen
+    z-index: $zindex-fixed + 1;
+    border-left: 1px solid $border-color;
+
+    .o_wb_voip_af_kopf {
+        background-color: $wb-voip-af-navy;
+        color: $white;
+
+        .o_wb_voip_af_schliessen {
+            color: $white;
+        }
+    }
+
+    .o_wb_voip_af_bild,
+    .o_wb_voip_af_platzhalter {
+        width: 64px;
+        height: 64px;
+        flex: 0 0 64px;
+        object-fit: cover;
+    }
+
+    .o_wb_voip_af_platzhalter {
+        background-color: rgba($white, 0.15);
+    }
+
+    .o_wb_voip_af_protokoll_text {
+        white-space: pre-line;
+        overflow-wrap: anywhere;
+    }
+
+    &:focus {
+        outline: none;
+    }
+
+    .btn:focus-visible,
+    .form-control:focus-visible {
+        outline: 2px solid $wb-voip-af-cyan;
+        outline-offset: 1px;
+    }
+
+    // unter 576 px: Vollbild
+    @include media-breakpoint-down(sm) {
+        top: 0;
+        left: 0;
+        width: auto;
+        border-left: 0;
+    }
+}
+
+// Breite Bildschirme: das Softphone rückt links neben das Panel
+@include media-breakpoint-up(xl) {
+    body.o_wb_voip_af_offen .o_wb_voip_fenster {
+        right: calc(#{$wb-voip-af-breite} + 1rem);
+    }
+}
