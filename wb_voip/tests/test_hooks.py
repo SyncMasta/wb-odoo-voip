@@ -1,6 +1,6 @@
 from unittest.mock import patch
 
-from odoo.exceptions import UserError, ValidationError
+from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tests import tagged
 
 from .common import WbVoipCase
@@ -351,3 +351,79 @@ class TestHooks(WbVoipCase):
         daten = protokoll.wb_voip_popup_layout()
         self.assertEqual(daten['layout']['bloecke'][0]['daten'], 7)
         self.assertEqual(gesehen, [anruf])
+
+    # --- Nachbesserung: Last, Robustheit, kein sudo ---
+
+    def _anrufe_mit_datensatz(self, anzahl):
+        datensaetze = self.env['res.partner'].create(
+            [{'name': f'Datensatz {i}'} for i in range(anzahl)])
+        return self.Anruf.sudo().create([{
+            'user_id': self.user_a.id, 'richtung': 'ausgehend', 'zustand': 'beendet',
+            'nummer': f'+49 30 {i:06d}', 'sip_call_id': f'last-{anzahl}-{i}',
+            'res_model': 'res.partner', 'res_id': d.id,
+        } for i, d in enumerate(datensaetze)])
+
+    def _abfragen_liste(self):
+        Anruf = self.Anruf.with_user(self.user_a)
+        self.env.invalidate_all()
+        vorher = self.env.cr.sql_log_count
+        liste = Anruf.wb_voip_liste(limit=50)
+        return self.env.cr.sql_log_count - vorher, liste
+
+    def test_liste_datensaetze_gebuendelt(self):
+        self._anrufe_mit_datensatz(2)
+        wenige, liste = self._abfragen_liste()
+        self.assertEqual(len(liste), 2)
+        self._anrufe_mit_datensatz(20)
+        viele, liste = self._abfragen_liste()
+        self.assertEqual(len(liste), 22)
+        self.assertTrue(all(e['res_name'].startswith('Datensatz') for e in liste))
+        # Datensätze je Modell auf einmal geprüft, nicht je Anruf
+        self.assertLessEqual(viele - wenige, 3)
+
+    def test_liste_unlesbarer_datensatz(self):
+        anrufe = self._anrufe_mit_datensatz(1)
+        anrufe[0].res_id = self.fremd.id
+        _abfragen, liste = self._abfragen_liste()
+        self.assertEqual((liste[0]['res_model'], liste[0]['res_id'], liste[0]['res_name']),
+                         (False, False, False))
+
+    def test_datensatzname_fehler_bricht_nichts(self):
+        # Anruf ohne Kontakt, aber mit Datensatz (sonst wäre der Datensatz der Kontakt)
+        anruf = self.Anruf.sudo().create({
+            'user_id': self.user_a.id, 'richtung': 'ausgehend', 'zustand': 'klingelt',
+            'nummer': '+49 30 4711', 'sip_call_id': 'name-kaputt',
+            'res_model': 'res.partner', 'res_id': self.anderer.id,
+        }).with_user(self.user_a)
+
+        def kaputt(datensaetze):
+            raise AccessError('kein Zugriff auf verknüpfte Daten')
+
+        self._ueberschreiben('res.partner', '_compute_display_name', kaputt)
+        self.env.invalidate_all()
+        daten = anruf.wb_voip_angenommen()
+        self.assertEqual((daten['res_model'], daten['res_id']), ('res.partner', self.anderer.id))
+        self.assertFalse(daten['res_name'])
+        self.assertFalse(self.Anruf.with_user(self.user_a).wb_voip_liste()[0]['res_name'])
+
+    def test_block_daten_nie_als_superuser(self):
+        layout = self.Layout.create({'name': 'Su', 'ort': 'anrufer_fenster', 'sequence': 1})
+        self.Block.create({'layout_id': layout.id, 'art': 'text', 'text': 'x'})
+        aufrufe = []
+
+        def block_daten(layout_modell, anruf, block, partner):
+            aufrufe.append(layout_modell.env.su)
+            return 1
+
+        self._ueberschreiben('wb.voip.layout', '_wb_voip_block_daten_text', block_daten, neu=True)
+        bloecke = layout.sudo()._wb_voip_fuer_client(self.kontakt.sudo())['bloecke']
+        self.assertNotIn('daten', bloecke[0])
+        self.assertEqual(aufrufe, [])
+        bloecke = layout._wb_voip_fuer_client(self.kontakt.with_user(self.user_a))['bloecke']
+        self.assertEqual(bloecke[0]['daten'], 1)
+        self.assertEqual(aufrufe, [False])
+
+    def test_hook_hilfe_ausserhalb_des_praefixes(self):
+        Layout = type(self.Layout)
+        self.assertFalse(any(name.startswith('_wb_voip_block_daten_') for name in dir(Layout)))
+        self.assertTrue(callable(getattr(Layout, '_wb_voip_block_hook', None)))

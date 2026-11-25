@@ -285,7 +285,8 @@ class WbVoipLayout(models.Model):
             'text': (text or '')[:TEXT_MAX] if art == 'text' else False,
             'felder': self._wb_voip_feldwerte(partner, felder) if art == 'felder' and partner else [],
         }
-        methode = self._wb_voip_block_daten_methode(art)
+        # Block-Daten nie als Superuser (Hooks lesen mit den Rechten des Aufrufers)
+        methode = None if self.env.su else self._wb_voip_block_hook(art)
         if methode is not None:
             if anruf is None:
                 anruf = self.env['wb.voip.anruf']
@@ -293,7 +294,7 @@ class WbVoipLayout(models.Model):
         return block
 
     @api.model
-    def _wb_voip_block_daten_methode(self, art):
+    def _wb_voip_block_hook(self, art):
         """Return the bound block data hook ``_wb_voip_block_daten_<art>`` or None.
 
         Contract of such a hook (added by other modules for their block types): called on

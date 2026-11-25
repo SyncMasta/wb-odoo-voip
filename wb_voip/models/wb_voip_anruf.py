@@ -10,7 +10,7 @@ import psycopg2
 from markupsafe import Markup
 
 from odoo import api, fields, models
-from odoo.exceptions import AccessError, UserError
+from odoo.exceptions import AccessError, MissingError, UserError
 from odoo.fields import Domain
 from odoo.tools import clean_context, html2plaintext, plaintext2html
 
@@ -329,29 +329,61 @@ class WbVoipAnruf(models.Model):
                 ziel = gepruefter
         return ziel, partner_id
 
-    def _wb_voip_datensatz_daten(self):
-        """Return ``(res_model, res_id, res_name)`` of the call's record, all False unless
-        the caller may read it (as superuser: the stored values)."""
-        anruf = self.sudo()
-        if not anruf.res_model or not anruf.res_id:
-            return False, False, False
-        if self.env.su:
-            ziel = anruf.env[anruf.res_model].browse(anruf.res_id).exists() \
-                if anruf.res_model in anruf.env else None
-        else:
-            ziel = self._wb_voip_ziel(anruf.res_model, anruf.res_id)
-        if not ziel:
-            return False, False, False
-        return ziel._name, ziel.id, ziel.display_name or False
+    def _wb_voip_datensaetze(self):
+        """Return ``{call id: (res_model, res_id, res_name)}`` for the calls in ``self``.
 
-    def _wb_voip_client_daten(self):
-        """Return the call data the browser client needs (no credentials)."""
+        Only records that exist and that the caller may read (as superuser: all existing);
+        checked per model in one go. A failing name compute gives ``res_name`` False.
+        """
+        paare = {}
+        for anruf in self.sudo():
+            if anruf.res_model and type(anruf.res_id) is int and anruf.res_id > 0:
+                paare.setdefault(anruf.res_model, []).append((anruf.id, anruf.res_id))
+        ergebnis = {}
+        for res_model, eintraege in paare.items():
+            if res_model not in self.env:
+                continue
+            modell = self.env[res_model]
+            if modell._abstract or modell._transient:
+                continue
+            datensaetze = modell.browse({res_id for _anruf, res_id in eintraege}).exists()
+            if not self.env.su:
+                datensaetze = datensaetze._filtered_access('read')
+            namen = self._wb_voip_namen(datensaetze)
+            for anruf_id, res_id in eintraege:
+                if res_id in namen:
+                    ergebnis[anruf_id] = (res_model, res_id, namen[res_id])
+        return ergebnis
+
+    @api.model
+    def _wb_voip_namen(self, datensaetze):
+        """Return ``{id: display_name or False}``; never raises for a failing name compute."""
+        try:
+            return {d.id: d.display_name or False for d in datensaetze}
+        except (AccessError, MissingError):
+            pass
+        namen = {}
+        for datensatz in datensaetze:
+            try:
+                namen[datensatz.id] = datensatz.with_prefetch().display_name or False
+            except (AccessError, MissingError):
+                namen[datensatz.id] = False
+        return namen
+
+    def _wb_voip_client_daten(self, datensaetze=None):
+        """Return the call data the browser client needs (no credentials).
+
+        ``datensaetze``: result of ``_wb_voip_datensaetze`` for several calls (lists);
+        without it the record of this call is checked here.
+        """
         self.ensure_one()
         # Kontakt nur nennen, wenn der Benutzer ihn (noch) lesen darf
         partner = self.partner_id
         if partner and not self.env.su and not partner.has_access('read'):
             partner = partner.browse()
-        res_model, res_id, res_name = self._wb_voip_datensatz_daten()
+        if datensaetze is None:
+            datensaetze = self._wb_voip_datensaetze()
+        res_model, res_id, res_name = datensaetze.get(self.id, (False, False, False))
         return {
             'id': self.id,
             'richtung': self.richtung,
@@ -378,7 +410,8 @@ class WbVoipAnruf(models.Model):
         """
         limit_pruefen(self.env, limit)
         anrufe = self.search([('user_id', '=', self.env.uid)], limit=limit)
-        return [anruf._wb_voip_client_daten() for anruf in anrufe]
+        datensaetze = anrufe._wb_voip_datensaetze()
+        return [anruf._wb_voip_client_daten(datensaetze) for anruf in anrufe]
 
     @api.model
     @nur_voip_benutzer
