@@ -54,6 +54,10 @@ GLEICHZEITIG_SEKUNDEN = 10
 GLEICHZEITIG_HOECHSTENS = 50
 # Obergrenze der Verpasst-Einträge, die eine Annahme oder ein Rückruf auf einmal erledigt
 ERLEDIGEN_HOECHSTENS = 500
+# Verpasst-Liste: höchstens so viele offene Einträge je Abruf, Notiz des Kollegen gekürzt
+VERPASST_HOECHSTENS = 2000
+VERPASST_NOTIZ_MAX = 300
+ERLEDIGT_TEXT_MAX = 2000
 RUECKRUF_TYP = 'wb_voip.wb_voip_activity_type_rueckruf'
 # Höchstlängen der Angaben an die RPC-Methoden
 MAX_NUMMER = 64
@@ -618,23 +622,33 @@ class WbVoipAnruf(models.Model):
         werte = {'erledigt': True, 'erledigt_am': fields.Datetime.now(), 'erledigt_text': text}
         # Verknüpfung stets neu setzen, damit ein früheres Protokoll den Eintrag nicht mehr berührt
         werte['erledigt_durch_protokoll_id'] = protokoll.id if protokoll else False
-        typ = self.env.ref(RUECKRUF_TYP, raise_if_not_found=False)
-        aktivitaeten = offen.rueckruf_aktivitaet_id.exists().filtered(
-            lambda a: a.active and a.activity_type_id == typ)
+        aktivitaeten = offen.rueckruf_aktivitaet_id
         offen.write(werte)
-        for aktivitaet in aktivitaeten:
-            # gehört sie noch zu einem offenen Eintrag (z. B. andere Firma), bleibt sie offen
-            if anruf.search_count([('rueckruf_aktivitaet_id', '=', aktivitaet.id),
-                                   ('erledigt', '=', False)]):
+        anruf._wb_voip_aktivitaeten_abschliessen(aktivitaeten, text)
+        offen._wb_voip_verpasst_melden()
+        return offen
+
+    def _wb_voip_aktivitaeten_abschliessen(self, aktivitaeten, text):
+        """Mark active callback activities done with ``text`` (plain text, escaped here).
+
+        Call after the entries were closed. An activity that a still open entry uses (e.g.
+        another number of the same contact) stays open. Each activity is closed as its owner
+        in a savepoint; a failure is logged and never aborts the caller.
+        """
+        typ = self.env.ref(RUECKRUF_TYP, raise_if_not_found=False)
+        feedback = plaintext2html(text) if text else False
+        for aktivitaet in aktivitaeten.sudo().exists().filtered(
+                lambda a: a.active and a.activity_type_id == typ):
+            if self.sudo().search_count([('rueckruf_aktivitaet_id', '=', aktivitaet.id),
+                                         ('erledigt', '=', False)]):
                 continue
             try:
                 with self.env.cr.savepoint():
                     # als Besitzer (Autor der Nachricht), sudo für fehlende Schreibrechte
-                    aktivitaet.with_user(aktivitaet.user_id).sudo().action_feedback(feedback=text)
+                    aktivitaet.with_user(aktivitaet.user_id).sudo().action_feedback(
+                        feedback=feedback)
             except Exception:  # noqa: BLE001 - eine Aktivität darf das Erledigen nicht abbrechen
                 _logger.exception("[wb_voip] Rückruf-Aktivität %s nicht abschließbar", aktivitaet.id)
-        offen._wb_voip_verpasst_melden()
-        return offen
 
     def _wb_voip_wieder_oeffnen(self):
         """Reopen done missed entries (the result of the callback log changed).
@@ -666,6 +680,121 @@ class WbVoipAnruf(models.Model):
         """Tell the owners' browser tabs that their missed-call list changed (empty payload)."""
         for benutzer in self.sudo().user_id:
             benutzer._bus_send('wb_voip/verpasst', {})
+
+    # --- Verpasst-Liste: Zeilen, Zähler, Erledigen (RPC) ---
+
+    @api.model
+    def _wb_voip_verpasst_offen(self):
+        """Return (sudo) the caller's open entries: missed, or answered elsewhere with a link."""
+        return self.sudo().search([
+            ('user_id', '=', self.env.uid), ('erledigt', '=', False),
+            '|', ('zustand', '=', 'verpasst'),
+            '&', ('zustand', '=', 'anderswo'), ('angenommen_anruf_id', '!=', False),
+        ], order='beginn desc, id desc', limit=VERPASST_HOECHSTENS)
+
+    @staticmethod
+    def _wb_voip_verpasst_schluessel(anruf):
+        return anruf.nummer_e164 or anruf.nummer or ''
+
+    def _wb_voip_angenommen_info(self):
+        """Return what the owner may see of the colleague who answered: name, duration, note.
+
+        Only for the caller's own ``anderswo`` entry with a link to a call of the same company;
+        otherwise ``False``. The note is plain text, cut to ``VERPASST_NOTIZ_MAX`` characters.
+        Nothing else of the colleague's call is revealed.
+        """
+        self.ensure_one()
+        anruf = self.sudo()
+        if anruf.user_id != self.env.user or anruf.zustand != 'anderswo':
+            return False
+        kollege = anruf.angenommen_anruf_id
+        if not kollege or not anruf.company_id or kollege.company_id != anruf.company_id:
+            return False
+        return {
+            'name': kollege.user_id.name,
+            'dauer_sek': kollege.dauer_sek,
+            'notiz': (kollege.notiz or '')[:VERPASST_NOTIZ_MAX],
+        }
+
+    def _wb_voip_verpasst_zeile(self):
+        """Return the list row of a group of entries (newest first, all the caller's own)."""
+        neuester = self[0]
+        partner = neuester._wb_voip_lesbarer_kontakt()
+        art = 'anderswo' if neuester.zustand == 'anderswo' else 'verpasst'
+        return {
+            'schluessel': self._wb_voip_verpasst_schluessel(neuester),
+            'anruf_id': neuester.id,
+            'anzahl': len(self),
+            'art': art,
+            'nummer': neuester.nummer or False,
+            'partner': [partner.id, partner.display_name] if partner else False,
+            'letzter_beginn': fields.Datetime.to_string(neuester.beginn) if neuester.beginn
+            else False,
+            'kollege': neuester._wb_voip_angenommen_info() if art == 'anderswo' else False,
+        }
+
+    @api.model
+    @nur_voip_benutzer
+    def wb_voip_verpasst_liste(self, limit=50):
+        """Return the caller's open missed calls grouped per number, newest group first.
+
+        Group key: E.164 number, else the dialled number. ``limit`` counts groups. Works
+        without a license (existing data). The contact is named only if the caller may read it.
+        """
+        limit_pruefen(self.env, limit)
+        gruppen = {}
+        for anruf in self._wb_voip_verpasst_offen():
+            gruppen.setdefault(self._wb_voip_verpasst_schluessel(anruf), anruf.browse())
+            gruppen[self._wb_voip_verpasst_schluessel(anruf)] |= anruf
+        zeilen = [g.sorted(lambda a: (a.beginn, a.id), reverse=True)._wb_voip_verpasst_zeile()
+                  for g in gruppen.values()]
+        zeilen.sort(key=lambda z: (z['letzter_beginn'] or '', z['anruf_id']), reverse=True)
+        return zeilen[:limit]
+
+    @api.model
+    @nur_voip_benutzer
+    def wb_voip_verpasst_zaehler(self):
+        """Return the number of the caller's open, unseen missed calls (never "elsewhere")."""
+        return self.sudo().search_count([
+            ('user_id', '=', self.env.uid), ('zustand', '=', 'verpasst'),
+            ('erledigt', '=', False), ('gesehen', '=', False)])
+
+    @api.model
+    @nur_voip_benutzer
+    def wb_voip_verpasst_gesehen(self):
+        """Mark all the caller's open entries as seen; return the new counter."""
+        neu = self._wb_voip_verpasst_offen().filtered(lambda a: not a.gesehen)
+        if neu:
+            neu.write({'gesehen': True})
+            neu._wb_voip_verpasst_melden()
+        return self.wb_voip_verpasst_zaehler()
+
+    @nur_voip_benutzer
+    def wb_voip_verpasst_erledigen(self, text):
+        """Close all open entries of this entry's group (check mark "how done?").
+
+        ``text``: str of at most ``ERLEDIGT_TEXT_MAX`` characters, may be empty; it becomes the
+        feedback of the callback activity (plain text). Already done: no-op. Returns the new
+        list row of the group or ``False`` if nothing is left open.
+        """
+        _text_pruefen(self.env, text, self.env._("Text"), ERLEDIGT_TEXT_MAX, pflicht=False)
+        anruf = self._wb_voip_eigener()
+        if anruf.erledigt:
+            return False
+        offen = self._wb_voip_verpasst_offen()
+        if anruf not in offen:
+            raise UserError(self.env._("Dies ist kein offener Verpasst-Eintrag."))
+        schluessel = self._wb_voip_verpasst_schluessel(anruf)
+        gruppe = offen.filtered(lambda a: self._wb_voip_verpasst_schluessel(a) == schluessel)
+        aktivitaeten = gruppe.rueckruf_aktivitaet_id
+        gruppe.write({
+            'erledigt': True, 'erledigt_am': fields.Datetime.now(), 'erledigt_text': text or False,
+            'erledigt_durch_protokoll_id': False})
+        anruf._wb_voip_aktivitaeten_abschliessen(aktivitaeten, text or self.env._("Erledigt"))
+        gruppe._wb_voip_verpasst_melden()
+        rest = self._wb_voip_verpasst_offen().filtered(
+            lambda a: self._wb_voip_verpasst_schluessel(a) == schluessel)
+        return rest._wb_voip_verpasst_zeile() if rest else False
 
     def _wb_voip_protokollieren(self):
         """Create the log entry of a finished call exactly once and post to the chatter."""
