@@ -31,7 +31,7 @@ Einrichtung
 Verbindungsdaten der Anlage
 ---------------------------
 
-WebSocket-URL, SIP-Domain und ICE-Server einer Anlage dürfen nur Systemadministratoren ändern (Prüfung in
+WebSocket-URL, SIP-Domain, ICE-Server und Land einer Anlage dürfen nur Systemadministratoren ändern (Prüfung in
 ``write``, im Formular für andere schreibgeschützt); Anlagen anlegen, duplizieren und löschen ist ebenfalls der
 Systemverwaltung vorbehalten (Zugriffsrechte plus Prüfung im Code, auch gegen Vorgabewerte). Benutzer von WB VoIP lesen sie weiter, der
 Browser braucht sie zur Anmeldung. VoIP-Administratoren ohne Systemrecht können sie nicht auf einen fremden
@@ -245,7 +245,7 @@ Lebenszeichen (ein vorhandenes wird gelöscht) und in der Gesprächsansicht gibt
 freie Nummer.
 
 Die Übersicht zeigt Anwesenheit und Telefonstatus von Beschäftigten. Wer sie einschaltet, informiert vorher die
-Beschäftigten (Art. 13 DSGVO, § 26 BDSG) und beteiligt, falls vorhanden, den Betriebsrat: Eine Einrichtung, die
+Beschäftigten (Art. 13 DSGVO) und beteiligt, falls vorhanden, den Betriebsrat: Eine Einrichtung, die
 Verhalten oder Leistung überwachen kann, ist mitbestimmungspflichtig (§ 87 Abs. 1 Nr. 6 BetrVG).
 
 Der Reiter „Team“ im Softphone zeigt die Kollegen mit ihrem Status:
