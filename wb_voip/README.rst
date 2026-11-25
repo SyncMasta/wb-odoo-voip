@@ -176,6 +176,44 @@ Kontakt nicht ändern, wird der Anruf trotzdem zugeordnet und die Nummer nicht g
 gehören Anruf und Protokoll zum Kontakt, und spätere Anrufe dieser Nummer erkennt WB VoIP selbst. Zuordnen
 kann nur, wer den Anruf selbst geführt hat.
 
+Verpasste Anrufe
+----------------
+
+Zustände: Legt der Anrufer vor der Annahme auf (SIP CANCEL), ist der Anruf „verpasst“ (Protokoll „nicht
+erreicht“). Nimmt ein Kollege den Anruf an, meldet die Anlage „Call completed elsewhere“; der eigene Anruf
+wird dann „anderswo angenommen“. Selbst abgelehnte Anrufe bleiben „abgelehnt“. Ein verpasster Anruf legt eine
+Aktivität „Rückruf: verpasster Anruf“ an (Aktivitätstyp „Rückruf“): am verknüpften Kontakt, nur wenn der
+Benutzer ihn lesen darf, und je Benutzer und Kontakt nur eine offene.
+
+Liste und Zähler: Im Softphone zeigt der Reiter „Verpasst“ die offenen Einträge je Rufnummer (mit Anzahl und
+letzter Zeit), ein Zähler am Telefonsymbol und am Reiter die noch nicht gesehenen. Der Zähler zählt nur
+ungesehene verpasste Anrufe, nie „anderswo angenommen“; als gesehen gilt, was die Liste in einem sichtbaren Tab
+angezeigt hat. Liste und Zähler laden per RPC, der Bus meldet nur „neu laden“ (keine personenbezogenen Daten).
+
+Erledigen: „Jetzt anrufen“ wählt die Nummer. Mit ✓ und der Eingabe „Wie erledigt?“ schließt man die Einträge der
+Nummer; der Text wird die Rückmeldung der Aktivität. Ein angenommener eingehender Anruf derselben Nummer schließt
+die offenen Einträge aller Benutzer sofort; ein ausgehender Rückruf schließt sie beim Auflegen, wenn sein
+Protokoll „erreicht“ lautet. Wird die Rückruf-Aktivität im Chatter als erledigt markiert, ist auch der Eintrag
+erledigt.
+
+Wieder öffnen: Ändert man das Ergebnis eines Rückruf-Protokolls von „erreicht“ auf etwas anderes (z. B.
+Mailbox), öffnen sich genau die Einträge wieder, die dieses Protokoll geschlossen hat, je Benutzer mit neuer
+Rückruf-Aktivität; zurück auf „erreicht“ schließt sie erneut. Einträge, die auf anderem Weg erledigt wurden,
+bleiben erledigt. Archivierte Aktivitäten werden nie wiederverwendet.
+
+Kollegen-Hinweis und gemeinsame Firma: Kam der Anruf bei mehreren Nebenstellen gleichzeitig an und nahm ihn ein
+Kollege an, steht in der Liste „angenommen von <Name> (Dauer)“ und die Notiz des Kollegen. Als gleichzeitig gilt
+derselbe eingehende Anruf (gleiche Rufnummer im E.164-Format, Beginn höchstens 10 Sekunden auseinander), aber nur
+bei Benutzern mit gemeinsamer Firma; zwischen Firmen wird nichts verknüpft oder geschlossen. Anrufe ohne E.164-Nummer
+werden nie verknüpft.
+
+Datenschutz: Kollegen sehen von einem angenommenen Anruf nur Name, Dauer und Notiz des Annehmenden, und nur in
+derselben Firma. Ob jemand angenommen hat, meldet der Browser; der Server kann das nicht prüfen. Eine falsche
+Meldung kann daher offene Einträge von Kollegen mit derselben Nummer im 10-Sekunden-Fenster schließen. Ausgehende
+Anrufe, die der Aufräum-Lauf beendet, schließen keine Einträge. Schlägt das Abschließen einer Aktivität fehl,
+gilt der Eintrag trotzdem als erledigt (wird protokolliert). Bei der Deinstallation hängt das Modul vorhandene
+Rückruf-Aktivitäten auf den Odoo-Typ „Anruf“ um, damit Aufgaben erhalten bleiben.
+
 SIP-Passwort und Schlüssel
 --------------------------
 

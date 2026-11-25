@@ -8,7 +8,7 @@ Notizen und findet später nicht mehr, wer wann mit wem gesprochen hat. WB VoIP 
 Klick aus jedem Telefonfeld, eingehende Anrufe mit Namen des Kontakts, und nach jedem Gespräch ein Protokolleintrag
 am richtigen Datensatz.
 
-> **Stand:** Phase 3 (Version 19.0.3.x). Softphone, Anrufprotokoll, Anrufer-Fenster mit Layout-Designer, eigene
+> **Stand:** Phase 4 (Version 19.0.4.x). Verpasste Anrufe mit Rückruf-Liste, Softphone, Anrufprotokoll, Anrufer-Fenster mit Layout-Designer, eigene
 > Anruf-Buttons mit Assistent, Rufnummer zuordnen und Lizenzanbindung sind fertig und mit automatischen Tests
 > abgesichert. Gegen eine echte Telefonanlage getestet ist die Signalisierung aus Phase 1 und 2 (Anmelden,
 > Anrufe, Annehmen, Auflegen); das Weiterleiten von Gesprächen noch nicht. Bis dahin gilt das Modul als
@@ -32,6 +32,20 @@ am richtigen Datensatz.
 - Breites Popup direkt nach dem Auflegen mit Kontakt, den letzten Anrufen und „Folgeaktivität planen“
 - Hinweis im Chatter des verknüpften Datensatzes bzw. des Kontakts
 - Kontakterkennung über die Rufnummer, unabhängig von der Schreibweise (`0170 1234567` = `+49 170 1234567`)
+
+**Verpasste Anrufe**
+- Zustände „verpasst“ (Anrufer legt vor der Annahme auf) und „anderswo angenommen“ (ein Kollege war schneller)
+- Reiter „Verpasst“ im Softphone: offene Einträge je Rufnummer, „Jetzt anrufen“, ✓ mit „Wie erledigt?“, Zähler am
+  Telefonsymbol (nur ungesehene verpasste, nie „anderswo“)
+- Rückruf-Aktivität „Rückruf: verpasster Anruf“ am Kontakt (nur bei Leserecht)
+- Ein angenommener Anruf oder ein erreichter Rückruf derselben Nummer schließt die Einträge; ändert man das
+  Ergebnis des Rückruf-Protokolls, öffnen sich genau diese Einträge wieder. Die Rückruf-Aktivität im Chatter zu
+  erledigen schließt den Eintrag ebenfalls.
+- Hinweis „angenommen von <Name>“ mit Dauer und Notiz des Kollegen, nur bei gleichzeitigem Anruf (Beginn ± 10 s,
+  gleiche E.164-Nummer) und gemeinsamer Firma
+- Datenschutz: Kollegen sehen nur Name, Dauer und Notiz des Annehmenden. Die Annahme meldet der Browser, der Server
+  kann sie nicht prüfen; eine falsche Meldung kann offene Einträge von Kollegen derselben Nummer im
+  10-Sekunden-Fenster schließen. Ausgehende Anrufe, die der Aufräum-Lauf beendet, schließen keine Einträge.
 
 **Anrufer-Fenster**
 - Seitenpanel bei jedem Anruf, nur im Tab, der telefoniert: Kontakt mit Bild, letzte Gespräche, offene Aufgaben,
@@ -117,7 +131,6 @@ Details stehen in [`wb_voip/README.rst`](wb_voip/README.rst).
 
 ## Geplant
 
-- Verpasste Anrufe mit Rückruf-Liste
 - CRM-Anbindung (Anrufe am Vorgang)
 - Adapter für Telefonanlagen, beginnend mit Ansitel (Rufumleitung, Anrufbeantworter, Anrufliste)
 - Englische Oberfläche
