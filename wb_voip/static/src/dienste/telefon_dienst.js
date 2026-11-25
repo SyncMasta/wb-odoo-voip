@@ -26,6 +26,11 @@ export const MAX_NOTIZ = 10_000;
 export const MAX_NUMMER = 64;
 /** Meldung, wenn dem Benutzer Anlage oder SIP-Benutzer fehlt (Zustand „aus“). */
 export const NICHT_EINGERICHTET = _t("Telefon ist für diesen Benutzer nicht eingerichtet.");
+/** Höchstens so viele mit 480 abgewiesene Anrufe je Minute an den Server melden. */
+export const ABGEWIESEN_MAX_JE_MINUTE = 10;
+const ABGEWIESEN_FENSTER_MS = 60_000;
+/** So viele Call-IDs abgewiesener Anrufe merkt sich der Dienst (je Call-ID nur eine Meldung). */
+const ABGEWIESEN_MERKEN = 100;
 const HALTER_FRAGE_MS = 1000;
 const DTMF = /^[0-9*#]$/;
 
@@ -141,7 +146,9 @@ export class TelefonDienst {
         this._gehalten = null; // Kontext der gehaltenen Leitung
         this._klopfend = null; // Kontext des wartenden eingehenden Anrufs
         this._rueckfrageLaeuft = false; // Halten vor der Rückfrage läuft noch
-        this._verbindet = null; // {aktiv, gehalten} während „Verbinden“
+        this._verbindet = null; // {aktiv, gehalten, beideBeendet} während „Verbinden“
+        this._abgewiesenIds = new Set(); // Call-IDs schon gemeldeter 480-Anrufe
+        this._abgewiesenZeiten = []; // Meldezeiten im laufenden Minutenfenster
         this._popupWarten = []; // Protokoll-Popups, bis keine Leitung mehr läuft
         this._teamTimer = null; // Takt des Team-Lebenszeichens (nur im Telefon-Tab)
         this._teamGemeldet = false; // dem Server zuletzt „angemeldet“ gemeldet
@@ -644,9 +651,27 @@ export class TelefonDienst {
 
     /**
      * Meldet einen mit 480 abgewiesenen Anruf, damit er als verpasst zählt: anlegen und sofort
-     * beenden. Best effort, ohne Oberfläche und ohne Fehlermeldung.
+     * beenden. Best effort, ohne Oberfläche und ohne Fehlermeldung. Je Call-ID nur einmal und
+     * höchstens ``ABGEWIESEN_MAX_JE_MINUTE`` je Minute (eine Flut von INVITEs erzeugt sonst je
+     * Anruf zwei Server-Aufrufe).
      */
     _abgewiesenMelden(sitzung, kennung) {
+        const callId = String(sitzung.callId || "");
+        if (this._abgewiesenIds.has(callId)) {
+            return;
+        }
+        const jetzt = this.uhr.jetzt();
+        this._abgewiesenZeiten = this._abgewiesenZeiten.filter(
+            (zeit) => jetzt - zeit < ABGEWIESEN_FENSTER_MS
+        );
+        if (this._abgewiesenZeiten.length >= ABGEWIESEN_MAX_JE_MINUTE) {
+            return;
+        }
+        this._abgewiesenZeiten.push(jetzt);
+        this._abgewiesenIds.add(callId);
+        if (this._abgewiesenIds.size > ABGEWIESEN_MERKEN) {
+            this._abgewiesenIds.delete(this._abgewiesenIds.values().next().value);
+        }
         Promise.resolve()
             .then(() =>
                 this.orm.call("wb.voip.anruf", "wb_voip_beginnen", [
@@ -677,11 +702,13 @@ export class TelefonDienst {
 
     /** Beendet alle Leitungen mit ``fn``, ohne die gehaltene zurückzuholen. */
     _alleBeenden(fn) {
+        const verbinden = this._verbindet;
         this._verbindet = null;
         this.state.verbindet = false;
         for (const kontext of this._leitungen()) {
             fn(kontext);
         }
+        verbinden?.beideBeendet?.(); // wartendes verbinden() gibt auf
     }
 
     _anrufBeginnen(sitzung, richtung, nummer, resModel, resId, platz = "aktiv") {
@@ -857,6 +884,11 @@ export class TelefonDienst {
             this._klopfend = null;
             this.state.klopfend = null;
             this.klaenge.klingeln(false);
+        }
+        const verbinden = this._verbindet;
+        if (verbinden && verbinden.aktiv.beendet && verbinden.gehalten.beendet) {
+            // die Anlage hat beide Dialoge beendet: Übergabe gelungen, ohne auf NOTIFY zu warten
+            verbinden.beideBeendet?.();
         }
         this._popupsFreigeben();
         // Protokoll-Popup für jedes Kundengespräch, nie für eine Rückfrage
@@ -1172,15 +1204,22 @@ export class TelefonDienst {
             this.state.fehler = _t("Verbinden geht erst, wenn die Rückfrage angenommen ist.");
             return false;
         }
-        const verbinden = { aktiv, gehalten };
+        const verbinden = { aktiv, gehalten, beideBeendet: null };
+        // erfüllt, sobald die Anlage beide Dialoge beendet hat (BYE vor dem NOTIFY) oder der
+        // Dienst abbricht; dann wird nicht länger auf das REFER gewartet
+        const beideBeendet = new Promise((resolve) => (verbinden.beideBeendet = resolve));
         this._verbindet = verbinden;
         this.state.verbindet = true;
-        let fehler = null;
+        let refer;
         try {
-            await gehalten.sitzung.refer(aktiv.sitzung);
+            refer = Promise.resolve(gehalten.sitzung.refer(aktiv.sitzung)).then(
+                () => null,
+                (f) => f || new Error(_t("Verbinden fehlgeschlagen."))
+            );
         } catch (f) {
-            fehler = f;
+            refer = Promise.resolve(f);
         }
+        const fehler = await Promise.race([refer, beideBeendet.then(() => null)]);
         if (this._verbindet !== verbinden) {
             return false; // inzwischen abgebrochen (stop, Lizenz, Verbindung weg)
         }
@@ -1218,7 +1257,7 @@ export class TelefonDienst {
     async weiterleiten(nummer) {
         const kontext = this._laufend();
         const ziel = waehlbar(nummer);
-        if (!kontext || !ziel) {
+        if (!kontext || !ziel || this._verbindet) {
             return false;
         }
         try {

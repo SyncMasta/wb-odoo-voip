@@ -53,7 +53,7 @@
             <t t-else="">
                 <div class="o_wb_voip_bedienung d-flex flex-wrap gap-2 justify-content-center mb-3">
                     <button type="button" class="o_wb_voip_stumm btn btn-outline-secondary"
-                            t-att-class="{active: anruf.stumm}" t-att-disabled="!laeuft"
+                            t-att-class="{active: anruf.stumm}" t-att-disabled="!laeuft or verbindet"
                             t-att-aria-pressed="anruf.stumm ? 'true' : 'false'"
                             title="Stumm" aria-label="Stumm" t-on-click="stumm">
                         <i class="fa fa-microphone-slash" aria-hidden="true"/>
@@ -65,20 +65,20 @@
                         <i class="fa fa-pause" aria-hidden="true"/>
                     </button>
                     <button type="button" class="o_wb_voip_tastatur_umschalten btn btn-outline-secondary"
-                            t-att-class="{active: lokal.tastatur}" t-att-disabled="!laeuft"
+                            t-att-class="{active: lokal.tastatur}" t-att-disabled="!laeuft or verbindet"
                             t-att-aria-pressed="lokal.tastatur ? 'true' : 'false'"
                             title="Tastatur" aria-label="Tastatur" t-on-click="tastaturUmschalten">
                         <i class="fa fa-th" aria-hidden="true"/>
                     </button>
                     <button type="button" class="o_wb_voip_weiterleiten_umschalten btn btn-outline-secondary"
-                            t-att-class="{active: lokal.weiterleiten}" t-att-disabled="!laeuft"
+                            t-att-class="{active: lokal.weiterleiten}" t-att-disabled="!laeuft or verbindet"
                             t-att-aria-pressed="lokal.weiterleiten ? 'true' : 'false'"
                             title="Weiterleiten" aria-label="Weiterleiten" t-on-click="weiterleitenUmschalten">
                         <i class="fa fa-share" aria-hidden="true"/>
                     </button>
                     <button t-if="!gehaltener and !klopfend" type="button"
                             class="o_wb_voip_team_umschalten btn btn-outline-secondary"
-                            t-att-class="{active: lokal.team}" t-att-disabled="!laeuft"
+                            t-att-class="{active: lokal.team}" t-att-disabled="!laeuft or verbindet"
                             t-att-aria-pressed="lokal.team ? 'true' : 'false'"
                             title="Team: Übergeben oder Rückfrage" aria-label="Team: Übergeben oder Rückfrage"
                             t-on-click="teamUmschalten">
@@ -88,8 +88,8 @@
                 <div t-if="lokal.team and zweiteFrei" class="o_wb_voip_team_auswahl border rounded mb-3">
                     <TeamListe auswahl="true" onFertig.bind="teamFertig"/>
                 </div>
-                <Tastenfeld t-if="lokal.tastatur and laeuft" onTaste.bind="dtmf"/>
-                <div t-if="lokal.weiterleiten and laeuft" class="input-group mb-3">
+                <Tastenfeld t-if="lokal.tastatur and laeuft and !verbindet" onTaste.bind="dtmf"/>
+                <div t-if="lokal.weiterleiten and laeuft and !verbindet" class="input-group mb-3">
                     <input type="tel" class="o_wb_voip_weiterleiten_ziel form-control" maxlength="64"
                            placeholder="Weiterleiten an" aria-label="Weiterleiten an"
                            t-model="lokal.ziel" t-on-keydown="onZielKeydown"/>

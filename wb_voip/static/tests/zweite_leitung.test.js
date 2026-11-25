@@ -705,3 +705,71 @@ test("Anrufansicht: Zurück beschriftet nach Herkunft der aktiven Leitung", asyn
     expect(".o_wb_voip_zurueck").toHaveText("Auflegen und zurück");
     welt.dienst.stop();
 });
+
+// --- Nacharbeiten Verbinden (Task 4) ---------------------------------------------------------
+
+test("Verbinden: Anlage beendet beide Leitungen vor dem NOTIFY – sofort fertig, Telefon wieder frei", async () => {
+    const welt = await verbunden();
+    const { erste, zweite } = await mitRueckfrage(welt);
+    referSteuern(erste); // NOTIFY kommt nie
+    const ergebnis = welt.dienst.verbinden();
+    await welt.uhr.vorspulen(0);
+    erste.gegenstelleLegtAuf("bye");
+    zweite.gegenstelleLegtAuf("bye");
+    await welt.uhr.vorspulen(0);
+    // ohne die 15-s-Frist abzuwarten
+    expect(await ergebnis).toBe(true);
+    expect(welt.dienst.state.verbindet).toBe(false);
+    expect(welt.popups).toEqual([10]);
+    const eingehend = welt.agent.eingehend("0170 5555");
+    await welt.uhr.vorspulen(0);
+    expect(eingehend.hat("reject")).toEqual([]);
+    expect(welt.dienst.state.anruf.nummer).toBe("0170 5555");
+    await welt.dienst.ablehnen();
+    expect(await welt.dienst.waehlen("0170 6666")).toBe(true);
+    welt.dienst.stop();
+});
+
+test("Während Verbinden: Weiterleiten ohne Wirkung, Stumm, Tastatur und Weiterleiten gesperrt", async () => {
+    const welt = await ansicht();
+    const { erste, zweite } = await mitRueckfrage(welt);
+    const refer = referSteuern(erste);
+    await animationFrame();
+    await click(".o_wb_voip_verbinden");
+    await welt.uhr.vorspulen(0);
+    await animationFrame();
+    for (const knopf of [".o_wb_voip_stumm", ".o_wb_voip_tastatur_umschalten", ".o_wb_voip_weiterleiten_umschalten"]) {
+        expect(knopf).toHaveAttribute("disabled");
+    }
+    expect(".o_wb_voip_team_umschalten").toHaveCount(0);
+    expect(await welt.dienst.weiterleiten("103")).toBe(false);
+    expect(zweite.hat("refer").length).toBe(0);
+    expect(erste.hat("refer").length).toBe(1);
+    refer.resolve();
+    await welt.uhr.vorspulen(0);
+    welt.dienst.stop();
+});
+
+test("Abgewiesene Anrufe (480): je Call-ID einmal, höchstens 10 je Minute gemeldet", async () => {
+    const welt = await verbunden();
+    await mitRueckfrage(welt);
+    const vorher = welt.orm.zaehle("wb_voip_beginnen");
+    const gleich = welt.agent.eingehend("0170 3333");
+    await welt.uhr.vorspulen(0);
+    // dieselbe Call-ID noch einmal (z. B. INVITE wiederholt)
+    welt.agent.emit("invitation", gleich);
+    await welt.uhr.vorspulen(0);
+    expect(welt.orm.zaehle("wb_voip_beginnen")).toBe(vorher + 1);
+    for (let i = 0; i < 12; i++) {
+        welt.agent.eingehend(`0170 40${i}`);
+    }
+    await welt.uhr.vorspulen(0);
+    expect(welt.orm.zaehle("wb_voip_beginnen")).toBe(vorher + 10);
+    // alle wurden trotzdem abgewiesen
+    expect(welt.agent.invites.length).toBe(2);
+    await welt.uhr.vorspulen(60_000);
+    welt.agent.eingehend("0170 5000");
+    await welt.uhr.vorspulen(0);
+    expect(welt.orm.zaehle("wb_voip_beginnen")).toBe(vorher + 11);
+    welt.dienst.stop();
+});
