@@ -218,13 +218,19 @@ class WbVoipAnruf(models.Model):
 
     # --- Schutz der Serverfelder ---
 
+    @api.model
+    def _wb_voip_nur_server(self):
+        """Return the server-only field names; extensions add theirs through ``super()``."""
+        return self._WB_VOIP_NUR_SERVER
+
     @api.model_create_multi
     def create(self, vals_list):
         if not self.env.su:
+            nur_server = self._wb_voip_nur_server()
             for vals in vals_list:
-                serverfelder.pruefen(self.env, vals, self._WB_VOIP_NUR_SERVER)
+                serverfelder.pruefen(self.env, vals, nur_server)
             self = self.with_context(
-                serverfelder.kontext_ohne_defaults(self.env, self._WB_VOIP_NUR_SERVER))
+                serverfelder.kontext_ohne_defaults(self.env, nur_server))
         anrufe = super().create(vals_list)
         # Neuer Anruf, der gleich klingelt oder läuft: nur melden, wenn sich der Status ändert
         besitzer = anrufe.sudo().filtered(lambda a: a.zustand in OFFENE_ZUSTAENDE).user_id
@@ -235,7 +241,7 @@ class WbVoipAnruf(models.Model):
 
     def write(self, vals):
         if not self.env.su:
-            serverfelder.pruefen(self.env, vals, self._WB_VOIP_NUR_SERVER)
+            serverfelder.pruefen(self.env, vals, self._wb_voip_nur_server())
         if 'zustand' not in vals:
             return super().write(vals)
         # Team-Status: nur Besitzer melden, deren abgeleiteter Status sich wirklich ändert

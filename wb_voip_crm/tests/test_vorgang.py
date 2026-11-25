@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from odoo.exceptions import AccessError, UserError
 from odoo.tests import tagged
 
@@ -54,6 +56,27 @@ class TestVorgang(WbVoipCrmCase):
         self.assertIn('lead_id', self.Anruf._WB_VOIP_NUR_SERVER)
         # der Kern bleibt unverändert erhalten
         self.assertIn('res_model', self.Anruf._WB_VOIP_NUR_SERVER)
+
+    def test_serverfelder_methode_erweiterbar(self):
+        """A second extension adds a field through ``super()``; both stay protected."""
+        modell = type(self.Anruf)
+        vorher = modell._wb_voip_nur_server
+
+        def zweite(modell_self):
+            return vorher(modell_self) + ('zweites_feld',)
+
+        with patch.object(modell, '_wb_voip_nur_server', zweite):
+            nur_server = self.Anruf._wb_voip_nur_server()
+            self.assertIn('lead_id', nur_server)
+            self.assertIn('zweites_feld', nur_server)
+            self.assertIn('res_model', nur_server)
+            anruf = self._anruf()
+            for feld in ('lead_id', 'zweites_feld'):
+                with self.assertRaises(UserError, msg=feld):
+                    anruf.with_user(self.vertrieb_eigene).write({feld: 1})
+                with self.assertRaises(UserError, msg=feld):
+                    self.Anruf.with_user(self.vertrieb_eigene).create({
+                        'user_id': self.vertrieb_eigene.id, 'richtung': 'eingehend', feld: 1})
 
     def test_lead_id_default_im_kontext_wirkungslos(self):
         env = self.Anruf.with_user(self.vertrieb_eigene).with_context(

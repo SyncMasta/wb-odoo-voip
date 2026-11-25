@@ -12,8 +12,13 @@ LEAD_MODELL = 'crm.lead'
 class WbVoipAnruf(models.Model):
     _inherit = 'wb.voip.anruf'
 
-    # lead_id wird nur aus res_model/res_id berechnet und ist für Clients nie schreibbar
+    # lead_id wird nur aus res_model/res_id berechnet und ist für Clients nie schreibbar.
+    # Die Konstante bleibt für ältere Aufrufer; geprüft wird über ``_wb_voip_nur_server()``.
     _WB_VOIP_NUR_SERVER = KernAnruf._WB_VOIP_NUR_SERVER + ('lead_id',)
+
+    @api.model
+    def _wb_voip_nur_server(self):
+        return super()._wb_voip_nur_server() + ('lead_id',)
 
     # Nur Systemverwaltung: Many2one-Anzeigenamen werden per sudo gelesen und würden den
     # Vorgangsnamen ohne Leserecht preisgeben; Benutzer nutzen res_model/res_id und das
