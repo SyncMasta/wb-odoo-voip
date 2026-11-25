@@ -4,6 +4,7 @@ from odoo.fields import Command
 from odoo.tools.misc import format_amount, format_date, format_datetime, formatLang
 
 from ..tools.rechte import GRUPPE_MANAGER, nur_voip_manager
+from .wb_voip_aktion import ART_MUSTER
 
 ORTE = [('anrufer_fenster', 'Anrufer-Fenster'), ('protokoll_popup', 'Protokoll-Popup')]
 TEXT_MAX = 2000
@@ -27,11 +28,13 @@ ERLAUBTE_ZIELE = ('res.partner', 'res.country', 'res.country.state', 'res.partne
 # Many2many targets
 ERLAUBTE_ZIELE_M2M = ('res.partner.category',)
 
-# Block types allowed per place (the popup has no buttons, note or activities)
+# Block types allowed per place (the popup has no buttons, note or activities); at runtime
+# always through ``wb.voip.layout._wb_voip_erlaubte_arten()`` (other modules add types)
 ERLAUBTE_ARTEN = {
     'anrufer_fenster': ('kontaktkopf', 'felder', 'protokolle', 'aufgaben', 'notiz', 'buttons', 'text'),
     'protokoll_popup': ('kontaktkopf', 'felder', 'protokolle', 'text'),
 }
+# Block types with a number of entries; at runtime ``_wb_voip_gezaehlte_arten()``
 GEZAEHLT = ('protokolle', 'aufgaben')
 # Designer: limits of the data a client may send
 DESIGNER_MAX_BLOECKE = 30
@@ -90,6 +93,22 @@ class WbVoipLayout(models.Model):
         '(ort) WHERE ist_standard IS TRUE',
         'Je Fenster gibt es genau ein Standard-Layout.')
 
+    # --- Erweiterungspunkte für Blockarten ---
+
+    @api.model
+    def _wb_voip_erlaubte_arten(self):
+        """Return ``{ort: (art, ...)}``: the block types each place allows (a fresh copy).
+
+        Other modules add their block types (after ``selection_add`` on
+        ``wb.voip.layout.block.art``) by overriding this and extending the tuples.
+        """
+        return {ort: tuple(arten) for ort, arten in ERLAUBTE_ARTEN.items()}
+
+    @api.model
+    def _wb_voip_gezaehlte_arten(self):
+        """Return the block types that show a number of entries (field ``anzahl``, 1 to 20)."""
+        return tuple(GEZAEHLT)
+
     @api.constrains('ist_standard', 'ort', 'active')
     def _check_standard(self):
         for layout in self.filtered('ist_standard'):
@@ -104,10 +123,11 @@ class WbVoipLayout(models.Model):
         """Only the block types of the place, the note at most once."""
         orte = dict(self._fields['ort']._description_selection(self.env))
         arten_namen = dict(self.env['wb.voip.layout.block']._fields['art']._description_selection(self.env))
+        erlaubte_arten = self._wb_voip_erlaubte_arten()
         for layout in self:
             arten = layout.block_ids.mapped('art')
             for art in arten:
-                if art not in ERLAUBTE_ARTEN.get(layout.ort, ()):
+                if art not in erlaubte_arten.get(layout.ort, ()):
                     raise ValidationError(self.env._(
                         "Die Blockart „%(art)s“ gibt es im Fenster „%(ort)s“ nicht.",
                         art=arten_namen.get(art, art), ort=orte.get(layout.ort, layout.ort)))
@@ -205,18 +225,23 @@ class WbVoipLayout(models.Model):
                     if block.art == art]
         return min(max(anzahlen), ANZAHL_MAX) if anzahlen else 0
 
-    def _wb_voip_fuer_client(self, partner):
+    def _wb_voip_fuer_client(self, partner, anruf=None):
         """Return the layout as client data, field values read as ``partner``'s user.
 
         ``partner`` is a ``res.partner`` record in the caller's environment that the caller
-        may read, or empty; without it field blocks carry no values. The layout itself is
-        read as superuser (the caller cannot read layouts; it was chosen for him beforehand).
+        may read, or empty; without it field blocks carry no values. ``anruf`` is the
+        caller's own call in the caller's environment (empty or None: designer preview); it
+        is handed to the block data hooks. The layout itself is read as superuser (the
+        caller cannot read layouts; it was chosen for him beforehand).
         """
         self.ensure_one()
         layout = self.sudo()
+        # Block-Daten in der Umgebung des Aufrufers (das Layout selbst ist oft sudo)
+        aufrufer = anruf.env if anruf else partner.env
+        Layout = aufrufer['wb.voip.layout']
         bloecke = [
-            self._wb_voip_block_fuer_client(block.art, block.titel, block.spalte, block.anzahl,
-                                            block.text, block.feld_ids, partner)
+            Layout._wb_voip_block_fuer_client(block.art, block.titel, block.spalte, block.anzahl,
+                                              block.text, block.feld_ids, partner, anruf=anruf)
             for block in layout._wb_voip_gueltige_bloecke()]
         # ein Ersatz ohne Datensatz hat keine ID
         return {'id': layout._origin.id or False, 'breite': layout.breite, 'bloecke': bloecke}
@@ -227,7 +252,7 @@ class WbVoipLayout(models.Model):
         Older data may hold blocks a place no longer allows; they are skipped at runtime.
         """
         self.ensure_one()
-        erlaubt = ERLAUBTE_ARTEN.get(self.ort, ())
+        erlaubt = self._wb_voip_erlaubte_arten().get(self.ort, ())
         ergebnis = self.env['wb.voip.layout.block']
         notiz = False
         for block in self.block_ids.sorted(lambda b: (b.sequence, b.id)):
@@ -245,16 +270,43 @@ class WbVoipLayout(models.Model):
             (layout.block_ids - layout._wb_voip_gueltige_bloecke()).unlink()
 
     @api.model
-    def _wb_voip_block_fuer_client(self, art, titel, spalte, anzahl, text, felder, partner):
-        """Return one block as client data (``felder``: ``ir.model.fields`` records)."""
-        return {
+    def _wb_voip_block_fuer_client(self, art, titel, spalte, anzahl, text, felder, partner,
+                                   anruf=None):
+        """Return one block as client data (``felder``: ``ir.model.fields`` records).
+
+        If the model has a method ``_wb_voip_block_daten_<art>(anruf, block, partner)``, its
+        result is added as ``daten`` (see ``_wb_voip_block_daten``).
+        """
+        block = {
             'art': art,
             'titel': titel or False,
             'spalte': spalte,
-            'anzahl': min(anzahl, ANZAHL_MAX) if art in GEZAEHLT else False,
+            'anzahl': min(anzahl, ANZAHL_MAX) if art in self._wb_voip_gezaehlte_arten() else False,
             'text': (text or '')[:TEXT_MAX] if art == 'text' else False,
             'felder': self._wb_voip_feldwerte(partner, felder) if art == 'felder' and partner else [],
         }
+        methode = self._wb_voip_block_daten_methode(art)
+        if methode is not None:
+            if anruf is None:
+                anruf = self.env['wb.voip.anruf']
+            block['daten'] = methode(anruf, dict(block), partner)
+        return block
+
+    @api.model
+    def _wb_voip_block_daten_methode(self, art):
+        """Return the bound block data hook ``_wb_voip_block_daten_<art>`` or None.
+
+        Contract of such a hook (added by other modules for their block types): called on
+        ``wb.voip.layout`` in the caller's environment (never sudo) with ``anruf`` (the
+        caller's own call, empty in the designer preview), ``block`` (a copy of the block's
+        client data: ``art``, ``titel``, ``spalte``, ``anzahl``, ``text``, ``felder``) and
+        ``partner`` (readable contact or empty). It returns JSON-serialisable data for the
+        browser and must itself show only what the caller may read.
+        """
+        if not isinstance(art, str) or not ART_MUSTER.fullmatch(art):
+            return None
+        methode = getattr(self, f'_wb_voip_block_daten_{art}', None)
+        return methode if callable(methode) else None
 
     # --- Designer (nur Administratoren von WB VoIP) ---
 
@@ -288,13 +340,14 @@ class WbVoipLayout(models.Model):
     def _wb_voip_designer_daten(self):
         """Return the layout as the designer edits it (field ids instead of values)."""
         self.ensure_one()
+        gezaehlt = self._wb_voip_gezaehlte_arten()
         bloecke = []
         for block in self.sudo().block_ids.sorted(lambda b: (b.sequence, b.id)):
             bloecke.append({
                 'art': block.art,
                 'titel': block.titel or False,
                 'spalte': block.spalte,
-                'anzahl': block.anzahl if block.art in GEZAEHLT else False,
+                'anzahl': block.anzahl if block.art in gezaehlt else False,
                 'text': (block.text or False) if block.art == 'text' else False,
                 'feld_ids': block.feld_ids.ids if block.art == 'felder' else [],
             })
@@ -321,8 +374,10 @@ class WbVoipLayout(models.Model):
         name = daten['name']
         if not isinstance(name, str) or not name.strip() or len(name) > NAME_MAX:
             raise ungueltig(self.env._("Name"))
+        erlaubte_arten = self._wb_voip_erlaubte_arten()
+        gezaehlt = self._wb_voip_gezaehlte_arten()
         ort = daten['ort']
-        if not isinstance(ort, str) or ort not in ERLAUBTE_ARTEN:
+        if not isinstance(ort, str) or ort not in erlaubte_arten:
             raise ungueltig(self.env._("Fenster"))
         breite = daten['breite']
         if not isinstance(breite, str) or breite not in dict(self._fields['breite'].selection):
@@ -344,7 +399,7 @@ class WbVoipLayout(models.Model):
                     or not set(block) <= _DESIGNER_BLOCK_SCHLUESSEL:
                 raise ungueltig(self.env._("Block"))
             art = block['art']
-            if not isinstance(art, str) or art not in ERLAUBTE_ARTEN[ort]:
+            if not isinstance(art, str) or art not in erlaubte_arten[ort]:
                 raise ungueltig(self.env._("Blockart"))
             titel = _leer_zu_false(block.get('titel', False))
             if titel is not False and (not isinstance(titel, str) or len(titel) > TITEL_MAX):
@@ -369,7 +424,7 @@ class WbVoipLayout(models.Model):
                 raise ungueltig(self.env._("Felder"))
             vals = {'sequence': nr * 10, 'art': art, 'titel': titel and titel.strip(),
                     'spalte': spalte}
-            if art in GEZAEHLT:
+            if art in gezaehlt:
                 anzahl = 5 if anzahl is False else anzahl
                 if not ANZAHL_MIN <= anzahl <= ANZAHL_MAX:
                     raise ungueltig(self.env._("Anzahl"))
@@ -392,9 +447,11 @@ class WbVoipLayout(models.Model):
         """Return everything the designer needs for ``layout_id`` (False: standard window).
 
         ``{layout, arten, felder, orte, breiten, layouts, beispielkontakt_id}``; ``felder`` are
-        the allowed contact fields (``ir.model.fields`` ids) the manager may read.
+        the allowed contact fields (``ir.model.fields`` ids) the manager may read; ``arten``
+        lists per place ``{art, label, gezaehlt}`` (from ``_wb_voip_erlaubte_arten``).
         """
         layout = self._wb_voip_designer_layout(layout_id)
+        gezaehlt = self._wb_voip_gezaehlte_arten()
         arten_namen = dict(self.env['wb.voip.layout.block']._fields['art']._description_selection(self.env))
         Partner = self.env['res.partner']
         felder = [{'id': feld.id, 'name': feld.name,
@@ -403,8 +460,9 @@ class WbVoipLayout(models.Model):
         felder.sort(key=lambda f: (f['label'].lower(), f['name']))
         return {
             'layout': layout._wb_voip_designer_daten(),
-            'arten': {ort: [{'art': art, 'label': arten_namen[art]} for art in arten]
-                      for ort, arten in ERLAUBTE_ARTEN.items()},
+            'arten': {ort: [{'art': art, 'label': arten_namen.get(art, art),
+                             'gezaehlt': art in gezaehlt} for art in arten]
+                      for ort, arten in self._wb_voip_erlaubte_arten().items()},
             'felder': felder,
             'orte': list(self._fields['ort']._description_selection(self.env)),
             'breiten': list(self._fields['breite']._description_selection(self.env)),
@@ -587,7 +645,8 @@ class WbVoipLayoutBlock(models.Model):
 
     @api.constrains('art', 'anzahl')
     def _check_anzahl(self):
-        for block in self.filtered(lambda b: b.art in GEZAEHLT):
+        gezaehlt = self.env['wb.voip.layout']._wb_voip_gezaehlte_arten()
+        for block in self.filtered(lambda b: b.art in gezaehlt):
             if not ANZAHL_MIN <= block.anzahl <= ANZAHL_MAX:
                 raise ValidationError(self.env._(
                     "Die Anzahl muss zwischen %(min)s und %(max)s liegen.",

@@ -18,31 +18,47 @@ const TEXT_MAX = 2000;
 const TITEL_MAX = 200;
 const ANZAHL_MIN = 1;
 const ANZAHL_MAX = 20;
+/** Gezählte Arten, falls der Server keine Angabe ``gezaehlt`` je Art schickt. */
 const GEZAEHLT = ["protokolle", "aufgaben"];
+/** Eigene Arten; Vorschau-Daten anderer Arten kommen vom Server (``block.daten``). */
+const EIGENE_ARTEN = ["kontaktkopf", "felder", "protokolle", "aufgaben", "notiz", "buttons", "text"];
+
+/** Gezählte Arten aus ``wb_voip_designer_laden`` (``arten[ort][i].gezaehlt``). */
+function gezaehlteArten(daten) {
+    const arten = new Set(GEZAEHLT);
+    for (const liste of Object.values(daten?.arten || {})) {
+        for (const a of Array.isArray(liste) ? liste : []) {
+            if (a && typeof a.art === "string" && a.gezaehlt === true) {
+                arten.add(a.art);
+            }
+        }
+    }
+    return arten;
+}
 
 let naechsteUid = 0;
 
 /** Block aus den Serverdaten in die Form des Entwurfs (Texte nie ``false`` in Eingabefeldern). */
-function blockAusServer(b) {
+function blockAusServer(b, gezaehlt) {
     naechsteUid += 1;
     return {
         uid: naechsteUid,
         art: b.art,
         titel: typeof b.titel === "string" ? b.titel : "",
         spalte: b.spalte === "2" ? "2" : "1",
-        anzahl: GEZAEHLT.includes(b.art) && Number.isInteger(b.anzahl) ? b.anzahl : 5,
+        anzahl: gezaehlt.has(b.art) && Number.isInteger(b.anzahl) ? b.anzahl : 5,
         text: typeof b.text === "string" ? b.text : "",
         feld_ids: Array.isArray(b.feld_ids) ? b.feld_ids.filter(Number.isInteger) : [],
     };
 }
 
 /** Block so, wie ``wb_voip_designer_speichern`` ihn erwartet. */
-function blockDaten(b) {
+function blockDaten(b, gezaehlt) {
     return {
         art: b.art,
         titel: b.titel ? b.titel : false,
         spalte: b.spalte === "2" ? "2" : "1",
-        anzahl: GEZAEHLT.includes(b.art) ? b.anzahl : false,
+        anzahl: gezaehlt.has(b.art) ? b.anzahl : false,
         text: b.art === "text" && b.text ? b.text : false,
         feld_ids: b.art === "felder" ? [...b.feld_ids] : [],
     };
@@ -205,7 +221,7 @@ export class LayoutDesigner extends Component {
             breite: BREITEN.includes(layout.breite) ? layout.breite : "normal",
             ist_standard: Boolean(layout.ist_standard),
             group_ids: [...(layout.group_ids || [])],
-            bloecke: (layout.bloecke || []).map(blockAusServer),
+            bloecke: (layout.bloecke || []).map((b) => blockAusServer(b, this.gezaehlt)),
         };
         this.original = JSON.stringify(this.speicherDaten());
         this.state.gewaehlt = false;
@@ -222,7 +238,7 @@ export class LayoutDesigner extends Component {
             ort: e.ort,
             breite: e.breite,
             group_ids: [...e.group_ids],
-            bloecke: e.bloecke.map(blockDaten),
+            bloecke: e.bloecke.map((b) => blockDaten(b, this.gezaehlt)),
         };
     }
 
@@ -299,6 +315,15 @@ export class LayoutDesigner extends Component {
         return this.state.daten?.arten?.[this.entwurf?.ort] || [];
     }
 
+    /** Arten mit Anzahl (vom Server, sonst die eigenen). */
+    get gezaehlt() {
+        return gezaehlteArten(this.state.daten);
+    }
+
+    istGezaehlt(art) {
+        return this.gezaehlt.has(art);
+    }
+
     get orte() {
         return this.state.daten?.orte || [];
     }
@@ -368,7 +393,7 @@ export class LayoutDesigner extends Component {
             return _t("Zu viele Felder.");
         }
         if (
-            GEZAEHLT.includes(block.art) &&
+            this.istGezaehlt(block.art) &&
             !(
                 Number.isInteger(block.anzahl) &&
                 block.anzahl >= ANZAHL_MIN &&
@@ -422,7 +447,7 @@ export class LayoutDesigner extends Component {
         if (!this.neuMoeglich(art) || !this.arten.some((a) => a.art === art)) {
             return;
         }
-        const block = blockAusServer({ art, spalte: "1", anzahl: 5, feld_ids: [] });
+        const block = blockAusServer({ art, spalte: "1", anzahl: 5, feld_ids: [] }, this.gezaehlt);
         this.entwurf.bloecke.push(block);
         this.waehlen(block.uid);
     }
@@ -587,11 +612,15 @@ export class LayoutDesigner extends Component {
         if (!this.entwurf) {
             return "";
         }
-        return JSON.stringify(
+        return JSON.stringify([
             this.entwurf.bloecke
                 .filter((b) => b.art === "felder" && b.feld_ids.length)
-                .map((b) => b.feld_ids)
-        );
+                .map((b) => b.feld_ids),
+            // Arten anderer Module holen ihre Vorschau-Daten vom Server
+            this.entwurf.bloecke
+                .filter((b) => !EIGENE_ARTEN.includes(b.art))
+                .map((b) => [b.art, b.anzahl, b.spalte]),
+        ]);
     }
 
     /** Entwurf für die Vorschau: nur Blöcke, die der Server so annimmt. */
@@ -610,7 +639,7 @@ export class LayoutDesigner extends Component {
                 return erste;
             })
             .slice(0, MAX_BLOECKE)
-            .map(blockDaten);
+            .map((b) => blockDaten(b, this.gezaehlt));
         return daten;
     }
 
@@ -656,6 +685,22 @@ export class LayoutDesigner extends Component {
     get vorschauLayout() {
         const katalog = this.katalog;
         const werte = this.feldwerte;
+        // Block-Daten anderer Arten aus der letzten Vorschau, je Art in derselben Reihenfolge
+        const vomServer = {};
+        for (const sb of this.state.vorschau?.layout?.bloecke || []) {
+            if (sb && typeof sb.art === "string" && !EIGENE_ARTEN.includes(sb.art)) {
+                (vomServer[sb.art] ||= []).push(sb.daten);
+            }
+        }
+        const zaehler = {};
+        const fremdeDaten = (b) => {
+            if (EIGENE_ARTEN.includes(b.art)) {
+                return {};
+            }
+            const nr = zaehler[b.art] || 0;
+            zaehler[b.art] = nr + 1;
+            return { daten: vomServer[b.art]?.[nr] };
+        };
         const felderVon = (b) =>
             b.feld_ids
                 .filter((id) => katalog[id])
@@ -670,7 +715,8 @@ export class LayoutDesigner extends Component {
             bloecke: this.entwurf.bloecke
                 .filter((b) => this.erlaubt(b))
                 .map((b) => ({
-                    ...blockDaten(b),
+                    ...blockDaten(b, this.gezaehlt),
+                    ...fremdeDaten(b),
                     text: b.art === "text" ? b.text : false,
                     felder: b.art === "felder" ? felderVon(b) : [],
                 })),

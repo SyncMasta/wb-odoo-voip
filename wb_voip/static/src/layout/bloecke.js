@@ -13,7 +13,13 @@ import { useService } from "@web/core/utils/hooks";
 import { AktionsLeiste, aktionenFuerOrt } from "../aktionen/aktions_leiste";
 import { formatDauer } from "../softphone/waehlen_hilfe";
 
-/** Block-Komponenten je Art (``wb.voip.layout.block.art``); unbekannte Arten fallen weg. */
+/**
+ * Block-Komponenten je Art (``wb.voip.layout.block.art``); unbekannte Arten fallen weg.
+ * Andere Module tragen eigene Arten ein: ``{ component, label? }``. Die Komponente bekommt
+ * ``block`` (Serverdaten des Blocks, eigene Daten in ``block.daten`` aus
+ * ``_wb_voip_block_daten_<art>``) und ``daten`` (Props von ``LayoutBloecke``: Kontakt,
+ * Anruf, Rückrufe). Alle Serverwerte nur als Text ausgeben.
+ */
 export const blockRegistry = registry.category("wb_voip_layout_bloecke");
 
 /** Breiten eines Layouts; alles andere gilt als „normal“. */
@@ -48,7 +54,11 @@ export function artLabel(art) {
             notiz: _t("Notiz"),
             buttons: _t("Buttons"),
             text: _t("Hinweis"),
-        }[art] || ""
+        }[art] ||
+        // Arten anderer Module: Name aus ihrem Registry-Eintrag
+        (typeof art === "string" && typeof blockRegistry.get(art, null)?.label === "string"
+            ? blockRegistry.get(art).label
+            : "")
     );
 }
 

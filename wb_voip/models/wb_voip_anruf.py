@@ -297,6 +297,53 @@ class WbVoipAnruf(models.Model):
             return None
         return ziel
 
+    @api.model
+    def _wb_voip_zuordnung(self, partner, ziel):
+        """Extension point: propose the record a new call belongs to (default: none).
+
+        Called as the caller (never sudo) when a call is created, after the contact was
+        chosen. ``partner`` is that contact (``res.partner`` in the caller's environment,
+        readable, possibly empty); ``ziel`` the record passed when dialling (checked by
+        ``_wb_voip_ziel``) or None. Return one record or None. The result is used only if
+        no record was passed or the passed record is the contact itself, and only after
+        ``_wb_voip_ziel`` confirmed the caller may read it.
+        """
+        return None
+
+    @api.model
+    def _wb_voip_ziel_und_kontakt(self, res_model, res_id, nummer_e164):
+        """Return ``(ziel, partner_id)`` for a new call of the caller.
+
+        ``ziel`` is the passed record if readable, else the record proposed by
+        ``_wb_voip_zuordnung`` (if readable), else None.
+        """
+        ziel = self._wb_voip_ziel(res_model, res_id)
+        partner_id = self._wb_voip_kontakt(ziel, nummer_e164)
+        partner = self.env['res.partner'].browse(partner_id)
+        vorschlag = self._wb_voip_zuordnung(partner, ziel)
+        # ein übergebener Datensatz hat Vorrang; nur der Kontakt selbst darf ersetzt werden
+        if vorschlag is not None and (ziel is None or ziel == partner) \
+                and isinstance(vorschlag, models.BaseModel) and len(vorschlag) == 1:
+            gepruefter = self._wb_voip_ziel(vorschlag._name, vorschlag.id)
+            if gepruefter is not None:
+                ziel = gepruefter
+        return ziel, partner_id
+
+    def _wb_voip_datensatz_daten(self):
+        """Return ``(res_model, res_id, res_name)`` of the call's record, all False unless
+        the caller may read it (as superuser: the stored values)."""
+        anruf = self.sudo()
+        if not anruf.res_model or not anruf.res_id:
+            return False, False, False
+        if self.env.su:
+            ziel = anruf.env[anruf.res_model].browse(anruf.res_id).exists() \
+                if anruf.res_model in anruf.env else None
+        else:
+            ziel = self._wb_voip_ziel(anruf.res_model, anruf.res_id)
+        if not ziel:
+            return False, False, False
+        return ziel._name, ziel.id, ziel.display_name or False
+
     def _wb_voip_client_daten(self):
         """Return the call data the browser client needs (no credentials)."""
         self.ensure_one()
@@ -304,14 +351,17 @@ class WbVoipAnruf(models.Model):
         partner = self.partner_id
         if partner and not self.env.su and not partner.has_access('read'):
             partner = partner.browse()
+        res_model, res_id, res_name = self._wb_voip_datensatz_daten()
         return {
             'id': self.id,
             'richtung': self.richtung,
             'nummer': self.nummer or False,
             'zustand': self.zustand,
             'partner': (partner.id, partner.display_name) if partner else False,
-            'res_model': self.res_model or False,
-            'res_id': self.res_id or False,
+            # Datensatz (z. B. Vorgang) nur, wenn der Benutzer ihn lesen darf
+            'res_model': res_model,
+            'res_id': res_id,
+            'res_name': res_name,
             'beginn': fields.Datetime.to_string(self.beginn) if self.beginn else False,
             'dauer_sek': self.dauer_sek,
             'protokoll_id': self.protokoll_id.id or False,
@@ -355,8 +405,7 @@ class WbVoipAnruf(models.Model):
         if not vorhanden:
             land = benutzer.sudo().wb_voip_anlage_id.country_id.code or 'DE'
             nummer_e164 = e164(nummer, land)
-            ziel = self._wb_voip_ziel(res_model, res_id)
-            partner_id = self._wb_voip_kontakt(ziel, nummer_e164)
+            ziel, partner_id = self._wb_voip_ziel_und_kontakt(res_model, res_id, nummer_e164)
             werte = {
                 'user_id': benutzer.id,
                 'richtung': richtung,
@@ -404,6 +453,7 @@ class WbVoipAnruf(models.Model):
             return vorhanden.with_user(benutzer)._wb_voip_client_daten()
         land = benutzer.sudo().wb_voip_anlage_id.country_id.code or 'DE'
         nummer_e164 = e164(nummer, land)
+        ziel, partner_id = self._wb_voip_ziel_und_kontakt(False, False, nummer_e164)
         jetzt = fields.Datetime.now()
         werte = {
             'user_id': benutzer.id,
@@ -412,7 +462,9 @@ class WbVoipAnruf(models.Model):
             'nummer_e164': nummer_e164,
             'sip_call_id': sip_call_id,
             'zustand': 'verpasst',
-            'partner_id': self._wb_voip_kontakt(None, nummer_e164),
+            'partner_id': partner_id,
+            'res_model': ziel._name if ziel is not None else False,
+            'res_id': ziel.id if ziel is not None else False,
             'beginn': jetzt,
             'ende': jetzt,
             'zuletzt_gesehen': jetzt,
@@ -578,32 +630,61 @@ class WbVoipAnruf(models.Model):
             ('company_id', 'in', anruf.user_id.company_ids.ids),
         ], order='beginn, id', limit=GLEICHZEITIG_HOECHSTENS)
 
-    def _wb_voip_rueckruf_aktivitaet(self):
-        """Give the missed call a callback activity on its contact (owner = call's user).
+    def _wb_voip_rueckruf_ziel(self):
+        """Extension point: return the record that gets the callback activity.
 
-        Only if the call's user may read the contact (checked with that user's companies, not
-        the caller's active ones); none without contact. An open (active) callback activity of
-        the same user on the contact is reused. Created with sudo after the read check, so no
-        write right on the contact is needed.
+        ``self`` is the missed call (sudo). Default: its contact. The result is checked in
+        ``_wb_voip_rueckruf_aktivitaet`` (one existing record with activities, readable by
+        the call's user); otherwise the contact is used.
+        """
+        self.ensure_one()
+        return self.partner_id
+
+    def _wb_voip_rueckruf_datensatz(self):
+        """Return the checked target of the callback activity (as the call's user) or None.
+
+        First ``_wb_voip_rueckruf_ziel``, then the contact; each must be a single existing
+        record with activities that the call's user may read (with that user's companies,
+        not the caller's active ones).
+        """
+        anruf = self.sudo()
+        benutzer = anruf.user_id
+        for kandidat in (anruf._wb_voip_rueckruf_ziel(), anruf.partner_id):
+            if not isinstance(kandidat, models.BaseModel) or len(kandidat) != 1 \
+                    or not hasattr(kandidat, 'activity_schedule'):
+                continue
+            kandidat = kandidat.with_user(benutzer).with_context(
+                allowed_company_ids=benutzer.company_ids.ids)
+            if kandidat.exists() and kandidat.has_access('read'):
+                return kandidat
+        return None
+
+    def _wb_voip_rueckruf_aktivitaet(self):
+        """Give the missed call a callback activity (owner = call's user).
+
+        On the record of ``_wb_voip_rueckruf_ziel`` (default: the contact), else on the
+        contact; only if the call's user may read it (``_wb_voip_rueckruf_datensatz``), none
+        without such a record. An open (active) callback activity of the same user on that
+        record is reused. Created with sudo after the read check, so no write right on the
+        record is needed.
         """
         self.ensure_one()
         anruf = self.sudo()
         if anruf.zustand != 'verpasst' or anruf.rueckruf_aktivitaet_id.active:
             return anruf.rueckruf_aktivitaet_id
         benutzer = anruf.user_id
-        partner = anruf.partner_id.with_user(benutzer).with_context(
-            allowed_company_ids=benutzer.company_ids.ids)
+        datensatz = anruf._wb_voip_rueckruf_datensatz()
         typ = self.env.ref(RUECKRUF_TYP, raise_if_not_found=False)
-        if not partner or not typ or not partner.exists() or not partner.has_access('read'):
+        if datensatz is None or not typ:
             return self.env['mail.activity']
         aktivitaet = self.env['mail.activity'].sudo().search([
-            ('activity_type_id', '=', typ.id), ('res_model', '=', 'res.partner'),
-            ('res_id', '=', partner.id), ('user_id', '=', benutzer.id), ('active', '=', True),
+            ('activity_type_id', '=', typ.id), ('res_model', '=', datensatz._name),
+            ('res_id', '=', datensatz.id), ('user_id', '=', benutzer.id), ('active', '=', True),
         ], order='id', limit=1)
         if not aktivitaet:
             sprache = self.with_context(lang=benutzer.lang).env
             # Kontext ohne default_*-Schlüssel des Clients; sudo erst nach der Leseprüfung
-            ziel = partner.with_context(clean_context(self.env.context)).sudo()
+            ziel = datensatz.with_context(clean_context(self.env.context)).sudo()
             try:
                 with self.env.cr.savepoint():
                     aktivitaet = ziel.activity_schedule(
@@ -1035,7 +1116,7 @@ class WbVoipAnruf(models.Model):
                 partner, layout._wb_voip_anzahl('protokolle')),
             'aufgaben': eigen._wb_voip_kontakt_aufgaben(partner, layout._wb_voip_anzahl('aufgaben')),
             'aktionen': eigen._wb_voip_aktionen(),
-            'layout': layout._wb_voip_fuer_client(partner),
+            'layout': layout._wb_voip_fuer_client(partner, anruf=eigen),
         }
 
     def _wb_voip_kontakt_daten(self, partner):
@@ -1175,15 +1256,8 @@ class WbVoipAnruf(models.Model):
         # wie in der Auswahl: „Neuer Kontakt“ nur ohne lesbaren Kontakt
         if aktion.art == 'neuer_kontakt' and partner:
             raise UserError(self.env._("Dieser Button passt nicht zu diesem Anruf."))
-        if aktion.art == 'fenster':
-            return eigen._wb_voip_fenster(aktion, partner)
-        if aktion.art == 'serveraktion':
-            return eigen._wb_voip_serveraktion(aktion, partner)
-        if aktion.art == 'url':
-            return eigen._wb_voip_url(aktion, partner)
-        if aktion.art == 'neuer_kontakt':
-            return eigen._wb_voip_neuer_kontakt()
-        raise UserError(self.env._("Dieser Button passt nicht zu diesem Anruf."))
+        # Ausführung je Art (_wb_voip_aktion_<art> am Button), andere Module ergänzen Arten
+        return aktion._wb_voip_ausfuehren(eigen, partner)
 
     def _wb_voip_fenster(self, aktion, partner):
         """Return the button's window action as a cleaned dict (only readable models)."""

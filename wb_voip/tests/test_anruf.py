@@ -106,7 +106,7 @@ class TestAnruf(WbVoipCase):
             'ausgehend', '0170 1234567', 'cd1', 'res.partner', partner.id)
         self.assertEqual(
             set(anruf), {'id', 'richtung', 'nummer', 'zustand', 'partner', 'res_model',
-                         'res_id', 'beginn', 'dauer_sek', 'protokoll_id'})
+                         'res_id', 'res_name', 'beginn', 'dauer_sek', 'protokoll_id'})
         self.assertEqual(anruf['res_id'], partner.id)
 
     def test_aufraeumen_nach_4h(self):

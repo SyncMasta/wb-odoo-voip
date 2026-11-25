@@ -1,4 +1,4 @@
-import { describe, expect, getFixture, test } from "@odoo/hoot";
+import { after, describe, expect, getFixture, test } from "@odoo/hoot";
 import { click, queryAll, queryOne, queryRect, resize, waitFor } from "@odoo/hoot-dom";
 import { Deferred, animationFrame } from "@odoo/hoot-mock";
 import { Component, EventBus, reactive, useState, xml } from "@odoo/owl";
@@ -14,7 +14,7 @@ import { MainComponentsContainer } from "@web/core/main_components_container";
 import { session } from "@web/session";
 
 import { AnruferFenster } from "@wb_voip/anrufer_fenster/anrufer_fenster";
-import { LayoutBloecke, NotizBlock } from "@wb_voip/layout/bloecke";
+import { LayoutBloecke, NotizBlock, artLabel, blockRegistry } from "@wb_voip/layout/bloecke";
 import "@wb_voip/layout/popup_layout";
 import "@wb_voip/protokoll_popup";
 
@@ -495,4 +495,50 @@ test("Notiz-Block: eindeutige Feld-ID, keine Beobachtung nach dem Abbau", async 
     anruf.notiz = "Nach dem Abbau";
     await animationFrame();
     expect(gezeichnet).toBe(0);
+});
+
+// --- Blockarten aus anderen Modulen ---------------------------------------------------------
+
+/** Block eines anderen Moduls: zeigt die Block-Daten des Servers (``block.daten``) als Text. */
+class FremderBlock extends Component {
+    static template = xml`
+        <section class="o_wb_voip_lb_block o_wb_voip_lb_fremd" t-att-aria-label="label">
+            <span class="o_wb_voip_lb_fremd_text" t-esc="props.block.daten?.text or ''"/>
+            <span class="o_wb_voip_lb_fremd_anruf" t-esc="props.daten.anruf?.id or ''"/>
+        </section>`;
+    static props = { block: Object, daten: Object };
+
+    get label() {
+        return artLabel(this.props.block.art);
+    }
+}
+
+function fremdeArtRegistrieren() {
+    blockRegistry.add("fremd_test", { component: FremderBlock, label: "Fremde Art" });
+    after(() => blockRegistry.remove("fremd_test"));
+}
+
+test("Blockart eines anderen Moduls: registriert, mit Server-Daten gezeichnet", async () => {
+    fremdeArtRegistrieren();
+    await fensterMit(() =>
+        layout([
+            block("fremd_test", { daten: { text: "<b>Vorgang 1</b>" } }),
+            block("text", { text: "Danach" }),
+        ])
+    );
+    expect(arten()).toEqual(["o_wb_voip_lb_fremd", "o_wb_voip_lb_text"]);
+    expect(".o_wb_voip_lb_fremd_text").toHaveText("<b>Vorgang 1</b>");
+    expect(".o_wb_voip_lb_fremd b").toHaveCount(0);
+    // der Block bekommt den laufenden Anruf wie die eigenen Blöcke
+    expect(".o_wb_voip_lb_fremd_anruf").toHaveText("10");
+    // Name für Screenreader aus der Registry
+    expect(".o_wb_voip_lb_fremd").toHaveAttribute("aria-label", "Fremde Art");
+});
+
+test("Blockart ohne Registrierung fällt weg, mit Registrierung erscheint sie", async () => {
+    expect(artLabel("fremd_test")).toBe("");
+    await fensterMit(() => layout([block("fremd_test", { daten: { text: "x" } })]));
+    expect(".o_wb_voip_lb_fremd").toHaveCount(0);
+    fremdeArtRegistrieren();
+    expect(artLabel("fremd_test")).toBe("Fremde Art");
 });

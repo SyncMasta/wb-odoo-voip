@@ -152,7 +152,7 @@
                                 <option value="2">Spalte 2</option>
                             </select>
                         </div>
-                        <div t-if="block.art === 'protokolle' or block.art === 'aufgaben'" class="mb-2">
+                        <div t-if="istGezaehlt(block.art)" class="mb-2">
                             <label class="form-label small mb-1" for="wb_voip_ds_anzahl">Anzahl</label>
                             <input id="wb_voip_ds_anzahl" class="o_wb_voip_ds_anzahl form-control" type="number"
                                    min="1" max="20" step="1" t-model.number="block.anzahl"/>

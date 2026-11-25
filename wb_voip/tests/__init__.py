@@ -24,3 +24,4 @@ from . import test_verpasst_rueckruf
 from . import test_verpasst_rpc
 from . import test_verpasst_nachbesserung
 from . import test_team
+from . import test_hooks

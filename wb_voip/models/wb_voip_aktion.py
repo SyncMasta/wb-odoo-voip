@@ -10,6 +10,8 @@ from ..tools import serverfelder
 from ..tools.rechte import GRUPPE_SYSTEM, nur_voip_manager
 
 ICON_MUSTER = re.compile(r'^fa-[a-z0-9-]{1,40}$')
+# Art eines Buttons als Teil eines Methodennamens (_wb_voip_aktion_<art>)
+ART_MUSTER = re.compile(r'[a-z][a-z0-9_]{0,40}')
 URL_MAX = 500
 URL_PLATZHALTER = ('nummer', 'nummer_e164', 'partner_id')
 URL_PLATZHALTER_MUSTER = re.compile(r'\{([^{}]*)\}')
@@ -192,6 +194,7 @@ class WbVoipAktion(models.Model):
 
     @api.constrains('art', 'act_window_id', 'server_action_id', 'url_vorlage')
     def _check_art(self):
+        # Nur die eigenen Arten; weitere Arten (selection_add) prüfen ihre Felder selbst
         for aktion in self:
             if aktion.art == 'fenster' and not aktion.act_window_id:
                 raise ValidationError(self.env._("Bitte eine Fensteraktion wählen."))
@@ -310,6 +313,40 @@ class WbVoipAktion(models.Model):
                         unter, modell.env[feld.comodel_name], tiefe + 1):
                     return False
         return True
+
+    # --- Ausführung je Art ---
+
+    def _wb_voip_ausfuehren(self, anruf, partner):
+        """Run this button on ``anruf`` via ``_wb_voip_aktion_<art>(anruf, partner)``.
+
+        ``anruf`` is the caller's own call and ``partner`` its contact (readable by the
+        caller or empty), both in the caller's environment; the caller has already checked
+        that the button applies. Other modules add an art with ``selection_add`` and a method
+        ``_wb_voip_aktion_<art>``; an art without such a method raises ``UserError``.
+        """
+        self.ensure_one()
+        art = self.art
+        methode = getattr(self, f'_wb_voip_aktion_{art}', None) \
+            if isinstance(art, str) and ART_MUSTER.fullmatch(art) else None
+        if not callable(methode):
+            raise UserError(self.env._("Dieser Button passt nicht zu diesem Anruf."))
+        return methode(anruf, partner)
+
+    def _wb_voip_aktion_fenster(self, anruf, partner):
+        """Open the button's window action (see ``wb.voip.anruf._wb_voip_fenster``)."""
+        return anruf._wb_voip_fenster(self, partner)
+
+    def _wb_voip_aktion_serveraktion(self, anruf, partner):
+        """Run the button's server action (see ``wb.voip.anruf._wb_voip_serveraktion``)."""
+        return anruf._wb_voip_serveraktion(self, partner)
+
+    def _wb_voip_aktion_url(self, anruf, partner):
+        """Open the button's web address (see ``wb.voip.anruf._wb_voip_url``)."""
+        return anruf._wb_voip_url(self, partner)
+
+    def _wb_voip_aktion_neuer_kontakt(self, anruf, partner):
+        """Open a new contact with the call's number (see ``wb.voip.anruf._wb_voip_neuer_kontakt``)."""
+        return anruf._wb_voip_neuer_kontakt()
 
     # --- Auswahl und Client-Daten ---
 

@@ -1,6 +1,7 @@
-import { describe, expect, test } from "@odoo/hoot";
+import { after, describe, expect, test } from "@odoo/hoot";
 import { click, edit, queryAll, queryAllTexts, select } from "@odoo/hoot-dom";
 import { animationFrame } from "@odoo/hoot-mock";
+import { Component, xml } from "@odoo/owl";
 import { defineMailModels } from "@mail/../tests/mail_test_helpers";
 import {
     contains,
@@ -11,6 +12,7 @@ import {
 } from "@web/../tests/web_test_helpers";
 
 import { LayoutDesigner } from "@wb_voip/designer/designer";
+import { blockRegistry } from "@wb_voip/layout/bloecke";
 
 import { WbVoipProtokoll } from "./protokoll_modell";
 
@@ -433,4 +435,71 @@ test("Vorschau: nicht lesbarer Beispielkontakt ergibt einen Hinweis", async () =
     expect(".o_wb_voip_ds_vorschau_hinweis").toHaveText(/Kontakt nicht lesbar/);
     // Platzhalter statt Kontaktdaten
     expect(".o_wb_voip_ds_vorschau .o_wb_voip_lb_kontaktkopf").toHaveText(/\+49 …/);
+});
+
+// --- Blockarten aus anderen Modulen ---------------------------------------------------------
+
+class FremderDesignerBlock extends Component {
+    static template = xml`
+        <section class="o_wb_voip_lb_block o_wb_voip_lb_fremd">
+            <span class="o_wb_voip_lb_fremd_text" t-esc="props.block.daten?.text or ''"/>
+            <span class="o_wb_voip_lb_fremd_anzahl" t-esc="props.block.anzahl or ''"/>
+        </section>`;
+    static props = { block: Object, daten: Object };
+}
+
+test("Designer: Blockarten und Zählung kommen vom Server, Vorschau mit Block-Daten", async () => {
+    blockRegistry.add("fremd_test", { component: FremderDesignerBlock, label: "Fremde Art" });
+    after(() => blockRegistry.remove("fremd_test"));
+    let gesendet;
+    const mitFremd = () => {
+        const daten = ladeDaten();
+        daten.arten.anrufer_fenster = [
+            ...ARTEN_FENSTER.map((a) => ({ ...a, gezaehlt: ["protokolle", "aufgaben"].includes(a.art) })),
+            { art: "fremd_test", label: "Vorgänge (Server)", gezaehlt: true },
+        ];
+        return daten;
+    };
+    await designerMit({
+        laden: mitFremd,
+        vorschauFn: (entwurf) => {
+            const v = vorschau(entwurf);
+            for (const b of v.layout.bloecke) {
+                if (b.art === "fremd_test") {
+                    b.daten = { text: "Vom Server" };
+                }
+            }
+            return v;
+        },
+        speichern: ({ args }) => {
+            gesendet = args[1];
+            return mitFremd();
+        },
+    });
+    expect(".o_wb_voip_ds_neu").toHaveCount(8);
+    expect(".o_wb_voip_ds_neu[data-art=fremd_test]").toHaveText("Vorgänge (Server)");
+    await click(".o_wb_voip_ds_neu[data-art=fremd_test]");
+    await animationFrame();
+    expect(blockArten()).toEqual(["kontaktkopf", "text", "notiz", "fremd_test"]);
+    expect(".o_wb_voip_ds_block:eq(3)").toHaveText(/Vorgänge \(Server\)/);
+    // vom Server als gezählt gemeldet: Anzahl einstellbar
+    expect(".o_wb_voip_ds_eigenschaften .o_wb_voip_ds_anzahl").toHaveValue(5);
+    await click(".o_wb_voip_ds_anzahl");
+    await edit("4");
+    await animationFrame();
+    // Vorschau sofort mit der eigenen Komponente, Server-Daten nach dem Laden
+    expect(".o_wb_voip_ds_vorschau .o_wb_voip_lb_fremd_anzahl").toHaveText("4");
+    await animationFrame();
+    await animationFrame();
+    expect(".o_wb_voip_ds_vorschau .o_wb_voip_lb_fremd_text").toHaveText("Vom Server");
+    await click(".o_wb_voip_ds_speichern");
+    await animationFrame();
+    expect(gesendet.bloecke[3]).toEqual({
+        art: "fremd_test",
+        titel: false,
+        spalte: "1",
+        anzahl: 4,
+        text: false,
+        feld_ids: [],
+    });
 });
