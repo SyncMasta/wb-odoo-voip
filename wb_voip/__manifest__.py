@@ -29,6 +29,7 @@ Softphone im Browser, Anrufprotokoll und Anbindung an SIP-Telefonanlagen.
         'data/ir_cron.xml',
         'data/wb_voip_aktion_data.xml',
         'data/wb_voip_layout_data.xml',
+        'data/mail_activity_type_data.xml',
         'views/res_config_settings_views.xml',
         'views/menus.xml',
     ],

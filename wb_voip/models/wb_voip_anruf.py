@@ -12,7 +12,7 @@ from markupsafe import Markup
 from odoo import api, fields, models
 from odoo.exceptions import AccessError, UserError
 from odoo.fields import Domain
-from odoo.tools import html2plaintext, plaintext2html
+from odoo.tools import clean_context, html2plaintext, plaintext2html
 
 from odoo.addons.wb_license_client.models.wb_license_client import license_required
 from odoo.addons.web.controllers.utils import clean_action
@@ -48,6 +48,13 @@ SIP_GRUND_ZUSTAND_EINGEHEND = {
     '480': 'verpasst',
     'anderswo': 'anderswo',
 }
+# Gleichzeitige Anrufe (Anlage klingelt bei mehreren Benutzern): gleiche E.164-Nummer, eingehend,
+# anderer Benutzer, gemeinsame Firma, Beginn höchstens so viele Sekunden auseinander
+GLEICHZEITIG_SEKUNDEN = 10
+GLEICHZEITIG_HOECHSTENS = 50
+# Obergrenze der Verpasst-Einträge, die eine Annahme oder ein Rückruf auf einmal erledigt
+ERLEDIGEN_HOECHSTENS = 500
+RUECKRUF_TYP = 'wb_voip.wb_voip_activity_type_rueckruf'
 # Höchstlängen der Angaben an die RPC-Methoden
 MAX_NUMMER = 64
 MAX_SIP_CALL_ID = 255
@@ -149,6 +156,8 @@ class WbVoipAnruf(models.Model):
         'sip_call_id', 'zustand', 'annahme', 'ende', 'dauer_sek', 'nummer_e164',
         'user_id', 'zuletzt_gesehen', 'richtung', 'beginn',
         'partner_id', 'res_model', 'res_id', 'protokoll_id',
+        'company_id', 'angenommen_anruf_id', 'rueckruf_aktivitaet_id', 'erledigt',
+        'erledigt_am', 'erledigt_text', 'erledigt_durch_protokoll_id', 'gesehen',
     )
 
     user_id = fields.Many2one(
@@ -178,6 +187,19 @@ class WbVoipAnruf(models.Model):
     notiz = fields.Text(string='Notiz')
     protokoll_id = fields.Many2one(
         'wb.voip.protokoll', string='Protokoll', copy=False, index=True, ondelete='set null')
+    company_id = fields.Many2one(
+        'res.company', string='Firma', index=True, default=lambda self: self.env.company)
+    # Verpasst-Liste: Anruf des Kollegen, der angenommen hat („anderswo“)
+    angenommen_anruf_id = fields.Many2one(
+        'wb.voip.anruf', string='Angenommen mit', copy=False, ondelete='set null')
+    rueckruf_aktivitaet_id = fields.Many2one(
+        'mail.activity', string='Rückruf-Aktivität', copy=False, ondelete='set null')
+    erledigt = fields.Boolean(string='Erledigt', copy=False, index=True)
+    erledigt_am = fields.Datetime(string='Erledigt am', copy=False)
+    erledigt_text = fields.Text(string='Erledigt wie', copy=False)
+    erledigt_durch_protokoll_id = fields.Many2one(
+        'wb.voip.protokoll', string='Erledigt durch Protokoll', copy=False, ondelete='set null')
+    gesehen = fields.Boolean(string='Gesehen', copy=False)
 
     _sip_call_id_je_benutzer = models.Constraint(
         'unique(user_id, sip_call_id)',
@@ -322,6 +344,8 @@ class WbVoipAnruf(models.Model):
                 'res_id': ziel.id if ziel is not None else False,
                 'beginn': fields.Datetime.now(),
                 'zuletzt_gesehen': fields.Datetime.now(),
+                # aktuelle Firma des Benutzers (ohne sudo geprüft gegen seine Firmen)
+                'company_id': self.env.company.id,
             }
             # Zweiter paralleler Aufruf mit derselben (Benutzer, SIP-Call-ID): Savepoint,
             # bei Unique-Verletzung den vorhandenen Anruf liefern statt IntegrityError.
@@ -342,6 +366,8 @@ class WbVoipAnruf(models.Model):
         if anruf.zustand in ('neu', 'klingelt'):
             jetzt = fields.Datetime.now()
             anruf.write({'zustand': 'laeuft', 'annahme': jetzt, 'zuletzt_gesehen': jetzt})
+            if anruf.richtung == 'eingehend':
+                anruf._wb_voip_nach_annahme()
         return anruf.with_user(self.env.user)._wb_voip_client_daten()
 
     @nur_voip_benutzer
@@ -366,10 +392,13 @@ class WbVoipAnruf(models.Model):
         if type(angenommen) is not bool:
             raise UserError(self.env._("Ungültige Angabe: %s.", self.env._("Angenommen")))
         anruf = self._wb_voip_eigener()
+        uebergang = neu_angenommen = False
         if anruf.zustand in OFFENE_ZUSTAENDE or anruf.zustand == 'neu':
+            uebergang = True
             jetzt = fields.Datetime.now()
             if angenommen and not anruf.annahme:
                 anruf.write({'annahme': jetzt})
+                neu_angenommen = True
             werte = {'ende': jetzt, 'zuletzt_gesehen': jetzt}
             if anruf.annahme:
                 werte['zustand'] = 'beendet'
@@ -383,7 +412,204 @@ class WbVoipAnruf(models.Model):
             anruf.write(werte)
         if not anruf.protokoll_id and anruf.zustand != 'anderswo':
             anruf._wb_voip_protokollieren()
+        if uebergang:
+            anruf._wb_voip_nach_beenden(neu_angenommen)
         return anruf.with_user(self.env.user)._wb_voip_client_daten()
+
+    # --- Verpasst, anderswo angenommen, Rückruf ---
+
+    def _wb_voip_nach_beenden(self, neu_angenommen):
+        """Follow-up after the call reached its final state (once per call).
+
+        ``verpasst``: callback activity; ``anderswo``: link to the colleague's answered call;
+        an incoming call answered only now (``neu_angenommen``): like ``wb_voip_angenommen``.
+        """
+        self.ensure_one()
+        anruf = self.sudo()
+        if anruf.zustand == 'verpasst':
+            anruf._wb_voip_rueckruf_aktivitaet()
+            anruf._wb_voip_verpasst_melden()
+        elif anruf.zustand == 'anderswo':
+            angenommen = anruf._wb_voip_gleichzeitige(('laeuft', 'beendet')).filtered(
+                'annahme').sorted(lambda a: (a.annahme, a.id))[:1]
+            if angenommen:
+                anruf.angenommen_anruf_id = angenommen
+            anruf._wb_voip_verpasst_melden()
+        elif neu_angenommen and anruf.richtung == 'eingehend':
+            anruf._wb_voip_nach_annahme()
+
+    def _wb_voip_gleichzeitige(self, zustaende):
+        """Return (sudo) the calls of other users that belong to the same incoming call.
+
+        Same E.164 number (never without one), both incoming, start at most
+        ``GLEICHZEITIG_SEKUNDEN`` apart, state in ``zustaende`` and a shared company: the
+        company of each call belongs to the companies of the other call's user. At most
+        ``GLEICHZEITIG_HOECHSTENS``, earliest first.
+        """
+        self.ensure_one()
+        anruf = self.sudo()
+        if anruf.richtung != 'eingehend' or not anruf.nummer_e164 or not anruf.beginn \
+                or not anruf.company_id:
+            return anruf.browse()
+        fenster = timedelta(seconds=GLEICHZEITIG_SEKUNDEN)
+        return anruf.search([
+            ('id', '!=', anruf.id),
+            ('user_id', '!=', anruf.user_id.id),
+            ('richtung', '=', 'eingehend'),
+            ('zustand', 'in', list(zustaende)),
+            ('nummer_e164', '=', anruf.nummer_e164),
+            ('beginn', '>=', anruf.beginn - fenster),
+            ('beginn', '<=', anruf.beginn + fenster),
+            ('user_id.company_ids', 'in', anruf.company_id.ids),
+            ('company_id', 'in', anruf.user_id.company_ids.ids),
+        ], order='beginn, id', limit=GLEICHZEITIG_HOECHSTENS)
+
+    def _wb_voip_rueckruf_aktivitaet(self):
+        """Give the missed call a callback activity on its contact (owner = call's user).
+
+        Only if the call's user may read the contact; none without contact. An open (active)
+        callback activity of the same user on the contact is reused. Created with sudo after
+        the read check, so no write right on the contact is needed.
+        """
+        self.ensure_one()
+        anruf = self.sudo()
+        if anruf.zustand != 'verpasst' or anruf.rueckruf_aktivitaet_id.active:
+            return anruf.rueckruf_aktivitaet_id
+        benutzer = anruf.user_id
+        partner = anruf.partner_id.with_user(benutzer)
+        typ = self.env.ref(RUECKRUF_TYP, raise_if_not_found=False)
+        if not partner or not typ or not partner.exists() or not partner.has_access('read'):
+            return self.env['mail.activity']
+        aktivitaet = self.env['mail.activity'].sudo().search([
+            ('activity_type_id', '=', typ.id), ('res_model', '=', 'res.partner'),
+            ('res_id', '=', partner.id), ('user_id', '=', benutzer.id), ('active', '=', True),
+        ], order='id', limit=1)
+        if not aktivitaet:
+            sprache = self.with_context(lang=benutzer.lang).env
+            # Kontext ohne default_*-Schlüssel des Clients; sudo erst nach der Leseprüfung
+            ziel = partner.with_context(clean_context(self.env.context)).sudo()
+            try:
+                with self.env.cr.savepoint():
+                    aktivitaet = ziel.activity_schedule(
+                        act_type_xmlid=RUECKRUF_TYP,
+                        summary=sprache._("Rückruf: verpasster Anruf"),
+                        note=plaintext2html(sprache._("Verpasster Anruf von %s", anruf.nummer or '')),
+                        user_id=benutzer.id)
+            except Exception:  # noqa: BLE001 - die Aktivität darf das Beenden nie verhindern
+                _logger.exception("[wb_voip] Rückruf-Aktivität fehlgeschlagen (Anruf %s)", anruf.id)
+                return self.env['mail.activity']
+        anruf.rueckruf_aktivitaet_id = aktivitaet
+        return aktivitaet
+
+    def _wb_voip_nach_annahme(self):
+        """An incoming call was answered: simultaneous calls of colleagues become ``anderswo``.
+
+        Ringing, missed and ``anderswo`` calls of other users (see ``_wb_voip_gleichzeitige``)
+        are linked to this call. A call that counted as missed loses its callback activity
+        and its untouched log "not reached" (``_wb_voip_verpasst_aufraeumen``). Then the open
+        missed entries of the number are closed (``_wb_voip_nummer_erreicht``).
+        """
+        self.ensure_one()
+        anruf = self.sudo()
+        andere = anruf._wb_voip_gleichzeitige(('klingelt', 'verpasst', 'anderswo'))
+        geaendert = anruf.browse()
+        jetzt = fields.Datetime.now()
+        for anderer in andere:
+            if anderer.zustand == 'anderswo':
+                # „anderswo“ kam vor dieser Annahme an: nur verknüpfen
+                if not anderer.angenommen_anruf_id:
+                    anderer.angenommen_anruf_id = anruf
+                    geaendert |= anderer
+                continue
+            aktivitaet = anderer.rueckruf_aktivitaet_id
+            protokoll = anderer.protokoll_id
+            anderer.write({
+                'zustand': 'anderswo',
+                'angenommen_anruf_id': anruf.id,
+                'ende': anderer.ende or jetzt,
+                'rueckruf_aktivitaet_id': False,
+            })
+            anderer._wb_voip_verpasst_aufraeumen(aktivitaet, protokoll)
+            geaendert |= anderer
+        geaendert._wb_voip_verpasst_melden()
+        anruf._wb_voip_nummer_erreicht()
+
+    def _wb_voip_verpasst_aufraeumen(self, aktivitaet, protokoll):
+        """Undo the follow-up of a call that counted as missed but was answered elsewhere.
+
+        Deletes ``aktivitaet`` only if it is an active callback activity of the call's user
+        that no other call uses, and ``protokoll`` only if it is this call's own log with
+        result "not reached", no description and never changed. Call after the activity
+        was detached from the call.
+        """
+        self.ensure_one()
+        anruf = self.sudo()
+        typ = self.env.ref(RUECKRUF_TYP, raise_if_not_found=False)
+        aktivitaet = aktivitaet.sudo().exists()
+        if aktivitaet and aktivitaet.active and typ and aktivitaet.activity_type_id == typ \
+                and aktivitaet.user_id == anruf.user_id \
+                and not anruf.search_count([('rueckruf_aktivitaet_id', '=', aktivitaet.id)]):
+            aktivitaet.unlink()
+        protokoll = protokoll.sudo().exists()
+        if protokoll and protokoll.anruf_id == anruf and protokoll.user_id == anruf.user_id \
+                and protokoll.ergebnis == 'nicht_erreicht' \
+                and not html2plaintext(protokoll.beschreibung or '').strip() \
+                and protokoll.write_date == protokoll.create_date:
+            anruf.protokoll_id = False
+            protokoll.unlink()
+
+    def _wb_voip_nummer_erreicht(self, protokoll=None):
+        """The number of this call was reached: close the open missed entries of all users.
+
+        Entries: state ``verpasst``, not done, same E.164 number, same company, started before
+        this call. Text "Zurückgerufen von <name>" (outgoing) or "Angenommen von <name>"; with
+        ``protokoll`` (callback log) the entry remembers it. Active callback activities that no
+        entry left open uses are marked done with this text. ``anderswo`` entries stay.
+        """
+        self.ensure_one()
+        anruf = self.sudo()
+        if not anruf.nummer_e164 or not anruf.company_id or not anruf.beginn:
+            return anruf.browse()
+        offen = anruf.search([
+            ('id', '!=', anruf.id),
+            ('zustand', '=', 'verpasst'),
+            ('erledigt', '=', False),
+            ('nummer_e164', '=', anruf.nummer_e164),
+            ('company_id', '=', anruf.company_id.id),
+            ('beginn', '<', anruf.beginn),
+        ], order='beginn, id', limit=ERLEDIGEN_HOECHSTENS)
+        if not offen:
+            return offen
+        name = anruf.user_id.name
+        if anruf.richtung == 'ausgehend':
+            text = self.env._("Zurückgerufen von %s", name)
+        else:
+            text = self.env._("Angenommen von %s", name)
+        werte = {'erledigt': True, 'erledigt_am': fields.Datetime.now(), 'erledigt_text': text}
+        if protokoll:
+            werte['erledigt_durch_protokoll_id'] = protokoll.id
+        typ = self.env.ref(RUECKRUF_TYP, raise_if_not_found=False)
+        aktivitaeten = offen.rueckruf_aktivitaet_id.exists().filtered(
+            lambda a: a.active and a.activity_type_id == typ)
+        offen.write(werte)
+        for aktivitaet in aktivitaeten:
+            # gehört sie noch zu einem offenen Eintrag (z. B. andere Firma), bleibt sie offen
+            if anruf.search_count([('rueckruf_aktivitaet_id', '=', aktivitaet.id),
+                                   ('erledigt', '=', False)]):
+                continue
+            try:
+                with self.env.cr.savepoint():
+                    # als Besitzer (Autor der Nachricht), sudo für fehlende Schreibrechte
+                    aktivitaet.with_user(aktivitaet.user_id).sudo().action_feedback(feedback=text)
+            except Exception:  # noqa: BLE001 - eine Aktivität darf das Erledigen nicht abbrechen
+                _logger.exception("[wb_voip] Rückruf-Aktivität %s nicht abschließbar", aktivitaet.id)
+        offen._wb_voip_verpasst_melden()
+        return offen
+
+    def _wb_voip_verpasst_melden(self):
+        """Tell the owners' browser tabs that their missed-call list changed (empty payload)."""
+        for benutzer in self.sudo().user_id:
+            benutzer._bus_send('wb_voip/verpasst', {})
 
     def _wb_voip_protokollieren(self):
         """Create the log entry of a finished call exactly once and post to the chatter."""

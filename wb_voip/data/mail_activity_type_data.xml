@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Rückruf nach einem verpassten Anruf; ohne Modell, damit sie an jedem Kontakt geht.
+         noupdate: Änderungen des Administrators (Name, Symbol, Frist) bleiben beim Update. -->
+    <data noupdate="1">
+        <record id="wb_voip_activity_type_rueckruf" model="mail.activity.type">
+            <field name="name">Rückruf</field>
+            <field name="category">phonecall</field>
+            <field name="icon">fa-phone</field>
+            <field name="res_model" eval="False"/>
+            <field name="delay_count">0</field>
+            <field name="summary">Rückruf: verpasster Anruf</field>
+        </record>
+    </data>
+</odoo>
