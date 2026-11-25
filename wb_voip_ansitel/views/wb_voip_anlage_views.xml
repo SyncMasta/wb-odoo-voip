@@ -17,7 +17,7 @@
                          invisible="not ansitel_token_gesetzt">
                         Token gespeichert – zum Ändern neu eingeben
                     </div>
-                    <field name="ansitel_tz"/>
+                    <field name="ansitel_tz" readonly="verbindung_gesperrt"/>
                     <div colspan="2" invisible="not id or not ansitel_token_gesetzt">
                         <button name="action_ansitel_testen" type="object" class="btn-secondary"
                                 string="Verbindung testen" groups="wb_voip.group_wb_voip_manager"/>

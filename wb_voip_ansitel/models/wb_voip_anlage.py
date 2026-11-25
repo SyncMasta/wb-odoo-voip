@@ -4,6 +4,7 @@ from datetime import timedelta
 from psycopg2 import errors
 
 from odoo import api, fields, models
+from odoo.tools import SQL
 from odoo.exceptions import AccessError, ConcurrencyError, UserError, ValidationError
 from odoo.addons.base.models.res_partner import _tz_get
 
@@ -66,6 +67,15 @@ class WbVoipAnlage(models.Model):
         help="Beginn des ersten Abgleichs; kein Lauf liest weiter zurück.")
     ansitel_geraet_ids = fields.One2many('wb.voip.geraet', 'anlage_id', string='Geräte')
 
+    def _ansitel_tz_pruefen(self, vals):
+        """Raise ``AccessError`` if a user without system right changes the time zone.
+
+        The zone decides how the call list is read; a wrong one shifts calls (and the state).
+        Internal code running as superuser stays allowed.
+        """
+        if 'ansitel_tz' in vals and not (self.env.su or self.env.user._is_system()):
+            raise AccessError(self.env._("Die Zeitzone der Anrufliste darf nur die Systemverwaltung ändern."))
+
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
@@ -73,6 +83,7 @@ class WbVoipAnlage(models.Model):
         return super().create(vals_list)
 
     def write(self, vals):
+        self._ansitel_tz_pruefen(vals)
         self._ansitel_url_bereinigen(vals)
         # Auch über sudo: eine umgebogene Adresse darf keinen gespeicherten Token erhalten
         verwerfen = 'ansitel_api_url' in vals and not self.env.user._is_system()
@@ -145,6 +156,9 @@ class WbVoipAnlage(models.Model):
 
         Only the system administration: the table maps PBX devices to users. The owner is the
         unique user of this PBX with that SIP user, else with that extension.
+
+        Deliberately ``_is_system()`` and not ``@nur_voip_benutzer``: stronger than the VoIP rights,
+        because the owner assignment decides whose calls a device's calls are matched to.
         """
         if not self.env.user._is_system():
             raise AccessError(self.env._("Geräte laden darf nur die Systemverwaltung."))
@@ -301,5 +315,5 @@ class WbVoipAnlage(models.Model):
         if feld not in CDR_SQL_FELDER:
             raise ValueError(feld)
         self.ensure_one()
-        self.env.cr.execute(f'UPDATE wb_voip_anlage SET {feld} = %s WHERE id = %s', [wert, self.id])
+        self.env.cr.execute(SQL('UPDATE wb_voip_anlage SET %s = %s WHERE id = %s', SQL.identifier(feld), wert, self.id))
         self.invalidate_recordset([feld])

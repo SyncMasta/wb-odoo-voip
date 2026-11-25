@@ -3,6 +3,7 @@
 ``_aufruf`` is the only place that talks to the network. The token and the
 URL stay on the server; error messages and logs never contain them.
 """
+import copy
 import functools
 import hashlib
 import logging
@@ -38,6 +39,10 @@ WEITERLEITUNG = ':weiterleitung'
 # Neither keys nor values ever hold the token.
 # (database, PBX id, URL, hash, extension) -> (monotonic time, peer id or None)
 _PEER_CACHE = {}
+# Zustand der Tasten je Benutzer, kurz zwischengespeichert (Abfrage alle 60 s je Tab, mehrere Tabs):
+# (database, user id, PBX id, write date of the PBX) -> (monotonic time, state without secrets)
+TASTEN_CACHE_SEKUNDEN = 10
+_TASTEN_CACHE = {}
 
 
 class AnsitelFehler(UserError):
@@ -75,8 +80,33 @@ def _robust(methode):
 
 
 def cache_leeren():
-    """Drop all cached peer ids of this worker."""
+    """Drop all cached peer ids and key states of this worker."""
     _PEER_CACHE.clear()
+    _TASTEN_CACHE.clear()
+
+
+def tasten_cache_holen(schluessel):
+    """Return a copy of the cached key state or ``None`` (missing or older than the lifetime)."""
+    treffer = _TASTEN_CACHE.get(schluessel)
+    if treffer and time.monotonic() - treffer[0] < TASTEN_CACHE_SEKUNDEN:
+        return copy.deepcopy(treffer[1])
+    return None
+
+
+def tasten_cache_setzen(schluessel, zustand):
+    """Store a key state and drop expired entries (the cache would grow without bound)."""
+    if TASTEN_CACHE_SEKUNDEN <= 0:
+        return
+    jetzt = time.monotonic()
+    for alt in [k for k, (zeit, _wert) in _TASTEN_CACHE.items() if jetzt - zeit >= TASTEN_CACHE_SEKUNDEN]:
+        del _TASTEN_CACHE[alt]
+    _TASTEN_CACHE[schluessel] = (jetzt, copy.deepcopy(zustand))
+
+
+def tasten_cache_leeren(datenbank, benutzer_id):
+    """Drop the cached key states of one user (after switching)."""
+    for alt in [k for k in _TASTEN_CACHE if k[0] == datenbank and k[1] == benutzer_id]:
+        del _TASTEN_CACHE[alt]
 
 
 def _cache_setzen(schluessel, wert):

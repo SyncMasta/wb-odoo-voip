@@ -104,3 +104,16 @@ class TestAnlageFelder(AnsitelCase):
     def test_tokens_verwerfen_methode(self):
         self.anlage._ansitel_tokens_verwerfen()
         self.assertFalse(self.anlage.sudo().ansitel_token_enc)
+
+    def test_zeitzone_nur_system(self):
+        with self.assertRaises(AccessError):
+            self.anlage.with_user(self.user_manager).write({'ansitel_tz': 'Asia/Tokyo'})
+        self.assertEqual(self.anlage.ansitel_tz, 'Europe/Berlin')
+        self.anlage.with_user(self.env.ref('base.user_admin')).write({'ansitel_tz': 'Europe/Vienna'})
+        self.assertEqual(self.anlage.ansitel_tz, 'Europe/Vienna')
+        # andere Felder der Anlage bleiben für den Manager änderbar
+        self.anlage.with_user(self.user_manager).write({'name': 'Umbenannt'})
+
+    def test_zeitzone_im_formular_gesperrt(self):
+        arch = self.env['wb.voip.anlage'].get_view(view_type='form')['arch']
+        self.assertRegex(arch, r'<field name="ansitel_tz"[^>]*readonly="verbindung_gesperrt"')

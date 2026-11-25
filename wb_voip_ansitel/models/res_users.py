@@ -9,6 +9,7 @@ from odoo.addons.wb_voip.models import PRODUKT_CODE
 from odoo.addons.wb_voip.tools import geheimnis
 from odoo.addons.wb_voip.tools.rechte import nur_voip_benutzer
 
+from . import ansitel_api
 from .ansitel_api import AnsitelFehler, AnsitelNichtErreichbar
 
 _logger = logging.getLogger(__name__)
@@ -44,7 +45,7 @@ class ResUsers(models.Model):
     # liest und schreibt die Nummer über SELF_READABLE/SELF_WRITEABLE
     wb_voip_handy = fields.Char(
         string='Mein Handy', copy=False, groups='base.group_system',
-        help="Ziel der Weiterleitungstaste „Eigenes Handy“, z. B. +49 170 1234567.")
+        help="Ziel der Weiterleitungstaste „Eigenes Handy“, z. B. +49 152 28817386.")
 
     # Wo die Tastenleiste erscheint; der Benutzer stellt sie selbst ein (wirkt nach dem Neuladen)
     wb_voip_ansitel_tastenleiste = fields.Selection(
@@ -377,14 +378,32 @@ class ResUsers(models.Model):
         if meldung:
             zustand = self._wb_voip_tasten_grau(meldung)
         else:
+            schluessel = self._wb_voip_tasten_cache_schluessel()
+            zustand = ansitel_api.tasten_cache_holen(schluessel) if schluessel else None
+            if zustand is not None:
+                return zustand  # höchstens 10 s alt: die Tabs holen nicht jeder die Anlage
             try:
                 with self.env.cr.savepoint():
                     zustand = self._wb_voip_tasten_lesen()
+                if schluessel:
+                    ansitel_api.tasten_cache_setzen(schluessel, zustand)
             except Exception:  # noqa: BLE001
                 _logger.exception("[wb_voip_ansitel] Schnelltasten: Zustand lesen fehlgeschlagen")
                 zustand = self._wb_voip_tasten_grau(self._wb_voip_tasten_texte()['allgemein'])
         self._wb_voip_tasten_senden(zustand)
         return zustand
+
+    @api.model
+    def _wb_voip_tasten_cache_schluessel(self):
+        """Return the cache key of the current user (database, user, PBX, write date) or ``None``.
+
+        The write date of the PBX belongs to the key: a changed PBX (URL, token) never serves old states.
+        """
+        kontext = self._wb_voip_tasten_kontext()
+        if not kontext:
+            return None
+        benutzer, anlage, _nebenstelle = kontext
+        return (self.env.cr.dbname, benutzer.id, anlage.id, anlage.write_date)
 
     @api.model
     def _wb_voip_tasten_schalten(self, taste_id, an=None):
@@ -494,6 +513,8 @@ class ResUsers(models.Model):
         texte = self._wb_voip_tasten_texte()
         fehler = False
         nicht_erreichbar = False
+        # Schalten ändert den Zustand: der Zwischenspeicher gilt nicht mehr (auch bei Fehler)
+        ansitel_api.tasten_cache_leeren(self.env.cr.dbname, self.env.uid)
         try:
             with self.env.cr.savepoint():
                 aktion(*args)

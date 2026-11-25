@@ -8,7 +8,7 @@
         <field name="arch" type="xml">
             <xpath expr="//field[@name='wb_voip_sip_passwort']/.." position="after">
                 <group string="Schnelltasten">
-                    <field name="wb_voip_handy" readonly="0" placeholder="+49 170 1234567"/>
+                    <field name="wb_voip_handy" readonly="0" placeholder="+49 152 28817386"/>
                     <field name="wb_voip_ansitel_tastenleiste" readonly="0"/>
                 </group>
             </xpath>
@@ -23,7 +23,9 @@
         <field name="arch" type="xml">
             <xpath expr="//page[@name='wb_voip']/group" position="after">
                 <group string="Ansitel" groups="wb_voip.group_wb_voip_manager">
-                    <field name="wb_voip_ansitel_nebenstelle" placeholder="100"/>
+                    <field name="wb_voip_ansitel_nebenstelle" groups="base.group_system" placeholder="100"/>
+                    <!-- Verwalter ohne Systemrecht sehen die Nebenstelle nur (setzen darf sie die Systemverwaltung) -->
+                    <field name="wb_voip_ansitel_nebenstelle" groups="!base.group_system" readonly="1"/>
                     <field name="wb_voip_ansitel_token_gesetzt" invisible="1"/>
                     <field name="wb_voip_ansitel_token" password="True" groups="base.group_system"
                            placeholder="Neuen Token eingeben"/>
