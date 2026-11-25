@@ -10,7 +10,8 @@ am richtigen Datensatz.
 
 > **Stand:** Phase 6b (`wb_voip` 19.0.4.5.0, `wb_voip_crm` 19.0.1.0.0, `wb_voip_ansitel` 19.0.1.1.0), Ansitel-Anbindung
 > fertig mit Weiterleitung auf interne Nebenstellen und Rufgruppen, Live-Test gegen eine echte Anlage steht aus;
-> Team-Übersicht jetzt standardmäßig an. Phase 5 (CRM-Anbindung) und Phase 4b
+> Team-Übersicht jetzt standardmäßig an: **Das Update auf 19.0.4.5.0 schaltet sie für alle vorhandenen Firmen ein**
+> (vorher Standard aus; vor dem Produktiveinsatz prüfen, siehe Team). Phase 5 (CRM-Anbindung) und Phase 4b
 > abgeschlossen. Team-Übersicht, zweite Leitung, Übergeben mit
 > Rückfrage, Konferenz im Browser, verpasste Anrufe mit Rückruf-Liste, Softphone, Anrufprotokoll, Anrufer-Fenster
 > mit Layout-Designer, eigene Anruf-Buttons mit Assistent, Rufnummer zuordnen und Lizenzanbindung sind fertig und mit
@@ -34,7 +35,10 @@ am richtigen Datensatz.
 **Team, zweite Leitung, Übergeben, Konferenz**
 - Reiter „Team“: Kollegen mit Status frei, telefoniert (optional mit Dauer), klingelt oder abgemeldet. Angezeigt
   werden aktive interne Benutzer mit VoIP-Recht, SIP-Benutzer, derselben Firma und derselben Anlage, nicht man selbst
-- Vor dem Produktiveinsatz Beschäftigte informieren (Art. 13 DSGVO) und die Mitbestimmung beachten (§ 87 Abs. 1 Nr. 6 BetrVG)
+- Vor dem Produktiveinsatz: Die Übersicht ist der Bequemlichkeit halber standardmäßig an; für datenschutzfreundliche
+  Voreinstellungen (Art. 25 DSGVO) ist der Betreiber verantwortlich. Ausschalten, bis die Beschäftigten informiert sind
+  (Art. 13 DSGVO); prüfen, ob eine Datenschutz-Folgenabschätzung nötig ist. Ist ein Betriebsrat vorhanden, darf die Übersicht erst nach dessen Zustimmung (in der Regel Betriebsvereinbarung,
+  § 87 Abs. 1 Nr. 6 BetrVG) genutzt werden; bis dahin ausschalten.
 - Team-Übersicht standardmäßig eingeschaltet, Gesprächsdauer standardmäßig aus; je Firma unter Einstellungen › WB VoIP
   „Team-Übersicht anzeigen“ und „Gesprächsdauer im Team anzeigen“; maßgeblich ist die Firma, in der die Person gerade arbeitet (aktive Firma)
 - Datenschutz: nur Name, Nebenstelle, Status und Dauer; nie Gegennummer, Kontakt oder Notiz. Als Anwesenheit

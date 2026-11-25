@@ -236,10 +236,11 @@ Team, zweite Leitung, Übergeben und Konferenz
 Team
 ~~~~
 
-**Vor dem Produktiveinsatz:** Die Übersicht zeigt Anwesenheit und Telefonstatus von Beschäftigten. Der Betreiber
-informiert vorher die Beschäftigten (Art. 13 DSGVO) und beteiligt, falls vorhanden, den Betriebsrat: Eine
-Einrichtung, die Verhalten oder Leistung überwachen kann, ist mitbestimmungspflichtig (§ 87 Abs. 1 Nr. 6 BetrVG).
-Wer das nicht will oder noch nicht geklärt hat, schaltet die Übersicht aus.
+**Vor dem Produktiveinsatz:** Die Übersicht zeigt Anwesenheit und Telefonstatus von Beschäftigten. Sie ist der
+Bequemlichkeit halber standardmäßig eingeschaltet; für datenschutzfreundliche Voreinstellungen (Art. 25 DSGVO) ist der
+Betreiber verantwortlich. Er schaltet sie aus, bis die Beschäftigten informiert sind (Art. 13 DSGVO), und prüft, ob
+eine Datenschutz-Folgenabschätzung (Art. 35 DSGVO) nötig ist. Ist ein Betriebsrat vorhanden, darf die Übersicht erst nach dessen Zustimmung (in der Regel Betriebsvereinbarung,
+§ 87 Abs. 1 Nr. 6 BetrVG) genutzt werden; bis dahin ausschalten.
 
 Die Team-Übersicht ist **standardmäßig eingeschaltet** (ab 19.0.4.5.0; das Update schaltet sie für alle
 vorhandenen Firmen ein). Schalter je Firma unter Einstellungen › WB VoIP: „Team-Übersicht anzeigen“ und, getrennt
