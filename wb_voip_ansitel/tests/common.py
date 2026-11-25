@@ -38,7 +38,7 @@ class AnsitelCase(WbVoipCase):
         self.addCleanup(ansitel_api.cache_leeren)
 
     def _post(self, *antworten, **kwargs):
-        """Patch ``requests.Session.post`` (the API module (never real network)."""
+        """Patch ``requests.Session.post`` of the API module (never real network)."""
         if antworten:
             kwargs.setdefault('side_effect', list(antworten))
         alt = getattr(self, '_post_patcher', None)

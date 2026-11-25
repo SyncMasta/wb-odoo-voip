@@ -100,3 +100,7 @@ class TestAnlageFelder(AnsitelCase):
         system = self.env.ref('base.user_admin')
         self.anlage.with_user(system).write({'ansitel_api_url': 'https://neu.example.invalid/api'})
         self.assertTrue(self.anlage.sudo().ansitel_token_enc)
+
+    def test_tokens_verwerfen_methode(self):
+        self.anlage._ansitel_tokens_verwerfen()
+        self.assertFalse(self.anlage.sudo().ansitel_token_enc)

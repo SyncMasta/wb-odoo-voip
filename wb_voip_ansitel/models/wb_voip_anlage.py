@@ -38,10 +38,16 @@ class WbVoipAnlage(models.Model):
 
     def write(self, vals):
         self._ansitel_url_bereinigen(vals)
-        if 'ansitel_api_url' in vals and not self.env.user._is_system():
-            # Auch über sudo: eine umgebogene Adresse darf den zentralen Token nie erhalten
-            vals['ansitel_token_enc'] = False
-        return super().write(vals)
+        # Auch über sudo: eine umgebogene Adresse darf keinen gespeicherten Token erhalten
+        verwerfen = 'ansitel_api_url' in vals and not self.env.user._is_system()
+        ergebnis = super().write(vals)
+        if verwerfen:
+            self._ansitel_tokens_verwerfen()
+        return ergebnis
+
+    def _ansitel_tokens_verwerfen(self):
+        """Delete all stored Ansitel tokens of these PBXs (extend for further token fields)."""
+        self.sudo().write({'ansitel_token_enc': False})
 
     @staticmethod
     def _ansitel_url_bereinigen(vals):
