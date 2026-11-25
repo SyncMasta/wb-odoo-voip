@@ -1,3 +1,5 @@
+from markupsafe import Markup
+
 from odoo import api, models
 from odoo.tools import html2plaintext
 
@@ -11,6 +13,16 @@ AUFGABEN_MAX_GELESEN = 2000
 AUFGABEN_MIN_STAPEL = 50
 
 
+def _feedback_text(feedback):
+    """Return the feedback as plain text: HTML is converted, plain text (e.g. "Preis < 100") kept."""
+    if not feedback:
+        return ''
+    text = str(feedback)
+    if isinstance(feedback, Markup) or text.lstrip().startswith('<'):
+        return html2plaintext(text).strip()
+    return text.strip()
+
+
 class MailActivity(models.Model):
     _inherit = 'mail.activity'
 
@@ -18,7 +30,8 @@ class MailActivity(models.Model):
         """Marking a callback activity done also closes the missed entries that use it.
 
         The open entries are collected before (the activity is archived by the standard
-        method); text = feedback of the activity as plain text, else "Aufgabe erledigt".
+        method); text = feedback of the activity as plain text (HTML, i.e. ``Markup`` or a string
+        starting with ``<``, is converted; other text stays as typed), else "Aufgabe erledigt".
         Entries closed by ``_wb_voip_nummer_erreicht`` are already done and not touched again.
         """
         offen = self.env['wb.voip.anruf'].sudo().search([
@@ -26,8 +39,7 @@ class MailActivity(models.Model):
             ('zustand', '=', 'verpasst')]) if self.ids else self.env['wb.voip.anruf']
         ergebnis = super()._action_done(feedback=feedback, attachment_ids=attachment_ids)
         if offen:
-            text = html2plaintext(feedback or '').strip()[:ERLEDIGT_TEXT_MAX] \
-                or self.env._("Aufgabe erledigt")
+            text = _feedback_text(feedback)[:ERLEDIGT_TEXT_MAX] or self.env._("Aufgabe erledigt")
             offen._wb_voip_durch_aktivitaet_erledigt(text)
         return ergebnis
 

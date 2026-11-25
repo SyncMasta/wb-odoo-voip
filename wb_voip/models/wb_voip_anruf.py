@@ -52,6 +52,9 @@ SIP_GRUND_ZUSTAND_EINGEHEND = {
 # anderer Benutzer, gemeinsame Firma, Beginn höchstens so viele Sekunden auseinander
 GLEICHZEITIG_SEKUNDEN = 10
 GLEICHZEITIG_HOECHSTENS = 50
+# Ein „anderswo“ ohne eigene Annahme darf der Client nur so kurz nach dem Beginn noch als
+# angenommen melden (z. B. Zentrale mit einer Nummer für zwei Anrufe); später ist es ein No-op
+NACHTRAEGLICH_ANGENOMMEN_SEKUNDEN = 120
 # Obergrenze der Verpasst-Einträge, die eine Annahme oder ein Rückruf auf einmal erledigt
 ERLEDIGEN_HOECHSTENS = 500
 # Verpasst-Liste: höchstens so viele offene Einträge je Abruf, Notiz des Kollegen gekürzt
@@ -196,14 +199,17 @@ class WbVoipAnruf(models.Model):
         'res.company', string='Firma', index=True, default=lambda self: self.env.company)
     # Verpasst-Liste: Anruf des Kollegen, der angenommen hat („anderswo“)
     angenommen_anruf_id = fields.Many2one(
-        'wb.voip.anruf', string='Angenommen mit', copy=False, ondelete='set null')
+        'wb.voip.anruf', string='Angenommen mit', copy=False, ondelete='set null',
+        index='btree_not_null')
     rueckruf_aktivitaet_id = fields.Many2one(
-        'mail.activity', string='Rückruf-Aktivität', copy=False, ondelete='set null')
+        'mail.activity', string='Rückruf-Aktivität', copy=False, ondelete='set null',
+        index='btree_not_null')
     erledigt = fields.Boolean(string='Erledigt', copy=False, index=True)
     erledigt_am = fields.Datetime(string='Erledigt am', copy=False)
     erledigt_text = fields.Text(string='Erledigt wie', copy=False)
     erledigt_durch_protokoll_id = fields.Many2one(
-        'wb.voip.protokoll', string='Erledigt durch Protokoll', copy=False, ondelete='set null')
+        'wb.voip.protokoll', string='Erledigt durch Protokoll', copy=False, ondelete='set null',
+        index='btree_not_null')
     gesehen = fields.Boolean(string='Gesehen', copy=False)
 
     _sip_call_id_je_benutzer = models.Constraint(
@@ -370,7 +376,8 @@ class WbVoipAnruf(models.Model):
 
         Also a call set to ``anderswo`` by a colleague's answer counts as answered when the
         caller really answers it (``annahme`` still empty): e.g. a switchboard sending one
-        number for two different calls. Its link and end are cleared.
+        number for two different calls. Its link and end are cleared. Only within
+        ``NACHTRAEGLICH_ANGENOMMEN_SEKUNDEN`` after the start; later it is a no-op.
         """
         anruf = self._wb_voip_eigener()
         if anruf.zustand in ('neu', 'klingelt') or anruf._wb_voip_anderswo_offen():
@@ -394,6 +401,7 @@ class WbVoipAnruf(models.Model):
         * not answered, incoming, ``487``/``480``     -> ``verpasst`` (log: not reached), but
           ``anderswo`` if a colleague already answered the same call
         * ``anderswo`` without ``annahme`` and ``angenommen`` True -> answered here, ``beendet``
+          (only within ``NACHTRAEGLICH_ANGENOMMEN_SEKUNDEN`` after the start, else no-op)
         * not answered, incoming, ``anderswo``       -> ``anderswo`` (answered on another
           device; no log entry)
         * not answered, ``603`` -> ``abgelehnt``; ``486`` or ``600`` -> ``besetzt``
@@ -462,10 +470,17 @@ class WbVoipAnruf(models.Model):
             anruf._wb_voip_nummer_erreicht(anruf.protokoll_id)
 
     def _wb_voip_anderswo_offen(self):
-        """Return True for an ``anderswo`` call that was never answered on this device."""
+        """Return True for a fresh ``anderswo`` call that was never answered on this device.
+
+        Fresh: started at most ``NACHTRAEGLICH_ANGENOMMEN_SEKUNDEN`` ago. A late client message
+        must not turn an old entry into an answered call (and close the colleagues' entries).
+        """
         self.ensure_one()
         anruf = self.sudo()
-        return anruf.zustand == 'anderswo' and not anruf.annahme
+        if anruf.zustand != 'anderswo' or anruf.annahme or not anruf.beginn:
+            return False
+        grenze = fields.Datetime.now() - timedelta(seconds=NACHTRAEGLICH_ANGENOMMEN_SEKUNDEN)
+        return anruf.beginn >= grenze
 
     def _wb_voip_angenommen_von(self):
         """Return (sudo) the earliest answered simultaneous call of a colleague, if any."""
@@ -502,16 +517,18 @@ class WbVoipAnruf(models.Model):
     def _wb_voip_rueckruf_aktivitaet(self):
         """Give the missed call a callback activity on its contact (owner = call's user).
 
-        Only if the call's user may read the contact; none without contact. An open (active)
-        callback activity of the same user on the contact is reused. Created with sudo after
-        the read check, so no write right on the contact is needed.
+        Only if the call's user may read the contact (checked with that user's companies, not
+        the caller's active ones); none without contact. An open (active) callback activity of
+        the same user on the contact is reused. Created with sudo after the read check, so no
+        write right on the contact is needed.
         """
         self.ensure_one()
         anruf = self.sudo()
         if anruf.zustand != 'verpasst' or anruf.rueckruf_aktivitaet_id.active:
             return anruf.rueckruf_aktivitaet_id
         benutzer = anruf.user_id
-        partner = anruf.partner_id.with_user(benutzer)
+        partner = anruf.partner_id.with_user(benutzer).with_context(
+            allowed_company_ids=benutzer.company_ids.ids)
         typ = self.env.ref(RUECKRUF_TYP, raise_if_not_found=False)
         if not partner or not typ or not partner.exists() or not partner.has_access('read'):
             return self.env['mail.activity']
@@ -653,14 +670,15 @@ class WbVoipAnruf(models.Model):
     def _wb_voip_wieder_oeffnen(self):
         """Reopen done missed entries (the result of the callback log changed).
 
-        Each entry is open again (no text, no date) and its owner gets a callback activity
+        Each entry is open again (no text, no date, unseen) and its owner gets a callback activity
         again (``_wb_voip_rueckruf_aktivitaet``: an active one is reused, an archived one never).
         The link to the log stays, so the entries close again when the result returns to reached.
         """
         eintraege = self.sudo().filtered(lambda a: a.zustand == 'verpasst' and a.erledigt)
         if not eintraege:
             return eintraege
-        eintraege.write({'erledigt': False, 'erledigt_am': False, 'erledigt_text': False})
+        eintraege.write({'erledigt': False, 'erledigt_am': False, 'erledigt_text': False,
+                         'gesehen': False})
         for eintrag in eintraege:
             eintrag._wb_voip_rueckruf_aktivitaet()
         eintraege._wb_voip_verpasst_melden()

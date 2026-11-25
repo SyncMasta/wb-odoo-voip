@@ -22,3 +22,4 @@ from . import test_verpasst
 from . import test_verpasst_logik
 from . import test_verpasst_rueckruf
 from . import test_verpasst_rpc
+from . import test_verpasst_nachbesserung
