@@ -227,10 +227,21 @@ Team, zweite Leitung, Übergeben und Konferenz
 Team
 ~~~~
 
+Die Team-Übersicht ist **standardmäßig ausgeschaltet**. Einschalten je Firma unter Einstellungen › WB VoIP:
+„Team-Übersicht anzeigen“ und, getrennt davon, „Gesprächsdauer im Team anzeigen“ (ebenfalls Standard aus).
+Ausgeschaltet zeigt der Reiter „Team“ nur „Die Team-Übersicht ist ausgeschaltet.“, der Telefon-Tab meldet keine
+Lebenszeichen (ein vorhandenes wird gelöscht) und in der Gesprächsansicht gibt es statt der Team-Auswahl nur die
+freie Nummer.
+
+Die Übersicht zeigt Anwesenheit und Telefonstatus von Beschäftigten. Wer sie einschaltet, informiert vorher die
+Beschäftigten (Art. 13 DSGVO, § 26 BDSG) und beteiligt, falls vorhanden, den Betriebsrat: Eine Einrichtung, die
+Verhalten oder Leistung überwachen kann, ist mitbestimmungspflichtig (§ 87 Abs. 1 Nr. 6 BetrVG).
+
 Der Reiter „Team“ im Softphone zeigt die Kollegen mit ihrem Status:
 
 * **frei**: angemeldet, kein Gespräch.
-* **telefoniert**: im Gespräch, mit der Dauer seit der Annahme.
+* **telefoniert**: im Gespräch, mit der Dauer seit der Annahme (nur wenn „Gesprächsdauer im Team anzeigen“
+  eingeschaltet ist).
 * **klingelt**: ein Anruf klingelt gerade.
 * **abgemeldet**: Telefon nicht angemeldet oder kein Lebenszeichen mehr.
 
@@ -254,8 +265,9 @@ Zweite Leitung
 ~~~~~~~~~~~~~~
 
 Pro Tab sind höchstens zwei gleichzeitige Anrufe möglich. Ruft jemand an, während ein Gespräch läuft,
-erscheint ein wartender Anruf („Zweiter Anruf“) mit Annehmen und Ablehnen; Annehmen hält das erste Gespräch.
-Ein dritter Anruf wird abgewiesen (SIP 480) und zählt als verpasst. Früher wurde 486 gesendet; wer die
+erscheint ein wartender Anruf („Zweiter Anruf“) mit Annehmen und Ablehnen und einem kurzen Anklopfton (zwei kurze
+Töne alle 3 Sekunden) statt des Klingeltons; Annehmen hält das erste Gespräch. Gehaltene Leitungen senden kein
+Mikrofon. Ein dritter Anruf wird abgewiesen (SIP 480) und zählt als verpasst (ohne Statuswechsel im Team). Früher wurde 486 gesendet; wer die
 Rückmeldecodes auswertet, beachtet die Änderung.
 
 Übergeben
@@ -264,8 +276,9 @@ Rückmeldecodes auswertet, beachtet die Änderung.
 * **Direkt** (blind): Der Anrufer wird per REFER an die Zielnummer übergeben, ohne Rückfrage.
 * **Mit Rückfrage** (attended): Das Gespräch wird gehalten, der Kollege angerufen; „Verbinden“ übergibt per
   REFER mit Replaces, „Zurück“ beendet die Rückfrage. Bestätigt die Anlage die Übergabe nicht innerhalb von
-  15 Sekunden, bleiben beide Leitungen bestehen, der Kunde kommt zurück und es erscheint ein Hinweis. Nimmt der
-  Kollege nicht ab oder legt er auf, kommt der Kunde ebenfalls automatisch zurück.
+  15 Sekunden, bleiben beide Leitungen bestehen: Der Kunde bleibt gehalten und es erscheint ein Hinweis; danach
+  „Verbinden“ erneut versuchen oder mit „Zurück“ zum Kunden. Nimmt der Kollege nicht ab oder legt er auf, kommt
+  der Kunde automatisch zurück.
 
 Jedes Kundengespräch bekommt sein eigenes Protokoll-Popup; laufen mehrere, öffnen sie sich nacheinander.
 

@@ -29,17 +29,20 @@ am richtigen Datensatz.
   reichen Wählen an ihn weiter. Schließt der Tab, übernimmt der nächste.
 
 **Team, zweite Leitung, Übergeben, Konferenz**
-- Reiter „Team“: Kollegen mit Status frei, telefoniert (mit Dauer), klingelt oder abgemeldet. Angezeigt werden
-  aktive interne Benutzer mit VoIP-Recht, SIP-Benutzer, derselben Firma und derselben Anlage, nicht man selbst
+- Reiter „Team“: Kollegen mit Status frei, telefoniert (optional mit Dauer), klingelt oder abgemeldet. Angezeigt
+  werden aktive interne Benutzer mit VoIP-Recht, SIP-Benutzer, derselben Firma und derselben Anlage, nicht man selbst
+- Standardmäßig ausgeschaltet; je Firma unter Einstellungen › WB VoIP „Team-Übersicht anzeigen“ und „Gesprächsdauer
+  im Team anzeigen“. Vor dem Einschalten Beschäftigte informieren (§ 26 BDSG) und ggf. den Betriebsrat beteiligen
+  (§ 87 Abs. 1 Nr. 6 BetrVG)
 - Datenschutz: nur Name, Nebenstelle, Status und Dauer; nie Gegennummer, Kontakt oder Notiz. Als Anwesenheit
   steht nur der Zeitpunkt des letzten Lebenszeichens des Telefon-Tabs in Odoo (nach 150 s ohne Meldung
   „abgemeldet“, beim Abmelden gelöscht)
 - Heranholen eines klingelnden Kollegen per Wahlpräfix der Anlage (Beispiel `**` bei Anlagen auf Asterisk-Basis);
   leeres Präfix blendet den Knopf aus
-- Zweite Leitung: wartender Anruf mit Annehmen/Ablehnen; ein dritter Anruf wird mit 480 abgewiesen und zählt als
-  verpasst (bisher 486)
+- Zweite Leitung: wartender Anruf mit Annehmen/Ablehnen und kurzem Anklopfton; gehaltene Leitungen senden kein
+  Mikrofon; ein dritter Anruf wird mit 480 abgewiesen und zählt als verpasst (bisher 486)
 - Übergeben direkt (blind) oder mit Rückfrage (attended, REFER mit Replaces); bestätigt die Anlage nicht binnen
-  15 s, kommt der Kunde zurück
+  15 s, bleibt der Kunde gehalten und ein Hinweis erscheint (Verbinden erneut oder Zurück)
 - Konferenz im Browser mit höchstens drei Teilnehmern; braucht eine stabile Verbindung und ausreichend Bandbreite
   am Gastgeber, Stumm gilt in beide Richtungen
 - Je Kundengespräch ein Protokoll-Popup, bei mehreren nacheinander
