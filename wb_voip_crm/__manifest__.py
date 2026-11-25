@@ -1,6 +1,6 @@
 {
     'name': 'WB VoIP CRM',
-    'version': '19.0.1.0.1',
+    'version': '19.0.1.0.2',
     'category': 'Productivity/VoIP',
     'summary': 'Anrufe und Anrufprotokolle am CRM-Vorgang',
     'description': """
@@ -9,6 +9,7 @@ WB VoIP CRM
 Brücke zwischen WB VoIP und CRM: Anrufe werden dem offenen Vorgang des Kontakts
 zugeordnet, am Vorgang erscheinen Anrufe und Anrufprotokolle.
 """,
+    'images': ['static/description/banner.png','static/description/vorgaenge-block.png'],
     'author': 'WISSEN BERATUNG (Tobias Wissen)',
     'website': 'https://www.wissen-beratung.de',
     'license': 'OPL-1',
