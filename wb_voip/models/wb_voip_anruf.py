@@ -794,11 +794,12 @@ class WbVoipAnruf(models.Model):
             anruf.protokoll_id = False
             protokoll.unlink()
 
-    def _wb_voip_nummer_erreicht(self, protokoll=None):
+    def _wb_voip_nummer_erreicht(self, protokoll=None, bis=None):
         """The number of this call was reached: close the open missed entries of all users.
 
         Entries: state ``verpasst``, not done, same E.164 number, same company, started before
-        this call. Text "Zurückgerufen von <name>" (outgoing) or "Angenommen von <name>"; with
+        this call (with ``bis``: started at the latest at ``bis``, e.g. the end of a call that
+        a late synchronisation with the PBX found). Text "Zurückgerufen von <name>" (outgoing) or "Angenommen von <name>"; with
         ``protokoll`` (callback log) the entry remembers it. Active callback activities that no
         entry left open uses are marked done with this text. ``anderswo`` entries stay.
         """
@@ -812,7 +813,7 @@ class WbVoipAnruf(models.Model):
             ('erledigt', '=', False),
             ('nummer_e164', '=', anruf.nummer_e164),
             ('company_id', '=', anruf.company_id.id),
-            ('beginn', '<', anruf.beginn),
+            ('beginn', '<=', bis) if bis else ('beginn', '<', anruf.beginn),
         ], order='beginn, id', limit=ERLEDIGEN_HOECHSTENS)
         if not offen:
             return offen
@@ -887,16 +888,28 @@ class WbVoipAnruf(models.Model):
 
     @api.model
     def _wb_voip_verpasst_offen(self, zusatz=(), limit=VERPASST_HOECHSTENS):
-        """Return (sudo) the caller's open entries: missed, or answered elsewhere with a link.
+        """Return (sudo) the caller's open entries: missed, or answered elsewhere and visible.
+
+        Visible ``anderswo`` entries: see ``_wb_voip_anderswo_sichtbar_domain``.
 
         ``zusatz``: extra domain terms (e.g. one group); ``limit`` None = unlimited.
         """
-        return self.sudo().search([
-            ('user_id', '=', self.env.uid), ('erledigt', '=', False),
-            '|', ('zustand', '=', 'verpasst'),
-            '&', ('zustand', '=', 'anderswo'), ('angenommen_anruf_id', '!=', False),
-            *zusatz,
-        ], order='beginn desc, id desc', limit=limit)
+        domain = Domain.AND([
+            Domain('user_id', '=', self.env.uid) & Domain('erledigt', '=', False),
+            Domain('zustand', '=', 'verpasst')
+            | (Domain('zustand', '=', 'anderswo') & Domain(self._wb_voip_anderswo_sichtbar_domain())),
+            Domain(list(zusatz)),
+        ])
+        return self.sudo().search(domain, order='beginn desc, id desc', limit=limit)
+
+    @api.model
+    def _wb_voip_anderswo_sichtbar_domain(self):
+        """Extension point: which ``anderswo`` entries appear in the missed-call list.
+
+        Default: those linked to the colleague's answered call. Extensions widen it with
+        ``super() | Domain(...)`` (e.g. calls answered on a known device of the PBX).
+        """
+        return Domain('angenommen_anruf_id', '!=', False)
 
     @staticmethod
     def _wb_voip_verpasst_schluessel(anruf):
@@ -987,8 +1000,9 @@ class WbVoipAnruf(models.Model):
         anruf = self._wb_voip_eigener()
         if anruf.erledigt:
             return False
-        if anruf.zustand not in ('verpasst', 'anderswo') \
-                or (anruf.zustand == 'anderswo' and not anruf.angenommen_anruf_id):
+        if anruf.zustand not in ('verpasst', 'anderswo') or (
+                anruf.zustand == 'anderswo'
+                and not anruf.filtered_domain(self._wb_voip_anderswo_sichtbar_domain())):
             raise UserError(self.env._("Dies ist kein offener Verpasst-Eintrag."))
         # Gruppe direkt suchen (nicht über die gekappte Liste)
         gruppe = self._wb_voip_verpasst_offen(
@@ -1011,29 +1025,12 @@ class WbVoipAnruf(models.Model):
         anruf = self.sudo()
         if anruf.protokoll_id:
             return anruf.protokoll_id
-        if anruf.zustand == 'beendet' and anruf.annahme:
-            ergebnis = 'erreicht'
-        elif anruf.zustand == 'besetzt':
-            ergebnis = 'besetzt'
-        else:
-            ergebnis = 'nicht_erreicht'
         Protokoll = self.env['wb.voip.protokoll'].sudo()
         vorhanden = Protokoll.search([('anruf_id', '=', anruf.id)], limit=1)
         if vorhanden:
             anruf.protokoll_id = vorhanden
             return vorhanden
-        werte = {
-            'anruf_id': anruf.id,
-            'user_id': anruf.user_id.id,
-            'datum': anruf.beginn or fields.Datetime.now(),
-            'partner_id': anruf.partner_id.id,
-            'res_model': anruf.res_model or False,
-            'res_id': anruf.res_id or False,
-            'richtung': anruf.richtung,
-            'ergebnis': ergebnis,
-            'dauer_sek': anruf.dauer_sek,
-            'beschreibung': plaintext2html(anruf.notiz) if anruf.notiz else False,
-        }
+        werte = anruf._wb_voip_protokoll_werte()
         # Paralleler Aufruf oder untergeschobenes Protokoll: Savepoint, bei Unique-Verletzung
         # das vorhandene liefern statt die Transaktion abzubrechen.
         try:
@@ -1048,6 +1045,33 @@ class WbVoipAnruf(models.Model):
         anruf.protokoll_id = protokoll
         self._wb_voip_chatter(protokoll)
         return protokoll
+
+    def _wb_voip_protokoll_werte(self):
+        """Return the values of the log entry of this finished call (extension point).
+
+        Extensions may change e.g. ``ergebnis`` or ``beschreibung`` through ``super()``;
+        ``anruf_id`` and ``user_id`` must stay. Called with sudo by ``_wb_voip_protokollieren``.
+        """
+        self.ensure_one()
+        anruf = self.sudo()
+        if anruf.zustand == 'beendet' and anruf.annahme:
+            ergebnis = 'erreicht'
+        elif anruf.zustand == 'besetzt':
+            ergebnis = 'besetzt'
+        else:
+            ergebnis = 'nicht_erreicht'
+        return {
+            'anruf_id': anruf.id,
+            'user_id': anruf.user_id.id,
+            'datum': anruf.beginn or fields.Datetime.now(),
+            'partner_id': anruf.partner_id.id,
+            'res_model': anruf.res_model or False,
+            'res_id': anruf.res_id or False,
+            'richtung': anruf.richtung,
+            'ergebnis': ergebnis,
+            'dauer_sek': anruf.dauer_sek,
+            'beschreibung': plaintext2html(anruf.notiz) if anruf.notiz else False,
+        }
 
     def _wb_voip_chatter(self, protokoll):
         """Post the call as note on the linked record, else on the contact.

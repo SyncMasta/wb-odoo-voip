@@ -1,6 +1,9 @@
+from datetime import timedelta
 from unittest.mock import patch
 
+from odoo import fields
 from odoo.exceptions import AccessError, UserError, ValidationError
+from odoo.fields import Domain
 from odoo.tests import tagged
 
 from .common import WbVoipCase
@@ -455,3 +458,60 @@ class TestHooks(WbVoipCase):
                 modul = getattr(Layout, name).__module__
                 self.assertFalse(modul.startswith('odoo.addons.wb_voip.'), name)
         self.assertTrue(callable(getattr(Layout, '_wb_voip_block_hook', None)))
+
+    # --- Verpasst-Liste: weitere sichtbare „anderswo“-Einträge, Erreicht bis, Protokollwerte ---
+
+    def _anderswo_ohne_kollegen(self):
+        anruf, _daten = self._beginnen()
+        anruf.sudo().write({'zustand': 'anderswo', 'notiz': 'Merker'})
+        return anruf
+
+    def test_anderswo_sichtbar_standard_nur_mit_kollegen(self):
+        anruf = self._anderswo_ohne_kollegen()
+        Anruf = self.Anruf.with_user(self.user_a)
+        self.assertEqual(Anruf.wb_voip_verpasst_liste(), [])
+        with self.assertRaises(UserError):
+            anruf.with_user(self.user_a).wb_voip_verpasst_erledigen('x')
+
+    def test_anderswo_sichtbar_hook(self):
+        anruf = self._anderswo_ohne_kollegen()
+        self._ueberschreiben('wb.voip.anruf', '_wb_voip_anderswo_sichtbar_domain',
+                             lambda self: Domain('notiz', '!=', False))
+        Anruf = self.Anruf.with_user(self.user_a)
+        zeilen = Anruf.wb_voip_verpasst_liste()
+        self.assertEqual([z['anruf_id'] for z in zeilen], [anruf.id])
+        self.assertEqual(zeilen[0]['art'], 'anderswo')
+        # Zähler zählt „anderswo“ nie
+        self.assertEqual(Anruf.wb_voip_verpasst_zaehler(), 0)
+        self.assertFalse(anruf.with_user(self.user_a).wb_voip_verpasst_erledigen('erledigt'))
+        self.assertTrue(anruf.sudo().erledigt)
+
+    def test_nummer_erreicht_bis(self):
+        frueh = self._verpasst()
+        spaet = self._verpasst()
+        noch_spaeter = self._verpasst()
+        basis = fields.Datetime.now()
+        frueh.beginn = basis - timedelta(minutes=10)
+        spaet.beginn = basis + timedelta(minutes=1)
+        noch_spaeter.beginn = basis + timedelta(minutes=5)
+        annahme, _daten = self._beginnen()
+        annahme.sudo().beginn = basis
+        # Standard: nur Einträge vor dem Beginn des Anrufs
+        self.assertEqual(annahme.sudo()._wb_voip_nummer_erreicht(), frueh)
+        frueh.erledigt = False
+        # Mit ``bis``: alle Einträge bis zu diesem Zeitpunkt, spätere bleiben offen
+        erledigt = annahme.sudo()._wb_voip_nummer_erreicht(bis=basis + timedelta(minutes=2))
+        self.assertEqual(erledigt, frueh | spaet)
+        self.assertFalse(noch_spaeter.erledigt)
+
+    def test_protokoll_werte_hook(self):
+        def werte(anruf):
+            ergebnis = original(anruf)
+            ergebnis['ergebnis'] = 'mailbox'
+            return ergebnis
+
+        original = type(self.Anruf)._wb_voip_protokoll_werte
+        self._ueberschreiben('wb.voip.anruf', '_wb_voip_protokoll_werte', werte)
+        anruf = self._verpasst()
+        self.assertEqual(anruf.protokoll_id.ergebnis, 'mailbox')
+        self.assertEqual(anruf.protokoll_id.anruf_id, anruf)
