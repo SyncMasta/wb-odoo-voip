@@ -385,7 +385,11 @@ class TestAktionAssistent(WbVoipCase):
     def test_loeschen_geteilte_aktion_bleibt(self):
         aktion = self._anlegen()
         server = aktion.sudo().server_action_id
-        zweiter = aktion.copy()
+        # Kopieren ist gesperrt; ein zweiter (nicht gekennzeichneter) Button auf dieselbe Aktion
+        # entsteht nur noch als Superuser, z. B. per Datenimport
+        zweiter = self.env['wb.voip.aktion'].create({
+            'name': 'Zweiter', 'art': 'serveraktion', 'ort_softphone': True,
+            'server_action_id': server.id})
         self.assertEqual(zweiter.sudo().server_action_id, server)
         self.assertFalse(zweiter.wb_voip_assistent)
         aktion.with_user(self.manager).unlink()
@@ -557,12 +561,80 @@ class TestAktionAssistent(WbVoipCase):
             with self.assertRaises(AccessError, msg=str(werte)):
                 als_manager.write(werte)
         als_manager.write({'name': 'Neuer Name', 'icon': 'fa-star'})
-        als_manager.write({'active': False})
         aktion.with_user(self.systemadmin).write({
-            'active': True, 'group_ids': [(6, 0, [self.env.ref('base.group_user').id])],
+            'group_ids': [(6, 0, [self.env.ref('base.group_user').id])],
             'richtung': 'eingehend'})
         self.assertEqual(aktion.richtung, 'eingehend')
         # bei Feld-Buttons bleibt das Publikum Sache des VoIP-Administrators
         feld = self._anlegen()
-        feld.with_user(self.manager).write({'richtung': 'ausgehend'})
-        aktion.with_user(self.manager).unlink()
+        feld.with_user(self.manager).write({'richtung': 'ausgehend', 'active': False})
+        feld.with_user(self.manager).write({'active': True})
+
+    def test_code_button_archivieren_loeschen_nur_systemadmin(self):
+        aktion = self._anlegen(self.systemadmin, art='code', feld_name=False, code='pass')
+        server = aktion.sudo().server_action_id
+        als_manager = aktion.with_user(self.manager)
+        with self.assertRaises(AccessError):
+            als_manager.write({'active': False})
+        self.assertTrue(aktion.active)
+        aktion.with_user(self.systemadmin).write({'active': False})
+        with self.assertRaises(AccessError):
+            als_manager.write({'active': True})
+        self.assertFalse(aktion.active)
+        aktion.with_user(self.systemadmin).write({'active': True})
+        with self.assertRaises(AccessError):
+            als_manager.unlink()
+        self.assertTrue(aktion.exists())
+        self.assertTrue(server.exists())
+        aktion.with_user(self.systemadmin).unlink()
+        self.assertFalse(aktion.exists())
+        self.assertFalse(server.exists())
+
+    # --- Kopieren ---
+
+    def test_kopieren_assistenten_button_verweigert(self):
+        aktion = self._anlegen()
+        for benutzer in (self.manager, self.systemadmin):
+            with self.assertRaises(UserError):
+                aktion.with_user(benutzer).copy()
+        with self.assertRaises(UserError):
+            aktion.copy()
+        self.assertEqual(self.env['wb.voip.aktion'].with_context(active_test=False).search_count(
+            [('server_action_id', '=', aktion.sudo().server_action_id.id)]), 1)
+        # von Hand angelegte Buttons lassen sich weiter kopieren
+        hand = self.env['wb.voip.aktion'].create({
+            'name': 'Hand', 'art': 'neuer_kontakt', 'ort_softphone': True})
+        self.assertTrue(hand.with_user(self.manager).copy())
+
+    # --- Deinstallation ---
+
+    def test_deinstallation_entfernt_assistenten_aktionen(self):
+        from odoo.addons.wb_voip import _wb_voip_uninstall
+
+        feld = self._anlegen()
+        code = self._anlegen(self.systemadmin, art='code', feld_name=False, code='pass')
+        feld_server = feld.sudo().server_action_id
+        code_server = code.sudo().server_action_id
+        # Gruppe nachträglich verändert: hängt trotzdem an einem Assistenten-Button
+        code_server.group_ids = self.env.ref('base.group_system')
+        # verwaiste Aktion mit genau der technischen Gruppe
+        Server = self.env['ir.actions.server']
+        modell = self._modell('res.partner').id
+        waise = Server.create({'name': 'Waise', 'model_id': modell, 'state': 'code',
+                               'code': 'pass', 'group_ids': [(6, 0, self.technisch.ids)]})
+        # fremde Serveraktionen bleiben: ohne Gruppe, mit anderer Gruppe, mit zusätzlicher Gruppe
+        fremd = Server.create({'name': 'Fremd', 'model_id': modell, 'state': 'code', 'code': 'pass'})
+        fremd_gruppe = Server.create({
+            'name': 'Fremd mit Gruppe', 'model_id': modell, 'state': 'code', 'code': 'pass',
+            'group_ids': [(6, 0, [self.env.ref('base.group_system').id])]})
+        hand = self.env['wb.voip.aktion'].create({
+            'name': 'Hand', 'art': 'serveraktion', 'ort_softphone': True,
+            'server_action_id': fremd.id})
+        with self.assertLogs('odoo.addons.wb_voip', 'INFO') as log:
+            _wb_voip_uninstall(self.env)
+        self.assertTrue(any('[wb_voip]' in z for z in log.output), log.output)
+        self.env.invalidate_all()
+        for weg in (feld_server, code_server, waise, feld, code):
+            self.assertFalse(weg.exists(), weg)
+        for bleibt in (fremd, fremd_gruppe, hand):
+            self.assertTrue(bleibt.exists(), bleibt)

@@ -26,9 +26,10 @@ GRUPPE_BUTTON_AKTION = 'wb_voip.group_wb_voip_button_aktion'
 _NUR_SERVER = ('wb_voip_assistent',)
 # An Buttons aus dem Assistenten nur über den Assistenten änderbar
 _NUR_ASSISTENT = ('art', 'server_action_id')
-# Wer einen Code-Button aus dem Assistenten sieht und wann: nur Systemadministratoren
-_CODE_PUBLIKUM = ('group_ids', 'partner_domain', 'ort_anrufer_fenster', 'ort_protokoll_popup',
-                  'ort_softphone', 'richtung', 'zustand')
+# Wer einen Code-Button aus dem Assistenten sieht und wann (auch Archivieren und
+# Reaktivieren): nur Systemadministratoren
+_CODE_PUBLIKUM = ('active', 'group_ids', 'partner_domain', 'ort_anrufer_fenster',
+                  'ort_protokoll_popup', 'ort_softphone', 'richtung', 'zustand')
 
 
 def assistenten_aktion(server):
@@ -127,14 +128,28 @@ class WbVoipAktion(models.Model):
                     "Die Aktion dieses Buttons wurde mit dem Assistenten angelegt. "
                     "Bitte mit „Mit Assistent bearbeiten“ ändern."))
             if set(vals) & set(_CODE_PUBLIKUM) and not self.env.user.has_group(GRUPPE_SYSTEM) \
-                    and self.sudo().filtered(lambda a: a.wb_voip_assistent
-                                             and a.server_action_id.state == 'code'):
+                    and self._wb_voip_code_buttons():
                 raise AccessError(self.env._(
                     "Bei Buttons mit Python-Code dürfen nur Systemadministratoren ändern, "
                     "wer den Button sieht und wann."))
         return super().write(vals)
 
+    def _wb_voip_code_buttons(self):
+        """Return the wizard-made buttons in ``self`` that run Python code (as superuser)."""
+        return self.sudo().with_context(active_test=False).filtered(
+            lambda a: a.wb_voip_assistent and a.server_action_id.state == 'code')
+
+    def copy(self, default=None):
+        # Eine Kopie teilte die Serveraktion, ohne Kennzeichen und ohne Schutz des Assistenten
+        if self.sudo().filtered('wb_voip_assistent'):
+            raise UserError(self.env._("Bitte mit dem Assistenten neu anlegen."))
+        return super().copy(default)
+
     def unlink(self):
+        if not self.env.su and not self.env.user.has_group(GRUPPE_SYSTEM) \
+                and self._wb_voip_code_buttons():
+            raise AccessError(self.env._(
+                "Buttons mit Python-Code dürfen nur Systemadministratoren löschen."))
         # Serveraktionen aus dem Assistenten merken; gelöscht wird erst nach dem Löschen der
         # Buttons (das prüft die Rechte) und nur, wenn kein anderer Button sie nutzt
         server = self.sudo().server_action_id.filtered(assistenten_aktion)
