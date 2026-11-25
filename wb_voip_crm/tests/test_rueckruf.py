@@ -1,6 +1,12 @@
+from contextlib import contextmanager
+
 from odoo.tests import tagged
 
 from .common import WbVoipCrmCase
+
+
+class _Zurueck(Exception):
+    """Marks the always-rolled-back end of ``_isoliert``."""
 
 
 @tagged('wb_voip_crm', 'post_install', '-at_install')
@@ -28,6 +34,16 @@ class TestRueckruf(WbVoipCrmCase):
     def _akt(self, anruf):
         return anruf.sudo().rueckruf_aktivitaet_id
 
+    @contextmanager
+    def _isoliert(self):
+        """Run the block in a savepoint that is always rolled back (also on a failure)."""
+        try:
+            with self.env.cr.savepoint():
+                yield
+                raise _Zurueck()
+        except _Zurueck:
+            pass
+
     # --- Ziel ---
 
     def test_aktivitaet_am_vorgang(self):
@@ -48,6 +64,12 @@ class TestRueckruf(WbVoipCrmCase):
         lead = self._lead()
         anruf = self._verpasst().sudo()
         self.assertEqual(anruf._wb_voip_rueckruf_ziel(), lead)
+        # gewonnen, verloren oder archiviert: nicht mehr der Vorgang, sondern der Kontakt
+        for ende, nach in (('gewonnen', self._gewonnen), ('verloren', self._verloren),
+                           ('archiviert', self._archiviert)):
+            with self.subTest(ende=ende), self._isoliert():
+                nach(lead)
+                self.assertEqual(anruf._wb_voip_rueckruf_ziel(), self.kontakt)
 
     def test_wiederverwendung_je_besitzer_und_vorgang(self):
         lead = self._lead()
@@ -100,7 +122,7 @@ class TestRueckruf(WbVoipCrmCase):
         gruppe = self.env['wb.voip.anruf'].with_user(self.vertrieb_eigene)
         self.assertEqual(len(gruppe.wb_voip_verpasst_liste()), 1)
         if mit_chatter:
-            akt.with_user(self.vertrieb_eigene).sudo().action_feedback(feedback='Erledigt im Chatter')
+            akt.with_user(self.vertrieb_eigene).action_feedback(feedback='Erledigt im Chatter')
             self.assertTrue(anruf.sudo().erledigt)
             self.assertEqual(anruf.sudo().erledigt_text, 'Erledigt im Chatter')
         else:
@@ -126,19 +148,16 @@ class TestRueckruf(WbVoipCrmCase):
         for ende, nach in (('gewonnen', self._gewonnen), ('verloren', self._verloren),
                            ('archiviert', self._archiviert)):
             for chatter in (False, True):
-                with self.subTest(ende=ende, chatter=chatter):
-                    sp = self.env.cr.savepoint()
+                with self.subTest(ende=ende, chatter=chatter), self._isoliert():
                     lead = self._lead()
                     anruf = self._verpasst()
                     nach(lead)
                     self._pruefen_weiter_bearbeitbar(anruf, lead, chatter)
-                    sp.rollback()
 
     def test_vorgang_endet_aktivitaet_bleibt(self):
         for ende, nach in (('gewonnen', self._gewonnen), ('verloren', self._verloren),
                            ('archiviert', self._archiviert)):
-            with self.subTest(ende=ende):
-                sp = self.env.cr.savepoint()
+            with self.subTest(ende=ende), self._isoliert():
                 lead = self._lead()
                 anruf = self._verpasst()
                 akt = self._akt(anruf)
@@ -146,7 +165,6 @@ class TestRueckruf(WbVoipCrmCase):
                 self.assertTrue(akt.exists())
                 self.assertEqual(self._akt(anruf), akt)
                 self.assertTrue(akt.active)
-                sp.rollback()
 
     def test_neuer_anruf_nach_ende_geht_an_kontakt(self):
         lead = self._lead()
