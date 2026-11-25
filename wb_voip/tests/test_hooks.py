@@ -255,7 +255,8 @@ class TestHooks(WbVoipCase):
         # Ergebnis ist eine Kopie: Ändern wirkt nicht auf den nächsten Aufruf
         arten['protokoll_popup'] += ('notiz',)
         self.assertNotIn('notiz', self.Layout._wb_voip_erlaubte_arten()['protokoll_popup'])
-        self.assertEqual(self.Layout._wb_voip_gezaehlte_arten(), ('protokolle', 'aufgaben'))
+        # Brückenmodule (z. B. wb_voip_crm) dürfen weitere Arten ergänzen
+        self.assertEqual(self.Layout._wb_voip_gezaehlte_arten()[:2], ('protokolle', 'aufgaben'))
 
     def _popup_mit_notiz_erlauben(self):
         original = type(self.Layout)._wb_voip_erlaubte_arten
@@ -425,5 +426,7 @@ class TestHooks(WbVoipCase):
 
     def test_hook_hilfe_ausserhalb_des_praefixes(self):
         Layout = type(self.Layout)
-        self.assertFalse(any(name.startswith('_wb_voip_block_daten_') for name in dir(Layout)))
+        # nur die Hooks anderer Module (z. B. wb_voip_crm) gibt es, die Hilfe selbst nicht
+        self.assertFalse(any(name.startswith('_wb_voip_block_daten_') and name != '_wb_voip_block_daten_vorgaenge'
+                             for name in dir(Layout)))
         self.assertTrue(callable(getattr(Layout, '_wb_voip_block_hook', None)))

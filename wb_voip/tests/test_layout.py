@@ -457,7 +457,9 @@ class TestLayoutDesigner(WbVoipCase):
                          {'art', 'titel', 'spalte', 'anzahl', 'text', 'feld_ids'})
         self.assertEqual([a['art'] for a in daten['arten']['protokoll_popup']],
                          ['kontaktkopf', 'felder', 'protokolle', 'text'])
-        self.assertEqual(len(daten['arten']['anrufer_fenster']), 7)
+        # die sieben Arten des Kerns, Brückenmodule dürfen weitere ergänzen
+        self.assertEqual([a['art'] for a in daten['arten']['anrufer_fenster']][:7],
+                         ['kontaktkopf', 'felder', 'protokolle', 'aufgaben', 'notiz', 'buttons', 'text'])
         namen = {f['name'] for f in daten['felder']}
         self.assertIn('email', namen)
         self.assertIn('country_id', namen)
