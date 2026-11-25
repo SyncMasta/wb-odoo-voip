@@ -137,6 +137,9 @@ export class TelefonDienst {
             klopfend: null,
             verbindet: false, // „Verbinden“ wartet auf die Anlage
             konferenz: false,
+            // Team-Übersicht der aktiven Firma eingeschaltet (aus wb_voip_status); nur dann
+            // Lebenszeichen und Team-Auswahl in der Anrufansicht
+            teamAktiv: false,
             fehler: null,
         });
 
@@ -337,6 +340,8 @@ export class TelefonDienst {
             this.state.fehler = NICHT_EINGERICHTET;
             return;
         }
+        // fehlt die Angabe, gilt aus (Datensparsamkeit)
+        this.state.teamAktiv = status.team_aktiv === true;
 
         let agent;
         try {
@@ -387,9 +392,15 @@ export class TelefonDienst {
 
     // --- Team-Lebenszeichen -----------------------------------------------------------
 
-    /** Meldet „angemeldet“ und wiederholt es alle 60 s, solange dieser Tab registriert ist. */
+    /**
+     * Meldet „angemeldet“ und wiederholt es alle 60 s, solange dieser Tab registriert ist; bei
+     * ausgeschalteter Team-Übersicht nichts.
+     */
     _teamStarten() {
         this._teamStoppenTimer();
+        if (!this.state.teamAktiv) {
+            return;
+        }
         this._teamMelden(true);
         this._teamTimer = this.uhr.setInterval(() => this._teamMelden(true), TEAM_LEBENSZEICHEN_MS);
     }
@@ -657,14 +668,20 @@ export class TelefonDienst {
             platz = "klopfend";
         }
         this._anrufBeginnen(sitzung, "eingehend", kennung, false, false, platz);
-        this.klaenge.klingeln(true);
+        if (platz === "klopfend") {
+            // während eines Gesprächs nur ein kurzer Hinweiston, nicht der volle Klingelton
+            this.klaenge.anklopfen(true);
+        } else {
+            this.klaenge.klingeln(true);
+        }
     }
 
     /**
-     * Meldet einen mit 480 abgewiesenen Anruf, damit er als verpasst zählt: anlegen und sofort
-     * beenden. Best effort, ohne Oberfläche und ohne Fehlermeldung. Je Call-ID nur einmal und
-     * höchstens ``ABGEWIESEN_MAX_JE_MINUTE`` je Minute (eine Flut von INVITEs erzeugt sonst je
-     * Anruf zwei Server-Aufrufe).
+     * Meldet einen mit 480 abgewiesenen Anruf, damit er als verpasst zählt: der Server legt ihn
+     * direkt als verpasst an (kein kurzes „klingelt“ in der Team-Übersicht). Best effort, ohne
+     * Oberfläche und ohne Fehlermeldung. Je Call-ID nur einmal und höchstens
+     * ``ABGEWIESEN_MAX_JE_MINUTE`` je Minute (eine Flut von INVITEs erzeugt sonst je Anruf einen
+     * Server-Aufruf).
      */
     _abgewiesenMelden(sitzung, kennung) {
         // ohne Call-ID keine Doppelprüfung (sonst fielen alle zusammen); die Minutengrenze gilt
@@ -688,24 +705,8 @@ export class TelefonDienst {
         }
         Promise.resolve()
             .then(() =>
-                this.orm.call("wb.voip.anruf", "wb_voip_beginnen", [
-                    "eingehend",
-                    kennung,
-                    sitzung.callId,
-                    false,
-                    false,
-                ])
+                this.orm.call("wb.voip.anruf", "wb_voip_abgewiesen_melden", [kennung, sitzung.callId])
             )
-            .then((daten) => {
-                if (Number.isInteger(daten?.id)) {
-                    return this.orm.call("wb.voip.anruf", "wb_voip_beendet", [
-                        [daten.id],
-                        false,
-                        "480",
-                        false,
-                    ]);
-                }
-            })
             .catch((fehler) => console.debug("wb_voip: abgewiesener Anruf nicht gemeldet", fehler));
     }
 
@@ -919,6 +920,8 @@ export class TelefonDienst {
                 this.state.klopfend = null;
                 this._aktiv = wartend;
                 this.state.anruf = wartend.anruf;
+                // jetzt der einzige Anruf: voller Klingelton statt Anklopfton
+                this.klaenge.anklopfen(false);
                 this.klaenge.klingeln(true);
                 this._aktivMelden(wartend);
             }
@@ -928,7 +931,7 @@ export class TelefonDienst {
         } else if (this._klopfend === kontext) {
             this._klopfend = null;
             this.state.klopfend = null;
-            this.klaenge.klingeln(false);
+            this.klaenge.anklopfen(false);
         }
         const verbinden = this._verbindet;
         if (verbinden && verbinden.aktiv.beendet && verbinden.gehalten.beendet) {
@@ -1068,7 +1071,7 @@ export class TelefonDienst {
 
     /** Nimmt den wartenden Anruf an; das laufende Gespräch wird vorher gehalten. */
     async _klopfendAnnehmen(wartend) {
-        this.klaenge.klingeln(false);
+        this.klaenge.anklopfen(false);
         const laufend = this._laufend();
         if (laufend && !laufend.anruf.gehalten) {
             try {
@@ -1078,7 +1081,7 @@ export class TelefonDienst {
                 if (this._aktiv !== wartend || wartend.beendet) {
                     this.state.fehler = fehlertext(fehler);
                     if (this._klopfend === wartend) {
-                        this.klaenge.klingeln(true);
+                        this.klaenge.anklopfen(true);
                     }
                     return;
                 }
@@ -1376,6 +1379,9 @@ export class TelefonDienst {
         this._konferenz = konferenz;
         this.state.fehler = null;
         try {
+            // Die gehaltene Leitung kommt vor dem Mischen aus dem Halten. Bei der Team-Konferenz
+            // (konferenz(nummer)) ist das der Kunde: Er wird kurz vor dem Mischen fortgesetzt und
+            // hört bis dahin nur das eigene Mikrofon, den Kollegen erst mit der Mischung.
             if (gehalten.anruf.gehalten) {
                 // endet die aktive Leitung währenddessen, holt _beenden nicht noch einmal zurück
                 konferenz.unholdLaeuft = true;

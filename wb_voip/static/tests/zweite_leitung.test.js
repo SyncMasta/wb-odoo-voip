@@ -302,7 +302,9 @@ test("Zweiter eingehender Anruf klingelt als zweite Leitung, Annehmen hält das 
     expect(zweite.hat("reject").length).toBe(0);
     expect(welt.dienst.state.klopfend.nummer).toBe("0170 2222");
     expect(welt.dienst.state.anruf.nummer).toBe("0170 1111");
-    expect(welt.dienst.klaenge.klingelnAn).toBe(true);
+    // kurzer Anklopfton statt des vollen Klingeltons
+    expect(welt.dienst.klaenge.anklopfenAn).toBe(true);
+    expect(welt.dienst.klaenge.klingelnAn).toBe(false);
     expect(welt.orm.zaehle("wb_voip_beginnen")).toBe(2);
     await welt.dienst.annehmen();
     await welt.uhr.vorspulen(0);
@@ -313,6 +315,28 @@ test("Zweiter eingehender Anruf klingelt als zweite Leitung, Annehmen hält das 
     expect(welt.dienst.state.anruf.zustand).toBe("laeuft");
     expect(welt.dienst.state.gehaltener.nummer).toBe("0170 1111");
     expect(welt.dienst.klaenge.klingelnAn).toBe(false);
+    expect(welt.dienst.klaenge.anklopfenAn).toBe(false);
+    welt.dienst.stop();
+});
+
+test("Anklopfton: aus beim Auflegen des Wartenden; erstes Gespräch endet – voller Klingelton", async () => {
+    const welt = await verbunden();
+    const erste = await imGespraech(welt);
+    const zweite = welt.agent.eingehend("0170 2222");
+    await welt.uhr.vorspulen(0);
+    expect(welt.dienst.klaenge.anklopfenAn).toBe(true);
+    zweite.gegenstelleLegtAuf("487");
+    await welt.uhr.vorspulen(0);
+    expect(welt.dienst.klaenge.anklopfenAn).toBe(false);
+    expect(welt.dienst.klaenge.klingelnAn).toBe(false);
+    welt.agent.eingehend("0170 3333");
+    await welt.uhr.vorspulen(0);
+    expect(welt.dienst.klaenge.anklopfenAn).toBe(true);
+    // das erste Gespräch endet: der Wartende klingelt jetzt als einziger, mit vollem Ton
+    erste.gegenstelleLegtAuf("bye");
+    await welt.uhr.vorspulen(0);
+    expect(welt.dienst.klaenge.anklopfenAn).toBe(false);
+    expect(welt.dienst.klaenge.klingelnAn).toBe(true);
     welt.dienst.stop();
 });
 
@@ -329,8 +353,9 @@ test("Dritter eingehender Anruf wird mit 480 abgewiesen", async () => {
     const vierte = welt.agent.eingehend("0170 4444");
     await welt.uhr.vorspulen(0);
     expect(vierte.hat("reject")).toEqual([["reject", { statusCode: 480 }]]);
-    // zwei Leitungen plus die beiden abgewiesenen Anrufe (als verpasst gemeldet)
-    expect(welt.orm.zaehle("wb_voip_beginnen")).toBe(4);
+    // zwei Leitungen; die beiden abgewiesenen Anrufe direkt als verpasst gemeldet
+    expect(welt.orm.zaehle("wb_voip_beginnen")).toBe(2);
+    expect(welt.orm.zaehle("wb_voip_abgewiesen_melden")).toBe(2);
     welt.dienst.stop();
 });
 
@@ -409,6 +434,21 @@ async function ansicht() {
     await mountWithCleanup(Softphone);
     return welt;
 }
+
+test("Anrufansicht: Team-Übersicht ausgeschaltet – kein Team-Knopf, freie Nummer bleibt", async () => {
+    const welt = await ansicht();
+    await imGespraech(welt);
+    await animationFrame();
+    expect(".o_wb_voip_team_umschalten").toHaveCount(1);
+    welt.dienst.state.teamAktiv = false;
+    await animationFrame();
+    expect(".o_wb_voip_team_umschalten").toHaveCount(0);
+    expect(".o_wb_voip_weiterleiten_umschalten").toHaveCount(1);
+    await click(".o_wb_voip_weiterleiten_umschalten");
+    await animationFrame();
+    expect(".o_wb_voip_rueckfrage").toHaveCount(1);
+    welt.dienst.stop();
+});
 
 test("Anrufansicht: Leiste „Gehalten“ mit Zurück und Verbinden", async () => {
     const welt = await ansicht();
@@ -615,20 +655,19 @@ test("Popup nach Verbinden nur für das Kundengespräch", async () => {
 test("Abgewiesener dritter Anruf (480) wird auf dem Server als verpasst gemeldet", async () => {
     const welt = await verbunden();
     await mitRueckfrage(welt);
-    const vorher = welt.orm.zaehle("wb_voip_beginnen");
+    const vorher = { beginnen: welt.orm.zaehle("wb_voip_beginnen"), beendet: welt.orm.zaehle("wb_voip_beendet") };
     const dritte = welt.agent.eingehend("0170 3333");
     await welt.uhr.vorspulen(0);
     expect(dritte.hat("reject")).toEqual([["reject", { statusCode: 480 }]]);
-    expect(welt.orm.zaehle("wb_voip_beginnen")).toBe(vorher + 1);
-    const beginn = welt.orm.letzter("wb_voip_beginnen");
-    expect(beginn.args.slice(0, 3)).toEqual(["eingehend", "0170 3333", dritte.callId]);
-    const ende = welt.orm.letzter("wb_voip_beendet");
-    expect(ende.args).toEqual([[12], false, "480", false]);
+    // eine eigene RPC legt den Anruf direkt als verpasst an (kein kurzes „klingelt“ im Team)
+    expect(welt.orm.letzter("wb_voip_abgewiesen_melden").args).toEqual(["0170 3333", dritte.callId]);
+    expect(welt.orm.zaehle("wb_voip_beginnen")).toBe(vorher.beginnen);
+    expect(welt.orm.zaehle("wb_voip_beendet")).toBe(vorher.beendet);
     // keine Spur in der Oberfläche
     expect(welt.dienst.state.klopfend).toBe(null);
     expect(welt.beendet.length).toBe(0);
     // Fehler beim Melden bleiben still
-    welt.orm.antworten["wb.voip.anruf.wb_voip_beginnen"] = () => {
+    welt.orm.antworten["wb.voip.anruf.wb_voip_abgewiesen_melden"] = () => {
         throw new Error("kaputt");
     };
     welt.dienst.state.fehler = null;
@@ -794,37 +833,38 @@ test("Während Verbinden: Weiterleiten ohne Wirkung, Stumm, Tastatur und Weiterl
 test("Abgewiesene Anrufe (480): je Call-ID einmal, höchstens 10 je Minute gemeldet", async () => {
     const welt = await verbunden();
     await mitRueckfrage(welt);
-    const vorher = welt.orm.zaehle("wb_voip_beginnen");
+    const melden = () => welt.orm.zaehle("wb_voip_abgewiesen_melden");
+    const vorher = melden();
     const gleich = welt.agent.eingehend("0170 3333");
     await welt.uhr.vorspulen(0);
     // dieselbe Call-ID noch einmal (z. B. INVITE wiederholt)
     welt.agent.emit("invitation", gleich);
     await welt.uhr.vorspulen(0);
-    expect(welt.orm.zaehle("wb_voip_beginnen")).toBe(vorher + 1);
+    expect(melden()).toBe(vorher + 1);
     for (let i = 0; i < 12; i++) {
         welt.agent.eingehend(`0170 40${i}`);
     }
     await welt.uhr.vorspulen(0);
-    expect(welt.orm.zaehle("wb_voip_beginnen")).toBe(vorher + 10);
+    expect(melden()).toBe(vorher + 10);
     // alle wurden trotzdem abgewiesen
     expect(welt.agent.invites.length).toBe(2);
     await welt.uhr.vorspulen(60_000);
     welt.agent.eingehend("0170 5000");
     await welt.uhr.vorspulen(0);
-    expect(welt.orm.zaehle("wb_voip_beginnen")).toBe(vorher + 11);
+    expect(melden()).toBe(vorher + 11);
     welt.dienst.stop();
 });
 
 test("Abgewiesene Anrufe ohne Call-ID: jeder gemeldet (nur die Minutengrenze gilt)", async () => {
     const welt = await verbunden();
     await mitRueckfrage(welt);
-    const vorher = welt.orm.zaehle("wb_voip_beginnen");
+    const vorher = welt.orm.zaehle("wb_voip_abgewiesen_melden");
     for (const nummer of ["0170 1", "0170 2"]) {
         const sitzung = new FakeSitzung({ remoteNummer: nummer });
         sitzung.callId = "";
         welt.agent.emit("invitation", sitzung);
     }
     await welt.uhr.vorspulen(0);
-    expect(welt.orm.zaehle("wb_voip_beginnen")).toBe(vorher + 2);
+    expect(welt.orm.zaehle("wb_voip_abgewiesen_melden")).toBe(vorher + 2);
     welt.dienst.stop();
 });

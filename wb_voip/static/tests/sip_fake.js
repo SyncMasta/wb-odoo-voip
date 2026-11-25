@@ -171,6 +171,7 @@ export class FakeOrm {
                 meldung: "",
                 eingerichtet: true,
                 konfiguriert: true,
+                team_aktiv: true,
             }),
             "res.users.wb_voip_zugang_lesen": () => ({ ...ZUGANG_PROD }),
             "wb.voip.anruf.wb_voip_beginnen": (args) => ({
@@ -189,6 +190,10 @@ export class FakeOrm {
             }),
             "wb.voip.anruf.wb_voip_lebenszeichen": () => true,
             "res.users.wb_voip_lebenszeichen_melden": () => true,
+            "wb.voip.anruf.wb_voip_abgewiesen_melden": () => ({
+                id: this._naechsteAnrufId++,
+                zustand: "verpasst",
+            }),
         };
     }
     async call(modell, methode, args = [], kwargs = {}) {
@@ -482,6 +487,7 @@ export class FakeKlaenge {
     constructor() {
         this.freizeichenAn = false;
         this.klingelnAn = false;
+        this.anklopfenAn = false;
         this.verlauf = [];
     }
     freizeichen(an) {
@@ -492,8 +498,13 @@ export class FakeKlaenge {
         this.klingelnAn = !!an;
         this.verlauf.push(["klingeln", !!an]);
     }
+    anklopfen(an) {
+        this.anklopfenAn = !!an;
+        this.verlauf.push(["anklopfen", !!an]);
+    }
     aus() {
         this.freizeichen(false);
         this.klingeln(false);
+        this.anklopfen(false);
     }
 }

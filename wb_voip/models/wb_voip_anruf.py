@@ -384,6 +384,56 @@ class WbVoipAnruf(models.Model):
                     raise
         return vorhanden.with_user(benutzer)._wb_voip_client_daten()
 
+    @api.model
+    @nur_voip_benutzer
+    @license_required(PRODUKT_CODE)
+    def wb_voip_abgewiesen_melden(self, nummer, sip_call_id):
+        """Record an incoming call the phone rejected itself (third call, 480) as missed.
+
+        Created directly in a final state, so the team never sees a short ``klingelt``; log
+        entry, callback activity and missed-list message as for any missed call (``anderswo``
+        if a colleague already answered it). Idempotent per (user, sip_call_id).
+        """
+        _text_pruefen(self.env, nummer, self.env._("Nummer"), MAX_NUMMER, pflicht=True)
+        _text_pruefen(self.env, sip_call_id, self.env._("SIP-Call-ID"), MAX_SIP_CALL_ID,
+                      pflicht=True)
+        benutzer = self.env.user
+        vorhanden = self.sudo().search([
+            ('user_id', '=', benutzer.id), ('sip_call_id', '=', sip_call_id)], limit=1)
+        if vorhanden:
+            return vorhanden.with_user(benutzer)._wb_voip_client_daten()
+        land = benutzer.sudo().wb_voip_anlage_id.country_id.code or 'DE'
+        nummer_e164 = e164(nummer, land)
+        jetzt = fields.Datetime.now()
+        werte = {
+            'user_id': benutzer.id,
+            'richtung': 'eingehend',
+            'nummer': nummer,
+            'nummer_e164': nummer_e164,
+            'sip_call_id': sip_call_id,
+            'zustand': 'verpasst',
+            'partner_id': self._wb_voip_kontakt(None, nummer_e164),
+            'beginn': jetzt,
+            'ende': jetzt,
+            'zuletzt_gesehen': jetzt,
+            'company_id': self.env.company.id,
+        }
+        try:
+            with self.env.cr.savepoint():
+                anruf = self.sudo().create(werte)
+        except psycopg2.errors.UniqueViolation:
+            anruf = self.sudo().search([
+                ('user_id', '=', benutzer.id), ('sip_call_id', '=', sip_call_id)], limit=1)
+            if not anruf:
+                raise
+            return anruf.with_user(benutzer)._wb_voip_client_daten()
+        if anruf._wb_voip_angenommen_von():
+            anruf.zustand = 'anderswo'
+        if anruf.zustand != 'anderswo':
+            anruf._wb_voip_protokollieren()
+        anruf._wb_voip_nach_beenden(False)
+        return anruf.with_user(benutzer)._wb_voip_client_daten()
+
     @nur_voip_benutzer
     def wb_voip_angenommen(self):
         """Mark the call as answered (state ``laeuft``).

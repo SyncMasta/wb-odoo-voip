@@ -1,9 +1,11 @@
 // Töne des Softphones, mit WebAudio erzeugt (keine Audiodateien).
 //   Freizeichen (ausgehend, erst nach 180 ohne SDP): 425 Hz, 1 s an, 4 s aus
 //   Klingeln (eingehend): 2 × 0,4 s Zweiklang, alle 3 s
+//   Anklopfen (zweiter Anruf während eines Gesprächs): 2 × 0,2 s 425 Hz, alle 3 s
 
 const FREIZEICHEN = { frequenzen: [425], muster: [[0, 1]], periode: 5 };
 const KLINGELN = { frequenzen: [440, 480], muster: [[0, 0.4], [0.6, 1.0]], periode: 3 };
+const ANKLOPFEN = { frequenzen: [425], muster: [[0, 0.2], [0.4, 0.6]], periode: 3 };
 const LAUTSTAERKE = 0.15;
 const VORLAUF_S = 15;
 
@@ -20,7 +22,7 @@ export class Klaenge {
                 return Kontext ? new Kontext() : null;
             });
         this._kontext = null;
-        this._laufend = { freizeichen: null, klingeln: null };
+        this._laufend = { freizeichen: null, klingeln: null, anklopfen: null };
     }
 
     freizeichen(an) {
@@ -31,9 +33,14 @@ export class Klaenge {
         this._schalten("klingeln", KLINGELN, an);
     }
 
+    anklopfen(an) {
+        this._schalten("anklopfen", ANKLOPFEN, an);
+    }
+
     aus() {
         this.freizeichen(false);
         this.klingeln(false);
+        this.anklopfen(false);
     }
 
     _schalten(name, ton, an) {

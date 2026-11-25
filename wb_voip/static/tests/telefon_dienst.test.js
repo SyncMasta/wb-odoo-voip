@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from "@odoo/hoot";
 import { registry } from "@web/core/registry";
 import { translatedTerms, translationLoaded } from "@web/core/l10n/translation";
 
+import { Klaenge } from "@wb_voip/dienste/klaenge";
 import { erzeugeAgentFabrik, SipJsAgent, TestAgent } from "@wb_voip/dienste/sip_agent";
 import { anruferKennung, TelefonDienst, waehlbar } from "@wb_voip/dienste/telefon_dienst";
 
@@ -914,4 +915,79 @@ test("Team-Lebenszeichen: Verbindungsverlust meldet abgemeldet, Wiederverbinden 
     expect(dienst.state.status).toBe("verbunden");
     expect(gemeldet(welt)).toEqual([true, false, true]);
     welt.aufraeumen();
+});
+
+test("Team-Übersicht ausgeschaltet: keine Lebenszeichen, auch nicht beim Beenden", async () => {
+    const welt = umgebung();
+    const status = welt.orm.antworten["res.users.wb_voip_status"];
+    welt.orm.antworten["res.users.wb_voip_status"] = () => ({ ...status(), team_aktiv: false });
+    const dienst = await verbundenerDienst(welt);
+    expect(dienst.state.teamAktiv).toBe(false);
+    await welt.uhr.vorspulen(180_000);
+    dienst.stop();
+    await welt.uhr.vorspulen(0);
+    expect(gemeldet(welt)).toEqual([]);
+    welt.aufraeumen();
+});
+
+test("Team-Übersicht: Schalter kommt aus wb_voip_status (fehlt er, gilt aus)", async () => {
+    const welt = umgebung();
+    const dienst = await verbundenerDienst(welt);
+    expect(dienst.state.teamAktiv).toBe(true);
+    dienst.stop();
+    const welt2 = umgebung();
+    const status = welt2.orm.antworten["res.users.wb_voip_status"];
+    welt2.orm.antworten["res.users.wb_voip_status"] = () => {
+        const daten = status();
+        delete daten.team_aktiv;
+        return daten;
+    };
+    const ohne = await verbundenerDienst(welt2);
+    expect(ohne.state.teamAktiv).toBe(false);
+    expect(gemeldet(welt2)).toEqual([]);
+    welt.aufraeumen();
+    welt2.aufraeumen();
+});
+
+/** AudioContext-Ersatz für die Töne: merkt sich Oszillatoren und geplante Pegel. */
+class TonKontext {
+    constructor() {
+        this.state = "running";
+        this.currentTime = 0;
+        this.destination = {};
+        this.oszillatoren = [];
+        this.pegel = [];
+    }
+    createGain() {
+        const werte = [];
+        this.pegel.push(werte);
+        return {
+            gain: { value: 0, setValueAtTime: (wert, zeit) => werte.push([wert, zeit]), cancelScheduledValues() {} },
+            connect() {},
+            disconnect() {},
+        };
+    }
+    createOscillator() {
+        const osz = { frequency: { value: 0 }, gestoppt: false, connect() {}, disconnect() {}, start() {} };
+        osz.stop = () => (osz.gestoppt = true);
+        this.oszillatoren.push(osz);
+        return osz;
+    }
+    resume() {
+        return Promise.resolve();
+    }
+}
+
+test("Anklopfton: zwei kurze Töne alle 3 s, leiser Hinweis statt Klingelton", () => {
+    const ctx = new TonKontext();
+    const klaenge = new Klaenge({ kontextFabrik: () => ctx });
+    klaenge.anklopfen(true);
+    klaenge.anklopfen(true); // läuft schon: kein zweiter Ton
+    expect(ctx.oszillatoren.map((o) => o.frequency.value)).toEqual([425]);
+    const an = ctx.pegel[0].filter(([wert]) => wert > 0).map(([, zeit]) => zeit);
+    expect(an.slice(0, 4).map((t) => Math.round(t * 10) / 10)).toEqual([0, 0.4, 3, 3.4]);
+    const aus = ctx.pegel[0].filter(([wert]) => wert === 0).map(([, zeit]) => zeit);
+    expect(aus.slice(0, 2).map((t) => Math.round(t * 10) / 10)).toEqual([0.2, 0.6]);
+    klaenge.aus();
+    expect(ctx.oszillatoren[0].gestoppt).toBe(true);
 });
