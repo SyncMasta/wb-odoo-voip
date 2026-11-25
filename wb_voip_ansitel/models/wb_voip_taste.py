@@ -89,7 +89,7 @@ class WbVoipTaste(models.Model):
              "Nummer unter Mein Profil › Telefonie ein (Feld „Mein Handy“).")
     ziel = fields.Char(
         string='Weiterleitungsziel',
-        help="Rufnummer, z. B. +49 170 1234567. Eine Weiterleitungstaste mit fester Nummer "
+        help="Rufnummer, z. B. +49 152 28817386. Eine Weiterleitungstaste mit fester Nummer "
              "ohne gültiges Ziel bleibt ausgeblendet.")
     ab_modus = fields.Selection(
         [('sofort', 'Sofort'), ('nach_rufzeit', 'Nach Rufzeit')],
@@ -175,7 +175,7 @@ class WbVoipTaste(models.Model):
         ziel = ziel if isinstance(ziel, str) else ''
         if any(zeichen.isdigit() and zeichen not in '0123456789' for zeichen in ziel):
             return _("Bitte nur die Ziffern 0–9 verwenden.")
-        ungueltig = _("„%s“ ist keine gültige Rufnummer (z. B. +49 170 1234567).", ziel)
+        ungueltig = _("„%s“ ist keine gültige Rufnummer (z. B. +49 152 28817386).", ziel)
         if not self._ziel_gueltig(ziel):
             return ungueltig
         vorwahl = _laendervorwahl(land_code)

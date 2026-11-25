@@ -37,7 +37,7 @@
                             <!-- Feste Ziele setzt nur die Systemverwaltung (Gebührenbetrug) -->
                             <field name="ziel" invisible="ziel_art != 'fest'" groups="base.group_system"
                                    required="art == 'weiterleitung' and ziel_art == 'fest'"
-                                   placeholder="+49 170 1234567"/>
+                                   placeholder="+49 152 28817386"/>
                             <field name="ziel" invisible="ziel_art != 'fest'" readonly="1"
                                    groups="!base.group_system"/>
                         </group>

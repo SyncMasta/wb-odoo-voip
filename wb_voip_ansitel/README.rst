@@ -44,6 +44,9 @@ Rechte
    * - API-URL, Schalter, zentraler Token
      - nein
      - ja
+   * - Zeitzone der Anrufliste, Land der Anlage (Kern)
+     - nein (lesen ja)
+     - ja
    * - Nebenstelle, persönlicher Token, AB-Freigabe
      - nein (lesen: Nebenstelle)
      - ja
@@ -63,8 +66,10 @@ Rechte
      - jeder Benutzer mit Lizenz bzw. für sich
      - ebenso
 
-Hinweis: Wer die URL oder die Anlage eines Benutzers ohne Systemrecht ändert, löscht damit Token und Nebenstelle; die
-Kette ist so ausgelegt, dass kein Token an einen fremden Host geschickt wird.
+Hinweis: Wer die URL einer Anlage ohne Systemrecht ändert (nur über Code mit Superuser-Rechten möglich), löscht damit
+den zentralen und alle persönlichen Token dieser Anlage. Wer die Anlage eines Benutzers ohne Systemrecht wechselt,
+löscht dessen Nebenstelle und persönlichen Token. So geht kein Token an einen fremden Host, und eine Nummer gehört an
+der neuen Anlage nie versehentlich jemand anderem.
 
 Datenschutz
 -----------
@@ -75,8 +80,9 @@ Datenschutz
   Softphone-Anrufe gelöscht, Protokolle bleiben erhalten.
 * Die „Bemerkung“ zu einem anderswo angenommenen Anruf sieht der Besitzer; der Kollege, an den der Anruf ging, sieht
   Name, Gerät und Dauer, die Bemerkung nur als Notiz seines eigenen Anrufs.
-* Der Abgleich zeigt jedem Benutzer nur eigene Anrufe (und beim Kollegen-Hinweis die genannten Angaben); der
-  Anlagenbetreiber sollte Beschäftigte über die Auswertung der Anrufliste informieren (§ 26 BDSG, ggf. Betriebsrat).
+* Der Abgleich zeigt jedem Benutzer nur eigene Anrufe (und beim Kollegen-Hinweis die genannten Angaben); VoIP-Administratoren
+  sehen alle Anrufe. Der Anlagenbetreiber muss Beschäftigte über die Auswertung der Anrufliste informieren
+  (Informationspflicht Art. 13 DSGVO) und die Mitbestimmung beachten (§ 87 Abs. 1 Nr. 6 BetrVG).
 * Zugangsdaten stehen nie in Logs, Bus oder Browser; Cache-Schlüssel enthalten nur einen Hash.
 
 Schnelltasten
