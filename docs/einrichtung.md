@@ -4,7 +4,7 @@ Diese Anleitung führt durch die Einrichtung von `wb_voip`, `wb_voip_crm` und `w
 an die Person, die Odoo betreibt (Zugriff auf Server und Systemverwaltung). Die englische Fassung steht in
 [setup.md](setup.md). Funktionsumfang und Stand: [README](../README.md).
 
-Beispieladressen in dieser Anleitung (`pbx.example.com`, Nummern im Bereich `+49 30 1234567`) sind erfunden.
+Beispieladressen in dieser Anleitung (`pbx.example.com`, Nummern im Bereich `030 23125 xxx`) sind erfunden.
 
 ## 1. Voraussetzungen
 
@@ -132,23 +132,24 @@ Installation in die VoIP-Gruppe aufgenommen.
 | Telefonanlage und Nebenstelle am Benutzer setzen | nein (nur lesen) | ja | nur mit VoIP-Gruppe |
 | Anlage lesen | ja | ja | ja |
 | Anlage: Name, Modus, Heranholen-Präfix ändern | nein | ja | ja |
-| Anlage anlegen, löschen; WebSocket-URL, SIP-Domain, ICE-Server, Land ändern | nein | nein | ja |
+| Anlage anlegen, löschen; WebSocket-URL, SIP-Domain, ICE-Server, Land ändern | nein | nein (ohne Systemrecht) | ja |
 | Anruf-Buttons und Assistent-Buttons ansehen | ja (nur Lesen) | ja, anlegen, ändern, löschen | nur mit VoIP-Gruppe |
-| Buttons mit Python-Code anlegen oder ändern (Assistent) | nein | nein | ja |
+| Buttons mit Python-Code anlegen oder ändern (Assistent) | nein | nein (ohne Systemrecht) | ja (mit VoIP-Administrator) |
 | Fenster-Layouts und Layout-Designer | nein | ja (Menü nur mit Zugang zu den Einstellungen) | nur mit VoIP-Gruppe |
 | Löschfrist, Team-Übersicht, Gesprächsdauer einstellen | nein | ja (Einstellungsseite braucht Zugang zu den Einstellungen) | nur mit VoIP-Gruppe |
 | Lizenz aktivieren, Migration beantragen | nein | nein | ja |
-| Ansitel: Schnittstelle, URL, zentraler Token, Zeitzone | nein | nein | ja |
-| Ansitel: Nebenstelle am Benutzer lesen | nein | ja | ja |
-| Ansitel: Nebenstelle, persönlicher Token, AB-Freigabe setzen | nein | nein | ja |
-| Ansitel: Geräte lesen | nein | ja | ja |
-| Ansitel: Geräte ändern, „Geräte aus Anlage laden“, weitere interne Ziele | nein | nein | ja |
+| Ansitel: Schnittstelle, URL, zentraler Token, Zeitzone | nein | nein (ohne Systemrecht) | ja |
+| Ansitel: Nebenstelle am Benutzer lesen (Block im Benutzerformular) | nein | ja | ja (mit VoIP-Administrator) |
+| Ansitel: Nebenstelle, persönlicher Token, AB-Freigabe setzen | nein | nein (ohne Systemrecht) | ja (mit VoIP-Administrator) |
+| Ansitel: Geräte lesen (Menü) | nein | ja | ja (Menü nur mit VoIP-Administrator) |
+| Ansitel: Geräte ändern, „Geräte aus Anlage laden“, weitere interne Ziele | nein | nein (ohne Systemrecht) | ja |
 | Ansitel: Tasten ansehen | ja (nur Lesen) | ja, Beschriftung, Art, Reihenfolge pflegen | nur mit VoIP-Gruppe |
-| Ansitel: feste und interne Tastenziele setzen | nein | nein | ja |
-| Ansitel: „Verbindung testen“ | nein | ja | ja |
-| Ansitel: Tasten schalten, „Mein Handy“ setzen | ja, nur für sich | ja | ja |
+| Ansitel: feste und interne Tastenziele setzen | nein | nein (ohne Systemrecht) | ja (mit VoIP-Administrator) |
+| Ansitel: „Verbindung testen“ | nein | ja | ja (mit VoIP-Administrator) |
+| Ansitel: Tasten schalten | ja, nur für sich | ja | nur mit VoIP-Gruppe |
+| Ansitel: „Mein Handy“ setzen | ja, nur für sich | ja | ja |
 | CRM: Anrufe und Protokolle am Vorgang sehen | eigene | alle | nur mit VoIP-Gruppe |
-| CRM: technisches Feld Anruf → Vorgang lesen | nein | nein | ja |
+| CRM: technisches Feld Anruf → Vorgang lesen | nein | nein | ja (mit VoIP-Gruppe, sonst kein Zugriff auf Anrufe) |
 
 Hinweis zu den Menüs: Das Menü „WB VoIP“ unter Einstellungen › Technisch ist für VoIP-Administratoren sichtbar, aber nur
 im Entwicklermodus.

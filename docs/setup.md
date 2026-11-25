@@ -4,7 +4,7 @@ This guide covers the setup of `wb_voip`, `wb_voip_crm` and `wb_voip_ansitel` in
 runs Odoo (access to the server and to system administration). The German version is
 [einrichtung.md](einrichtung.md). Features and status: [README](../README.md) (German).
 
-Example addresses in this guide (`pbx.example.com`, numbers in the range `+49 30 1234567`) are fictitious.
+Example addresses in this guide (`pbx.example.com`, numbers in the range `030 23125 xxx`) are fictitious.
 
 ## 1. Requirements
 
@@ -126,23 +126,24 @@ installation.
 | Set PBX and extension on a user | no (read only) | yes | only with a VoIP group |
 | Read a PBX | yes | yes | yes |
 | PBX: change name, mode, pick-up prefix | no | yes | yes |
-| PBX: create, delete; change WebSocket URL, SIP domain, ICE servers, country | no | no | yes |
+| PBX: create, delete; change WebSocket URL, SIP domain, ICE servers, country | no | no (without system right) | yes |
 | View call buttons and wizard buttons | yes (read only) | yes, create, edit, delete | only with a VoIP group |
-| Create or change buttons with Python code (wizard) | no | no | yes |
+| Create or change buttons with Python code (wizard) | no | no (without system right) | yes (with VoIP administrator) |
 | Window layouts and layout designer | no | yes (menu needs access to Settings) | only with a VoIP group |
 | Set retention period, team overview, call duration | no | yes (the settings page needs access to Settings) | only with a VoIP group |
 | Activate license, request migration | no | no | yes |
-| Ansitel: interface, URL, central token, time zone | no | no | yes |
-| Ansitel: read the extension on a user | no | yes | yes |
-| Ansitel: set extension, personal token, voicemail release | no | no | yes |
-| Ansitel: read devices | no | yes | yes |
-| Ansitel: change devices, "Load devices from PBX", additional internal targets | no | no | yes |
+| Ansitel: interface, URL, central token, time zone | no | no (without system right) | yes |
+| Ansitel: read the extension on a user (block on the user form) | no | yes | yes (with VoIP administrator) |
+| Ansitel: set extension, personal token, voicemail release | no | no (without system right) | yes (with VoIP administrator) |
+| Ansitel: read devices (menu) | no | yes | yes (menu only with VoIP administrator) |
+| Ansitel: change devices, "Load devices from PBX", additional internal targets | no | no (without system right) | yes |
 | Ansitel: view keys | yes (read only) | yes, maintain label, kind, order | only with a VoIP group |
-| Ansitel: set fixed and internal key targets | no | no | yes |
-| Ansitel: "Test connection" | no | yes | yes |
-| Ansitel: switch keys, set "My mobile phone" | yes, for themselves only | yes | yes |
+| Ansitel: set fixed and internal key targets | no | no (without system right) | yes (with VoIP administrator) |
+| Ansitel: "Test connection" | no | yes | yes (with VoIP administrator) |
+| Ansitel: switch keys | yes, for themselves only | yes | only with a VoIP group |
+| Ansitel: set "My mobile phone" | yes, for themselves only | yes | yes |
 | CRM: see calls and call logs on the opportunity | own | all | only with a VoIP group |
-| CRM: read the technical field call → opportunity | no | no | yes |
+| CRM: read the technical field call → opportunity | no | no | yes (with a VoIP group, otherwise no access to calls) |
 
 Note on menus: the "WB VoIP" menu under Settings › Technical is visible to VoIP administrators, but only in developer mode.
 

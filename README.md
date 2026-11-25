@@ -146,6 +146,7 @@ am richtigen Datensatz.
 | Python | `cryptography` (im offiziellen Odoo-Image enthalten); `phonenumbers` (Pflicht: Rufnummernprüfung und Gebührensperre, ohne das Paket werden alle Zielnummern abgelehnt) |
 | Telefonanlage | SIP über WebSocket mit TLS (`wss://`, RFC 7118), eine Nebenstelle je Benutzer |
 | Browser | aktueller Chrome, Edge oder Firefox; Odoo über HTTPS |
+| Oberfläche | Deutsch (Englisch in Vorbereitung) |
 | Lizenz | gültiger Lizenzschlüssel für den Produktcode `VOIP` |
 
 ## Installation
@@ -204,7 +205,7 @@ Details stehen in [`wb_voip/README.rst`](wb_voip/README.rst) und [`wb_voip_crm/R
 - Live-Test von Übergeben, Heranholen und Konferenz gegen verschiedene Telefonanlagen
 - Live-Test der Ansitel-Anbindung gegen eine echte Anlage (Phase 6 ist umgesetzt, bisher nur mit simulierter Anlage getestet);
   Team-Status von der Anlage; Adapter für weitere Telefonanlagen
-- Englische Oberfläche
+- Englische Oberfläche (die Oberfläche ist derzeit deutsch; Übersetzungsvorlagen `i18n/*.pot` liegen bei)
 
 ## Lizenz
 
