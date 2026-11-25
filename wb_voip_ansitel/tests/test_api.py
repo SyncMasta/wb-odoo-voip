@@ -38,7 +38,9 @@ class TestAufruf(AnsitelCase):
         daten = self.api._aufruf(self.anlage, 'getpeer', pk_peerId=7)
         self.assertEqual(daten, PEERS)
         args, kwargs = post.call_args
-        self.assertEqual(args, (URL,))
+        self.assertEqual(args[1:], (URL,))
+        self.assertIs(args[0].trust_env, False)
+        self.assertIs(kwargs['verify'], True)
         self.assertEqual(kwargs['timeout'], 10)
         self.assertIs(kwargs['allow_redirects'], False)
         self.assertEqual(kwargs['json'], {'token': TOKEN, 'action': 'getpeer', 'pk_peerId': 7})
@@ -61,7 +63,7 @@ class TestAufruf(AnsitelCase):
             self._fehler()
         post.assert_not_called()
 
-    def test_keine_nummer_im_klartext_inaktiv(self):
+    def test_inaktiv_ist_nicht_eingerichtet(self):
         self.anlage.write({'ansitel_aktiv': False})
         self.assertIn('nicht eingerichtet', str(self._fehler()))
 
@@ -103,6 +105,14 @@ class TestAufruf(AnsitelCase):
                     fehler = self._fehler()
                 self.assertIn(text, str(fehler))
                 self._kein_geheimnis(fehler, logs.output)
+
+    def test_geaenderte_adresse_ohne_alten_token(self):
+        # Verwalter ohne Systemrecht (auch über sudo) ändert die Adresse: Token ist weg, kein Aufruf
+        post = self._post(antwort(PEERS))
+        self.anlage.with_user(self.user_manager).sudo().write(
+            {'ansitel_api_url': 'https://fremd.example.invalid/api'})
+        self._fehler()
+        post.assert_not_called()
 
     def test_ungueltiges_json(self):
         self._post(antwort(json_fehler=True))
@@ -194,13 +204,18 @@ class TestPeerId(AnsitelCase):
         self.assertNotIn(self.anlage.sudo().ansitel_token_enc, schluessel)
         self.assertNotIn(TOKEN, repr(list(ansitel_api._PEER_CACHE.values())))
 
-    def test_cache_je_datenbank_und_anlage(self):
+    def test_cache_je_anlage(self):
         post = self._post(antwort(PEERS), antwort(PEERS))
         zweite = self.anlage.copy({'name': 'Zweite', 'sip_domain': 'zweite.test'})
         zweite.write({'ansitel_aktiv': True, 'ansitel_api_url': URL, 'ansitel_token': TOKEN})
         self.api._peer_id(self.anlage, '100')
         self.api._peer_id(zweite, '100')
         self.assertEqual(post.call_count, 2)
+
+    def test_schluessel_enthaelt_datenbank(self):
+        self._post(antwort(PEERS))
+        self.api._peer_id(self.anlage, '100')
+        self.assertTrue(all(k[0] == self.env.cr.dbname for k in ansitel_api._PEER_CACHE))
 
     def test_unerwartete_antwort(self):
         for daten in ({'status': 200, 'data': 'x'}, {'status': 200, 'data': [{'peerName': '100'}]},
@@ -246,6 +261,14 @@ class TestVerbindungTesten(AnsitelCase):
         post = self._post(antwort(PEERS))
         with self.assertRaises(AccessError):
             self.anlage.with_user(self.user_a).action_ansitel_testen()
+        post.assert_not_called()
+
+    def test_ohne_schluessel_als_hinweis(self):
+        post = self._post(antwort(PEERS))
+        umgebung = {k: v for k, v in os.environ.items() if k != 'WB_VOIP_FERNET_KEY'}
+        with patch.dict(os.environ, umgebung, clear=True):
+            aktion = self._testen()
+        self.assertEqual(aktion['params']['type'], 'danger')
         post.assert_not_called()
 
     def test_ohne_einrichtung(self):

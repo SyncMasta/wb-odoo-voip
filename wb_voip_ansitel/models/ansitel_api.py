@@ -8,6 +8,7 @@ import logging
 import time
 
 import requests
+from cryptography.fernet import InvalidToken
 
 from odoo import models
 from odoo.exceptions import UserError
@@ -63,8 +64,8 @@ class WbVoipAnsitel(models.AbstractModel):
         fernet = geheimnis.pruefen(self.env)
         try:
             return fernet.decrypt(chiffrat.encode()).decode()
-        except Exception:  # noqa: BLE001 - Inhalt nie ausgeben
-            pass
+        except (InvalidToken, ValueError, TypeError):
+            pass  # Inhalt nie ausgeben
         raise AnsitelFehler(self.env._("Ansitel-Token nicht lesbar, bitte neu eingeben."))
 
     def _aufruf(self, anlage, aktion, token=None, **werte):
@@ -86,43 +87,46 @@ class WbVoipAnsitel(models.AbstractModel):
 
         nutzdaten = {**werte, 'token': token, 'action': aktion}
         fehler = None
-        antwort = None
+        daten = None
         try:
-            # Keine Weiterleitung: sonst ginge der Token an eine fremde Adresse
-            antwort = requests.post(url, json=nutzdaten, timeout=TIMEOUT, allow_redirects=False)
-        except requests.RequestException as exc:
+            # Keine Umgebungs-Proxys, -CA-Pakete oder .netrc; Zertifikat wird geprüft; keine Weiterleitung,
+            # sonst ginge der Token an eine fremde Adresse
+            with requests.Session() as sitzung:
+                sitzung.trust_env = False
+                antwort = sitzung.post(
+                    url, json=nutzdaten, timeout=TIMEOUT, allow_redirects=False, verify=True)
+            fehler, daten = self._antwort_pruefen(aktion, antwort)
+        except (requests.RequestException, ValueError, UnicodeError) as exc:
             # Nur der Typ ins Log: Text und URL der Ausnahme können Token/Query enthalten
             _logger.warning("[wb_voip_ansitel] %s: %s", aktion, type(exc).__name__)
             fehler = self.env._("Ansitel nicht erreichbar.")
-        if fehler is None:
-            fehler = self._antwort_fehler(aktion, antwort)
         if fehler:
             raise AnsitelFehler(fehler)
-        return antwort.json()
+        return daten
 
-    def _antwort_fehler(self, aktion, antwort):
-        """Return the user message if ``antwort`` is not a usable answer, else ``None``."""
+    def _antwort_pruefen(self, aktion, antwort):
+        """Return ``(fehlertext, daten)``: the user message if ``antwort`` is unusable, else the parsed dict."""
         code = antwort.status_code
         if code != 200:
             _logger.warning("[wb_voip_ansitel] %s: HTTP %s", aktion, code)
             if code in (401, 403):
-                return self.env._("Ansitel lehnt den Token ab.")
+                return self.env._("Ansitel lehnt den Token ab."), None
             if code == 400:
-                return self.env._("Ansitel lehnt die Anfrage ab.")
-            return self.env._("Ansitel nicht erreichbar.")
+                return self.env._("Ansitel lehnt die Anfrage ab."), None
+            return self.env._("Ansitel nicht erreichbar."), None
         try:
             daten = antwort.json()
         except ValueError:
             daten = None
         if not isinstance(daten, dict):
             _logger.warning("[wb_voip_ansitel] %s: Antwort unverständlich", aktion)
-            return self.env._("Ansitel hat unverständlich geantwortet.")
+            return self.env._("Ansitel hat unverständlich geantwortet."), None
         # Fehlt `status` im Body, gilt allein der HTTP-Status
         status = daten.get('status')
         if status is not None and str(status) != '200':
             _logger.warning("[wb_voip_ansitel] %s: Status %s im Antworttext", aktion, str(status)[:20])
-            return self.env._("Ansitel lehnt die Anfrage ab.")
-        return None
+            return self.env._("Ansitel lehnt die Anfrage ab."), None
+        return None, daten
 
     def _peer_id(self, anlage, nebenstelle):
         """Return the peer id of an extension (number or name) or ``None``; cached per worker."""

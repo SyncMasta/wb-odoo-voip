@@ -9,3 +9,6 @@ Anbindung einer Ansitel-Telefonanlage an WB VoIP über deren REST-Schnittstelle.
 * ``wb.voip.ansitel._aufruf`` ist die einzige Netzstelle: https, Zeitlimit 10 s, keine Weiterleitungen,
   Fehler als ``AnsitelFehler`` ohne Token und URL.
 * Knopf „Verbindung testen“ (VoIP-Administratoren) liest die Geräteliste.
+* URL, Schalter und Token der Ansitel-Schnittstelle sind nur für Systemadministratoren les- und schreibbar;
+  ändert jemand ohne Systemrecht die URL (auch über sudo), wird der gespeicherte Token gelöscht.
+* HTTP über eine eigene Sitzung ohne Umgebungs-Proxys, mit Zertifikatsprüfung.

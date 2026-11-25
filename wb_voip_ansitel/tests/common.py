@@ -38,10 +38,13 @@ class AnsitelCase(WbVoipCase):
         self.addCleanup(ansitel_api.cache_leeren)
 
     def _post(self, *antworten, **kwargs):
-        """Patch ``requests.post`` of the API module (never real network)."""
+        """Patch ``requests.Session.post`` (the API module (never real network)."""
         if antworten:
             kwargs.setdefault('side_effect', list(antworten))
-        patcher = patch.object(ansitel_api.requests, 'post', **kwargs)
+        alt = getattr(self, '_post_patcher', None)
+        if alt:
+            alt.stop()  # mehrfach im selben Test (Teiltests): erst den alten Fake lösen
+        patcher = self._post_patcher = patch.object(ansitel_api.requests.Session, 'post', autospec=True, **kwargs)
         mock = patcher.start()
-        self.addCleanup(patcher.stop)
+        self.addCleanup(lambda: patcher.stop() if patcher is self._post_patcher else None)
         return mock

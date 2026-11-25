@@ -81,3 +81,22 @@ class TestAnlageFelder(AnsitelCase):
     def test_nicht_kopierbar(self):
         kopie = self.anlage.copy({'name': 'Kopie'})
         self.assertFalse(kopie.sudo().ansitel_token_enc)
+
+    def test_adresse_und_aktiv_nur_system(self):
+        manager = self.anlage.with_user(self.user_manager)
+        for feld in ('ansitel_api_url', 'ansitel_aktiv'):
+            with self.assertRaises(AccessError, msg=feld):
+                manager.read([feld])
+            with self.assertRaises(AccessError, msg=feld):
+                manager.write({feld: 'https://fremd.example.invalid/api' if 'url' in feld else False})
+        self.assertEqual(self.anlage.ansitel_api_url, URL)
+
+    def test_adressaenderung_ohne_systemrecht_loescht_token(self):
+        self.anlage.with_user(self.user_manager).sudo().write(
+            {'ansitel_api_url': 'https://fremd.example.invalid/api'})
+        self.assertFalse(self.anlage.sudo().ansitel_token_enc)
+
+    def test_adressaenderung_durch_system_behaelt_token(self):
+        system = self.env.ref('base.user_admin')
+        self.anlage.with_user(system).write({'ansitel_api_url': 'https://neu.example.invalid/api'})
+        self.assertTrue(self.anlage.sudo().ansitel_token_enc)

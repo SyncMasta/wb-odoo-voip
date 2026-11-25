@@ -1,5 +1,5 @@
 from odoo import api, fields, models
-from odoo.exceptions import ValidationError
+from odoo.exceptions import UserError, ValidationError
 from odoo.addons.base.models.res_partner import _tz_get
 
 from odoo.addons.wb_voip.tools import geheimnis
@@ -13,10 +13,10 @@ class WbVoipAnlage(models.Model):
     _inherit = 'wb.voip.anlage'
 
     ansitel_aktiv = fields.Boolean(
-        string='Ansitel-Schnittstelle', copy=False,
+        string='Ansitel-Schnittstelle', copy=False, groups='base.group_system',
         help="Schnelltasten und Abgleich der Anrufliste über die REST-Schnittstelle der Anlage.")
     ansitel_api_url = fields.Char(
-        string='Ansitel-REST-URL', copy=False,
+        string='Ansitel-REST-URL', copy=False, groups='base.group_system',
         help="Nur https, z. B. https://anlage.example/awi/api/rest.")
     # Nur schreibbar: liefert beim Lesen immer leer, gespeichert wird das Chiffrat
     ansitel_token = fields.Char(
@@ -38,6 +38,9 @@ class WbVoipAnlage(models.Model):
 
     def write(self, vals):
         self._ansitel_url_bereinigen(vals)
+        if 'ansitel_api_url' in vals and not self.env.user._is_system():
+            # Auch über sudo: eine umgebogene Adresse darf den zentralen Token nie erhalten
+            vals['ansitel_token_enc'] = False
         return super().write(vals)
 
     @staticmethod
@@ -48,7 +51,7 @@ class WbVoipAnlage(models.Model):
 
     @api.constrains('ansitel_aktiv', 'ansitel_api_url')
     def _check_ansitel_api_url(self):
-        for anlage in self:
+        for anlage in self.sudo():
             if anlage.ansitel_api_url and not url_ist_https(anlage.ansitel_api_url):
                 raise ValidationError(self.env._(
                     "Die Ansitel-URL muss mit https:// beginnen und einen Host haben, "
@@ -80,7 +83,7 @@ class WbVoipAnlage(models.Model):
         self.ensure_one()
         try:
             self.env['wb.voip.ansitel']._aufruf(self, 'getpeer')
-        except (AnsitelFehler, ValidationError) as fehler:
+        except UserError as fehler:
             art, text = 'danger', str(fehler)
         else:
             art, text = 'success', self.env._("Verbindung zur Anlage steht.")

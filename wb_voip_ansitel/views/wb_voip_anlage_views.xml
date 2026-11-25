@@ -7,18 +7,18 @@
         <field name="arch" type="xml">
             <xpath expr="//field[@name='heranholen_praefix']/ancestor::group" position="after">
                 <group string="Ansitel-Schnittstelle">
-                    <field name="ansitel_aktiv"/>
-                    <field name="ansitel_api_url" invisible="not ansitel_aktiv"
+                    <field name="ansitel_aktiv" groups="base.group_system"/>
+                    <field name="ansitel_api_url" groups="base.group_system"
                            placeholder="https://anlage.example/awi/api/rest"/>
                     <field name="ansitel_token_gesetzt" invisible="1"/>
-                    <field name="ansitel_token" password="True" invisible="not ansitel_aktiv"
+                    <field name="ansitel_token" password="True"
                            groups="base.group_system" placeholder="Neuen Token eingeben"/>
                     <div colspan="2" class="text-muted"
-                         invisible="not ansitel_aktiv or not ansitel_token_gesetzt">
+                         invisible="not ansitel_token_gesetzt">
                         Token gespeichert – zum Ändern neu eingeben
                     </div>
-                    <field name="ansitel_tz" invisible="not ansitel_aktiv"/>
-                    <div colspan="2" invisible="not ansitel_aktiv or not id">
+                    <field name="ansitel_tz"/>
+                    <div colspan="2" invisible="not id or not ansitel_token_gesetzt">
                         <button name="action_ansitel_testen" type="object" class="btn-secondary"
                                 string="Verbindung testen" groups="wb_voip.group_wb_voip_manager"/>
                     </div>
