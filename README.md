@@ -43,9 +43,14 @@ am richtigen Datensatz.
   erledigen schließt den Eintrag ebenfalls.
 - Hinweis „angenommen von <Name>“ mit Dauer und Notiz des Kollegen, nur bei gleichzeitigem Anruf (Beginn ± 10 s,
   gleiche E.164-Nummer) und gemeinsamer Firma
-- Datenschutz: Kollegen sehen nur Name, Dauer und Notiz des Annehmenden. Die Annahme meldet der Browser, der Server
-  kann sie nicht prüfen; eine falsche Meldung kann offene Einträge von Kollegen derselben Nummer im
-  10-Sekunden-Fenster schließen. Ausgehende Anrufe, die der Aufräum-Lauf beendet, schließen keine Einträge.
+- Datenschutz: Kollegen sehen nur Name, Dauer und Notiz des Annehmenden (Hinweis am Notizfeld eingehender Anrufe).
+  Die Annahme meldet der Browser, der Server kann sie nicht prüfen; eine falsche Meldung kann offene Einträge von
+  Kollegen derselben Nummer im 10-Sekunden-Fenster schließen. Ein „anderswo angenommen“ kann der Browser nur in
+  den ersten 120 Sekunden nach dem Beginn noch als selbst angenommen melden, später bleibt es unverändert.
+  Ausgehende Anrufe, die der Aufräum-Lauf beendet, schließen keine Einträge.
+- Wird der Tab geschlossen, während ein Anruf klingelt, beendet ihn der Aufräum-Lauf nach 4 Stunden als
+  „fehlgeschlagen“, nicht als „verpasst“: ohne Rückruf-Aktivität und ohne Eintrag in der Liste. Ist gar kein
+  Odoo-Tab mit dem Telefon offen, erfährt Odoo vom Anruf nichts.
 
 **Anrufer-Fenster**
 - Seitenpanel bei jedem Anruf, nur im Tab, der telefoniert: Kontakt mit Bild, letzte Gespräche, offene Aufgaben,

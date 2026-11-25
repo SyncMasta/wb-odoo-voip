@@ -198,7 +198,7 @@ erledigt.
 
 Wieder öffnen: Ändert man das Ergebnis eines Rückruf-Protokolls von „erreicht“ auf etwas anderes (z. B.
 Mailbox), öffnen sich genau die Einträge wieder, die dieses Protokoll geschlossen hat, je Benutzer mit neuer
-Rückruf-Aktivität; zurück auf „erreicht“ schließt sie erneut. Einträge, die auf anderem Weg erledigt wurden,
+Rückruf-Aktivität und wieder als ungesehen (der Zähler steigt); zurück auf „erreicht“ schließt sie erneut. Einträge, die auf anderem Weg erledigt wurden,
 bleiben erledigt. Archivierte Aktivitäten werden nie wiederverwendet.
 
 Kollegen-Hinweis und gemeinsame Firma: Kam der Anruf bei mehreren Nebenstellen gleichzeitig an und nahm ihn ein
@@ -208,9 +208,16 @@ bei Benutzern mit gemeinsamer Firma; zwischen Firmen wird nichts verknüpft oder
 werden nie verknüpft.
 
 Datenschutz: Kollegen sehen von einem angenommenen Anruf nur Name, Dauer und Notiz des Annehmenden, und nur in
-derselben Firma. Ob jemand angenommen hat, meldet der Browser; der Server kann das nicht prüfen. Eine falsche
-Meldung kann daher offene Einträge von Kollegen mit derselben Nummer im 10-Sekunden-Fenster schließen. Ausgehende
-Anrufe, die der Aufräum-Lauf beendet, schließen keine Einträge. Schlägt das Abschließen einer Aktivität fehl,
+derselben Firma; das Notizfeld eingehender Anrufe weist darauf hin. Ob jemand angenommen hat, meldet der Browser;
+der Server kann das nicht prüfen. Eine falsche Meldung kann daher offene Einträge von Kollegen mit derselben Nummer
+im 10-Sekunden-Fenster schließen. Ein Anruf, der schon „anderswo angenommen“ ist, gilt nur dann noch als selbst
+angenommen, wenn der Browser das in den ersten 120 Sekunden nach dem Beginn meldet; eine spätere Meldung ändert
+nichts. Ausgehende Anrufe, die der Aufräum-Lauf beendet, schließen keine Einträge.
+
+Geschlossener Tab: Wird der Tab mit dem Telefon geschlossen, während ein Anruf klingelt, erfährt Odoo das Ende
+nie. Der Aufräum-Lauf beendet solche Anrufe nach 4 Stunden als „fehlgeschlagen“ (Protokoll „nicht erreicht“),
+nicht als „verpasst“: ohne Rückruf-Aktivität und ohne Eintrag in der Liste. Ist gar kein Odoo-Tab mit dem Telefon
+offen, erfährt Odoo vom Anruf nichts. Schlägt das Abschließen einer Aktivität fehl,
 gilt der Eintrag trotzdem als erledigt (wird protokolliert). Bei der Deinstallation hängt das Modul vorhandene
 Rückruf-Aktivitäten auf den Odoo-Typ „Anruf“ um, damit Aufgaben erhalten bleiben.
 
