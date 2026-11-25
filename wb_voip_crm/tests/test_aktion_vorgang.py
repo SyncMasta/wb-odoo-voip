@@ -1,4 +1,4 @@
-from odoo.exceptions import AccessError, ValidationError
+from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tests import tagged
 
 from .common import WbVoipCrmCase
@@ -165,3 +165,35 @@ class TestAktionVorgang(WbVoipCrmCase):
     def test_steuerzeichen_werden_zu_leerzeichen(self):
         titel = self._titel('{kontakt}', 'Zeile1\nZeile2\t\x01Ende')
         self.assertEqual(titel, 'Zeile1 Zeile2 Ende')
+
+    # --- Fix round 1 ---
+
+    def test_client_defaults_landen_nicht_im_vorgang(self):
+        button = self._button()
+        daten = self._beginnen(self.vertrieb_eigene)
+        anruf = self.env['wb.voip.anruf'].with_user(self.vertrieb_eigene).browse(daten['id']) \
+            .with_context(default_priority='3', default_description='Eingeschleust')
+        ergebnis = anruf.wb_voip_aktion_ausfuehren(button.id)
+        lead = self.env['crm.lead'].sudo().browse(ergebnis['res_id'])
+        self.assertEqual(lead.priority, '0')
+        self.assertFalse(lead.description)
+
+    def test_team_anderer_firma(self):
+        team = self.env['crm.team'].create({'name': 'Fremdteam', 'company_id': self.fremdfirma.id})
+        button = self._button(crm_team_id=team.id)
+        vorher = self.env['crm.lead'].sudo().search_count([])
+        daten = self._beginnen(self.vertrieb_eigene)
+        anruf = self.env['wb.voip.anruf'].with_user(self.vertrieb_eigene).browse(daten['id'])
+        with self.assertRaises(UserError) as fehler:
+            anruf.wb_voip_aktion_ausfuehren(button.id)
+        self.assertIn('Das Team gehört zu einer anderen Firma.', str(fehler.exception))
+        self.assertEqual(self.env['crm.lead'].sudo().search_count([]), vorher)
+
+    def test_team_der_eigenen_firma_und_ohne_firma(self):
+        for firma in (self.env.company, self.env['res.company']):
+            with self.subTest(firma=firma.name):
+                team = self.env['crm.team'].create({'name': 'Team F', 'company_id': firma.id})
+                _anruf, ergebnis = self._ausfuehren(
+                    self.vertrieb_eigene, self._button(crm_team_id=team.id))
+                self.assertEqual(
+                    self.env['crm.lead'].sudo().browse(ergebnis['res_id']).team_id, team)

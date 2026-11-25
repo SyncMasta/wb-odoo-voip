@@ -1,4 +1,4 @@
-import { Component, useState } from "@odoo/owl";
+import { Component, onWillUpdateProps, toRaw, useState } from "@odoo/owl";
 import { _t } from "@web/core/l10n/translation";
 import { useService } from "@web/core/utils/hooks";
 
@@ -20,6 +20,13 @@ export class VorgaengeBlock extends Component {
         this.titelId = neueId();
         // Eigene Auswahl bis der Server neu geladen hat (null = Stand des Servers)
         this.state = useState({ gewaehlt: null, arbeitet: false, fehler: "" });
+        // Der Kern zeichnet den Block mit stabilem Schlüssel neu: kommen neue Server-Daten
+        // (Bus-Neuladen), gilt wieder der Stand des Servers, nicht meine frühere Auswahl.
+        onWillUpdateProps((naechste) => {
+            if (toRaw(naechste.block.daten) !== toRaw(this.props.block.daten)) {
+                this.state.gewaehlt = null;
+            }
+        });
     }
 
     get titel() {

@@ -426,7 +426,9 @@ class TestHooks(WbVoipCase):
 
     def test_hook_hilfe_ausserhalb_des_praefixes(self):
         Layout = type(self.Layout)
-        # nur die Hooks anderer Module (z. B. wb_voip_crm) gibt es, die Hilfe selbst nicht
-        self.assertFalse(any(name.startswith('_wb_voip_block_daten_') and name != '_wb_voip_block_daten_vorgaenge'
-                             for name in dir(Layout)))
+        # Hooks gibt es nur in anderen Modulen (z. B. wb_voip_crm), nie im Kern selbst
+        for name in dir(Layout):
+            if name.startswith('_wb_voip_block_daten_'):
+                modul = getattr(Layout, name).__module__
+                self.assertFalse(modul.startswith('odoo.addons.wb_voip.'), name)
         self.assertTrue(callable(getattr(Layout, '_wb_voip_block_hook', None)))

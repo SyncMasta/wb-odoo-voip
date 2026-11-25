@@ -79,6 +79,15 @@ class TestBlockVorgaenge(WbVoipCrmCase):
         namen = {v['name'] for v in self._block(self.vertrieb_alle)}
         self.assertEqual(namen, {'Eigener', 'Fremder'})
 
+    def test_archivierte_auch_ohne_active_test(self):
+        self._lead(name='Offen')
+        self._lead(name='Archiviert').action_archive()
+        Layout = self.Layout.with_user(self.vertrieb_eigene).with_context(active_test=False)
+        daten = Layout._wb_voip_block_daten_vorgaenge(
+            self.env['wb.voip.anruf'].with_user(self.vertrieb_eigene), {'anzahl': 5},
+            self.kontakt.with_user(self.vertrieb_eigene))
+        self.assertEqual([v['name'] for v in daten], ['Offen'])
+
     def test_firma_des_kontakts(self):
         lead = self._lead(name='Firmenvorgang', partner=self.firma)
         daten = self._block(self.vertrieb_eigene, partner=self.ansprechpartner)

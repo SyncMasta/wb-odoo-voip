@@ -1,13 +1,15 @@
 import re
 
 from odoo import api, fields, models
-from odoo.exceptions import AccessError, ValidationError
+from odoo.exceptions import AccessError, UserError, ValidationError
+from odoo.tools import clean_context
 from odoo.tools.misc import format_date
 
 LEAD_MODELL = 'crm.lead'
 TITEL_MAX = 200
 # Only these three placeholders exist; they are replaced in one pass, as plain text
-PLATZHALTER_MUSTER = re.compile(r'\{(kontakt|nummer|datum)\}')
+PLATZHALTER = ('kontakt', 'nummer', 'datum')
+PLATZHALTER_MUSTER = re.compile(r'\{(%s)\}' % '|'.join(PLATZHALTER))
 STEUERZEICHEN_MUSTER = re.compile(r'[\x00-\x1f\x7f-\x9f]')
 
 
@@ -77,8 +79,11 @@ class WbVoipAktion(models.Model):
             # nur ein Team, das der Benutzer lesen darf: nie still ein anderes nehmen
             if not team.with_user(self.env.user).has_access('read'):
                 raise AccessError(self.env._("Sie dürfen das Verkaufsteam dieses Buttons nicht lesen."))
+            if team.company_id and team.company_id != self.env.company:
+                raise UserError(self.env._("Das Team gehört zu einer anderen Firma."))
             werte['team_id'] = team.id
-        lead = Lead.create(werte)
+        # ohne default_* aus dem Client-Kontext (RPC): nur die Werte oben gelten
+        lead = Lead.with_context(clean_context(self.env.context)).create(werte)
         anruf.wb_voip_vorgang_setzen(lead.id)
         return {
             'type': 'ir.actions.act_window',

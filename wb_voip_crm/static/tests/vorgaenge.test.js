@@ -1,6 +1,7 @@
 import { describe, expect, test } from "@odoo/hoot";
 import { click, queryAll } from "@odoo/hoot-dom";
 import { Deferred, animationFrame } from "@odoo/hoot-mock";
+import { Component, reactive, xml } from "@odoo/owl";
 import { defineMailModels } from "@mail/../tests/mail_test_helpers";
 import { mockService, mountWithCleanup, onRpc } from "@web/../tests/web_test_helpers";
 
@@ -150,4 +151,28 @@ test("Ungültige Serverdaten werden ignoriert", async () => {
     await zeigen([null, { id: "x", name: "kaputt" }, { id: 5, name: 7, stufe: 1 }]);
     expect(".o_wb_voip_lb_vorgang").toHaveCount(1);
     expect(".o_wb_voip_lb_vorgang_name").toHaveText("");
+});
+
+test("Neue Server-Daten setzen die eigene Auswahl zurück", async () => {
+    onRpc("wb.voip.anruf", "wb_voip_vorgang_setzen", () => true);
+    const zustand = reactive({ daten: VORGAENGE });
+    class Eltern extends Component {
+        static components = { LayoutBloecke };
+        static props = {};
+        static template = xml`<LayoutBloecke layout="layout" ort="'anrufer_fenster'" anruf="{ id: 10 }"/>`;
+        get layout() {
+            return { id: 9, breite: "normal", bloecke: [block(zustand.daten)] };
+        }
+    }
+    const eltern = await mountWithCleanup(Eltern);
+    // zugeordnet wird der zweite Vorgang (lokale Auswahl)
+    await click(queryAll(".o_wb_voip_lb_vorgang_zuordnen")[0]);
+    await animationFrame();
+    expect(".o_wb_voip_lb_vorgang_aktiv .o_wb_voip_lb_vorgang_name").toHaveText("Zweiter Vorgang");
+    // anderswo wurde der dritte zugeordnet: Bus-Neuladen liefert neue Daten
+    zustand.daten = VORGAENGE.map((v) => ({ ...v, zugeordnet: v.id === 13 }));
+    eltern.render(true);
+    await animationFrame();
+    expect(".o_wb_voip_lb_vorgang_aktiv").toHaveCount(1);
+    expect(".o_wb_voip_lb_vorgang_aktiv .o_wb_voip_lb_vorgang_name").toHaveText("Dritter Vorgang");
 });

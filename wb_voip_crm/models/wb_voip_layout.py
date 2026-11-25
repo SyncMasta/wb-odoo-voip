@@ -48,6 +48,7 @@ class WbVoipLayout(models.Model):
         kontakte = partner | partner.commercial_partner_id
         leads = Lead.search([
             ('partner_id', 'in', kontakte.ids),
+            ('active', '=', True),
             ('probability', '<', 100),
             ('company_id', 'in', [self.env.company.id, False]),
         ], order='write_date desc, id desc', limit=anzahl)
