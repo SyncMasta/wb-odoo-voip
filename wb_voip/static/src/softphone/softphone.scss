@@ -100,3 +100,16 @@ $wb-voip-cyan: #00C8E8;
 .o_wb_voip_waehlen:focus-visible {
     outline: 2px solid $wb-voip-cyan;
 }
+
+// Team-Reiter: „klingelt“ blinkt, aber nicht bei reduzierter Bewegung
+@keyframes o_wb_voip_team_blinken {
+    50% {
+        opacity: 0.25;
+    }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .o_wb_voip_team_blinkt {
+        animation: o_wb_voip_team_blinken 1s ease-in-out infinite;
+    }
+}

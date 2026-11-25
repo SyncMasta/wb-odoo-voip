@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="wb_voip.TeamListe">
+        <div class="o_wb_voip_team">
+            <div t-if="lokal.fehler" class="alert alert-warning small" role="alert" t-esc="lokal.fehler"/>
+            <div t-elif="lokal.geladen and !lokal.kollegen.length" class="text-muted small p-2">
+                Keine Kollegen im Team.
+            </div>
+            <ul class="list-group list-group-flush">
+                <li t-foreach="lokal.kollegen" t-as="kollege" t-key="kollege.user_id"
+                    class="o_wb_voip_team_zeile list-group-item px-1">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="o_wb_voip_team_punkt fa fa-circle" t-att-class="punkt(kollege)" aria-hidden="true"/>
+                        <div class="flex-grow-1 text-truncate">
+                            <div class="text-truncate fw-bold">
+                                <span t-esc="kollege.name"/>
+                                <span class="o_wb_voip_team_nebenstelle text-muted fw-normal"
+                                      t-esc="kollege.nebenstelle"/>
+                            </div>
+                            <div class="o_wb_voip_team_status small" t-esc="statusText(kollege)"/>
+                        </div>
+                        <button t-if="anrufbar(kollege)" type="button"
+                                class="o_wb_voip_team_anrufen btn btn-sm btn-outline-success"
+                                t-att-title="beschriftung('anrufen', kollege)" t-att-aria-label="beschriftung('anrufen', kollege)"
+                                t-on-click="() => this.anrufen(kollege)">
+                            <i class="fa fa-phone" aria-hidden="true"/>
+                        </button>
+                        <button t-if="heranholbar(kollege)" type="button"
+                                class="o_wb_voip_team_heranholen btn btn-sm btn-outline-warning"
+                                t-att-title="beschriftung('heranholen', kollege)" t-att-aria-label="beschriftung('heranholen', kollege)"
+                                t-on-click="() => this.heranholen(kollege)">
+                            <i class="fa fa-hand-paper-o" aria-hidden="true"/>
+                        </button>
+                    </div>
+                    <div t-if="uebergebbar(kollege)" class="d-flex flex-wrap gap-1 mt-1 ps-4">
+                        <button type="button" class="o_wb_voip_team_uebergeben btn btn-sm btn-outline-primary"
+                                t-att-title="beschriftung('uebergeben', kollege)" t-att-aria-label="beschriftung('uebergeben', kollege)"
+                                t-on-click="() => this.uebergeben(kollege)">Übergeben</button>
+                        <button t-if="kannRueckfrage" type="button"
+                                class="o_wb_voip_team_rueckfrage btn btn-sm btn-outline-secondary"
+                                t-att-title="beschriftung('rueckfrage', kollege)" t-att-aria-label="beschriftung('rueckfrage', kollege)"
+                                t-on-click="() => this.rueckfrage(kollege)">Mit Rückfrage</button>
+                        <button t-if="kannKonferenz" type="button"
+                                class="o_wb_voip_team_konferenz btn btn-sm btn-outline-secondary"
+                                t-att-title="beschriftung('konferenz', kollege)" t-att-aria-label="beschriftung('konferenz', kollege)"
+                                t-on-click="() => this.konferenz(kollege)">Konferenz</button>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </t>
+</templates>

@@ -16,6 +16,8 @@ export const WEITERLEITUNG_MAX_ALTER_MS = 2500;
 /** Abstände zwischen Verbindungsversuchen; danach bleibt es beim letzten Wert. */
 export const WIEDERHOLUNG_MS = [3000, 10_000, 30_000, 60_000];
 export const LEBENSZEICHEN_MS = 60_000;
+/** Takt, in dem der Telefon-Tab dem Team „angemeldet“ meldet (Server: gültig 150 s). */
+export const TEAM_LEBENSZEICHEN_MS = 60_000;
 /** Neue Versuche für wb_voip_beendet; danach schließt der Server-Cron den Anruf. */
 export const BEENDET_WIEDERHOLUNG_MS = [2000, 5000, 10_000];
 /** Höchstlänge der Notiz (wie auf dem Server geprüft). */
@@ -125,6 +127,8 @@ export class TelefonDienst {
         this._agent = null;
         this._aktiv = null; // Kontext des laufenden Anrufs
         this._lebenTimer = null;
+        this._teamTimer = null; // Takt des Team-Lebenszeichens (nur im Telefon-Tab)
+        this._teamGemeldet = false; // dem Server zuletzt „angemeldet“ gemeldet
 
         this._kanalVerbinden();
         // Tab wird geschlossen, neu geladen oder in den bfcache gelegt: sofort an der Anlage
@@ -218,6 +222,7 @@ export class TelefonDienst {
         this._lauf++;
         this._wiederholungStoppen();
         this._lebenszeichenStoppen();
+        this._teamBeenden();
         this.klaenge?.aus();
         if (this._aktiv) {
             // Sitzung endet mit dem Agenten; Ende noch melden (sonst schließt der Cron)
@@ -346,6 +351,43 @@ export class TelefonDienst {
         this._versuch = 0;
         this.state.status = "verbunden";
         this.state.fehler = null;
+        this._teamStarten();
+    }
+
+    // --- Team-Lebenszeichen -----------------------------------------------------------
+
+    /** Meldet „angemeldet“ und wiederholt es alle 60 s, solange dieser Tab registriert ist. */
+    _teamStarten() {
+        this._teamStoppenTimer();
+        this._teamMelden(true);
+        this._teamTimer = this.uhr.setInterval(() => this._teamMelden(true), TEAM_LEBENSZEICHEN_MS);
+    }
+
+    /** Beendet den Takt und meldet „abgemeldet“, falls zuvor „angemeldet“ gemeldet wurde. */
+    _teamBeenden() {
+        this._teamStoppenTimer();
+        if (this._teamGemeldet) {
+            this._teamMelden(false);
+        }
+    }
+
+    _teamStoppenTimer() {
+        if (this._teamTimer !== null) {
+            this.uhr.clearInterval(this._teamTimer);
+            this._teamTimer = null;
+        }
+    }
+
+    /** Best effort: ein verlorener Aufruf wird beim nächsten Takt oder durch Ablauf (150 s) ausgeglichen. */
+    _teamMelden(registriert) {
+        this._teamGemeldet = registriert;
+        try {
+            Promise.resolve(
+                this.orm.call("res.users", "wb_voip_lebenszeichen_melden", [registriert])
+            ).catch(() => {});
+        } catch {
+            // Aufruf nicht möglich (z. B. beim Schließen des Tabs)
+        }
     }
 
     _ohneLizenz(meldung) {
@@ -428,6 +470,8 @@ export class TelefonDienst {
     _agentBeenden() {
         const agent = this._agent;
         this._agent = null;
+        // ohne Registrierung gilt der Tab im Team als abgemeldet
+        this._teamBeenden();
         if (agent) {
             // synchron aufrufen: beim Schließen des Tabs muss die Abmeldung sofort raus
             try {

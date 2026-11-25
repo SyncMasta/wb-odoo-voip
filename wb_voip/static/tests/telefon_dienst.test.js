@@ -853,3 +853,64 @@ test("beginnen scheitert, Lizenz aber gültig: verbunden bleiben", async () => {
     expect(welt.fabrik.agenten[0].gestoppt).toBe(false);
     welt.aufraeumen();
 });
+
+/** Gemeldete Werte von ``wb_voip_lebenszeichen_melden`` in Reihenfolge. */
+function gemeldet(welt) {
+    return welt.orm.aufrufe
+        .filter((a) => a.methode === "wb_voip_lebenszeichen_melden")
+        .map((a) => a.args[0]);
+}
+
+test("Team-Lebenszeichen: bei Registrierung, alle 60 s, beim Beenden abgemeldet", async () => {
+    const welt = umgebung();
+    const dienst = await verbundenerDienst(welt);
+    expect(gemeldet(welt)).toEqual([true]);
+    await welt.uhr.vorspulen(59_000);
+    expect(gemeldet(welt)).toEqual([true]);
+    await welt.uhr.vorspulen(1000);
+    expect(gemeldet(welt)).toEqual([true, true]);
+    await welt.uhr.vorspulen(60_000);
+    expect(gemeldet(welt)).toEqual([true, true, true]);
+    dienst.stop();
+    await welt.uhr.vorspulen(0);
+    expect(gemeldet(welt)).toEqual([true, true, true, false]);
+    // danach kein Takt mehr
+    await welt.uhr.vorspulen(180_000);
+    expect(gemeldet(welt)).toHaveLength(4);
+    expect(welt.uhr.anzahlTimer).toBe(0);
+    welt.aufraeumen();
+});
+
+test("Team-Lebenszeichen: Neben-Tab meldet nie, auch nicht beim Beenden", async () => {
+    const welt = umgebung();
+    await verbundenerDienst(welt, "tab-1");
+    const neben = welt.dienst("tab-2");
+    neben.start();
+    await welt.uhr.vorspulen(0);
+    expect(neben.state.status).toBe("anderer_tab");
+    const vorher = gemeldet(welt).length;
+    await welt.uhr.vorspulen(120_000);
+    neben.stop();
+    await welt.uhr.vorspulen(0);
+    // nur der Halter meldet: zwei Takte in 120 s, der Neben-Tab nichts
+    expect(gemeldet(welt)).toHaveLength(vorher + 2);
+    expect(gemeldet(welt).every((wert) => wert === true)).toBe(true);
+    welt.aufraeumen();
+});
+
+test("Team-Lebenszeichen: Verbindungsverlust meldet abgemeldet, Wiederverbinden angemeldet", async () => {
+    const welt = umgebung();
+    const dienst = await verbundenerDienst(welt);
+    expect(gemeldet(welt)).toEqual([true]);
+    welt.fabrik.agenten[0].emit("getrennt", "Netz weg");
+    await welt.uhr.vorspulen(0);
+    expect(dienst.state.status).toBe("getrennt");
+    expect(gemeldet(welt)).toEqual([true, false]);
+    // kein Takt, solange getrennt
+    await welt.uhr.vorspulen(2000);
+    expect(gemeldet(welt)).toEqual([true, false]);
+    await welt.uhr.vorspulen(5000);
+    expect(dienst.state.status).toBe("verbunden");
+    expect(gemeldet(welt)).toEqual([true, false, true]);
+    welt.aufraeumen();
+});

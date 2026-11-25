@@ -186,6 +186,7 @@ export class FakeOrm {
                 protokoll_id: 77,
             }),
             "wb.voip.anruf.wb_voip_lebenszeichen": () => true,
+            "res.users.wb_voip_lebenszeichen_melden": () => true,
         };
     }
     async call(modell, methode, args = [], kwargs = {}) {
