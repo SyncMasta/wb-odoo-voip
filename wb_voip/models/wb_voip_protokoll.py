@@ -139,9 +139,12 @@ class WbVoipProtokoll(models.Model):
             partner = partner.browse()
         layout = self.env.user._wb_voip_layout('protokoll_popup')
         Anruf = self.env['wb.voip.anruf']
+        # Block-Hooks bekommen nur den eigenen Anruf, sonst einen leeren
+        anruf = self.sudo().anruf_id
+        if anruf.user_id != self.env.user:
+            anruf = anruf.browse()
         return {
-            'layout': layout._wb_voip_fuer_client(
-                partner, anruf=self.sudo().anruf_id.with_user(self.env.user)),
+            'layout': layout._wb_voip_fuer_client(partner, anruf=anruf.with_user(self.env.user)),
             'kontakt': Anruf._wb_voip_kontakt_daten(partner),
             'protokolle': Anruf._wb_voip_kontakt_protokolle(
                 partner, layout._wb_voip_anzahl('protokolle'), ohne=self),

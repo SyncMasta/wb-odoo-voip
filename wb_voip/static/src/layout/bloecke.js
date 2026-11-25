@@ -55,9 +55,9 @@ export function artLabel(art) {
             buttons: _t("Buttons"),
             text: _t("Hinweis"),
         }[art] ||
-        // Arten anderer Module: Name aus ihrem Registry-Eintrag
-        (typeof art === "string" && typeof blockRegistry.get(art, null)?.label === "string"
-            ? blockRegistry.get(art).label
+        // Arten anderer Module: Name aus ihrem Registry-Eintrag (Text oder übersetzbarer ``_t``-Text)
+        (typeof art === "string" && blockRegistry.get(art, null)?.label
+            ? String(blockRegistry.get(art).label)
             : "")
     );
 }

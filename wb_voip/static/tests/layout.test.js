@@ -5,11 +5,13 @@ import { Component, EventBus, reactive, useState, xml } from "@odoo/owl";
 import { defineMailModels } from "@mail/../tests/mail_test_helpers";
 import {
     defineModels,
+    makeMockEnv,
     mockService,
     mountWithCleanup,
     onRpc,
     patchWithCleanup,
 } from "@web/../tests/web_test_helpers";
+import { _t } from "@web/core/l10n/translation";
 import { MainComponentsContainer } from "@web/core/main_components_container";
 import { session } from "@web/session";
 
@@ -541,4 +543,18 @@ test("Blockart ohne Registrierung fällt weg, mit Registrierung erscheint sie", 
     expect(".o_wb_voip_lb_fremd").toHaveCount(0);
     fremdeArtRegistrieren();
     expect(artLabel("fremd_test")).toBe("Fremde Art");
+});
+
+test("artLabel akzeptiert übersetzbare Texte einer fremden Art", async () => {
+    class Fremd extends Component {
+        static template = xml`<div/>`;
+        static props = ["*"];
+    }
+    blockRegistry.add("fremd_t_test", { component: Fremd, label: _t("Übersetzbare Art") });
+    after(() => blockRegistry.remove("fremd_t_test"));
+    // die Test-Umgebung lädt die Übersetzungen
+    await makeMockEnv();
+    const label = artLabel("fremd_t_test");
+    expect(typeof label).toBe("string");
+    expect(label).toBe("Übersetzbare Art");
 });

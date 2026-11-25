@@ -353,6 +353,29 @@ class TestHooks(WbVoipCase):
         self.assertEqual(daten['layout']['bloecke'][0]['daten'], 7)
         self.assertEqual(gesehen, [anruf])
 
+    def test_block_daten_popup_nur_eigener_anruf(self):
+        popup = self.Layout.create({'name': 'Popup E', 'ort': 'protokoll_popup', 'sequence': 1})
+        self.Block.create({'layout_id': popup.id, 'art': 'text', 'text': 'P'})
+        gesehen = []
+
+        def block_daten(layout_modell, anruf, block, partner):
+            gesehen.append(anruf)
+            return 1
+
+        self._ueberschreiben('wb.voip.layout', '_wb_voip_block_daten_text', block_daten, neu=True)
+        anruf, _daten = self._beginnen()
+        anruf.wb_voip_beendet(False, '487')
+        protokoll = anruf.sudo().protokoll_id
+        # Das Protokoll gehört user_a, der verknüpfte Anruf einem anderen Benutzer
+        fremder = self.Anruf.sudo().create({
+            'user_id': self.user_b.id, 'richtung': 'eingehend', 'zustand': 'beendet',
+            'nummer': '+49 30 99', 'sip_call_id': 'popup-fremd'})
+        protokoll.anruf_id = fremder
+        protokoll.with_user(self.user_a).wb_voip_popup_layout()
+        self.assertEqual(len(gesehen), 1)
+        self.assertFalse(gesehen[0])
+        self.assertEqual(gesehen[0]._name, 'wb.voip.anruf')
+
     # --- Nachbesserung: Last, Robustheit, kein sudo ---
 
     def _anrufe_mit_datensatz(self, anzahl):
