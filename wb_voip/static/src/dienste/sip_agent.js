@@ -42,7 +42,24 @@ export function iceServer(urls) {
 
 // --- SIP.js ---------------------------------------------------------------------------
 
-class SipJsSitzung extends Sender {
+/**
+ * Grund eines CANCEL vor der Annahme: „anderswo“, wenn ein anderes Gerät angenommen hat
+ * (Reason-Header nach RFC 3326: cause=200 bzw. „Call completed elsewhere“), sonst „487“.
+ */
+export function cancelGrund(nachricht) {
+    let reason = "";
+    try {
+        reason = String(nachricht?.getHeader?.("Reason") ?? "");
+    } catch {
+        reason = "";
+    }
+    if (/cause\s*=\s*200\b/i.test(reason) || /call completed elsewhere/i.test(reason)) {
+        return "anderswo";
+    }
+    return "487";
+}
+
+export class SipJsSitzung extends Sender {
     constructor(agent, session, { ausgehend }) {
         super();
         this._agent = agent;
@@ -71,8 +88,8 @@ class SipJsSitzung extends Sender {
             // Anrufer legt vor der Annahme auf (CANCEL)
             session.delegate = {
                 ...(session.delegate || {}),
-                onCancel: () => {
-                    this._grund = "487";
+                onCancel: (nachricht) => {
+                    this._grund = cancelGrund(nachricht);
                 },
             };
         }

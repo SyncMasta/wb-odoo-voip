@@ -30,7 +30,7 @@ _logger = logging.getLogger(__name__)
 # Anrufe ohne Lebenszeichen gelten nach dieser Zeit als verloren (Tab geschlossen o. Ä.)
 AUFRAEUM_STUNDEN = 4
 OFFENE_ZUSTAENDE = ('klingelt', 'laeuft')
-FINALE_ZUSTAENDE = ('beendet', 'abgelehnt', 'besetzt', 'fehlgeschlagen')
+FINALE_ZUSTAENDE = ('beendet', 'abgelehnt', 'besetzt', 'fehlgeschlagen', 'verpasst', 'anderswo')
 RICHTUNGEN = ('eingehend', 'ausgehend')
 # Endzustand eines nicht angenommenen Anrufs je SIP-Grund; alles andere -> fehlgeschlagen
 SIP_GRUND_ZUSTAND = {
@@ -39,6 +39,14 @@ SIP_GRUND_ZUSTAND = {
     '487': 'abgelehnt',  # Request Terminated: vor der Annahme abgebrochen
     '486': 'besetzt',    # Busy Here
     '600': 'besetzt',    # Busy Everywhere
+}
+# Eingehend gilt anders: Abbruch des Anrufers (487) und eigene automatische Abweisung (480) sind
+# „verpasst“, die Annahme an einem anderen Gerät („anderswo“) ist weder verpasst noch abgelehnt.
+SIP_GRUND_ZUSTAND_EINGEHEND = {
+    **SIP_GRUND_ZUSTAND,
+    '487': 'verpasst',
+    '480': 'verpasst',
+    'anderswo': 'anderswo',
 }
 # Höchstlängen der Angaben an die RPC-Methoden
 MAX_NUMMER = 64
@@ -155,7 +163,8 @@ class WbVoipAnruf(models.Model):
     zustand = fields.Selection(
         [('neu', 'Neu'), ('klingelt', 'Klingelt'), ('laeuft', 'Läuft'),
          ('beendet', 'Beendet'), ('abgelehnt', 'Abgelehnt'), ('besetzt', 'Besetzt'),
-         ('fehlgeschlagen', 'Fehlgeschlagen')],
+         ('fehlgeschlagen', 'Fehlgeschlagen'), ('verpasst', 'Verpasst'),
+         ('anderswo', 'Anderswo angenommen')],
         string='Zustand', required=True, default='neu', index=True)
     partner_id = fields.Many2one('res.partner', string='Kontakt', ondelete='set null')
     res_model = fields.Char(string='Datensatz-Modell')
@@ -342,11 +351,14 @@ class WbVoipAnruf(models.Model):
         * answered before (``annahme`` set)          -> ``beendet``
         * ``angenommen`` True but ``annahme`` empty  -> ``annahme`` now, ``beendet``
           (the client saw the answer, ``wb_voip_angenommen`` lost the race)
-        * not answered, ``sip_grund`` ``603``/``480``/``487`` -> ``abgelehnt``
-        * not answered, ``486`` or ``600``            -> ``besetzt``
+        * not answered, outgoing, ``603``/``480``/``487`` -> ``abgelehnt``
+        * not answered, incoming, ``487``/``480``     -> ``verpasst`` (log: not reached)
+        * not answered, incoming, ``anderswo``       -> ``anderswo`` (answered on another
+          device; no log entry)
+        * not answered, ``603`` -> ``abgelehnt``; ``486`` or ``600`` -> ``besetzt``
         * not answered, anything else / no reason     -> ``fehlgeschlagen``
 
-        (see ``SIP_GRUND_ZUSTAND``). ``dauer_sek`` counts from the answer. A call
+        (see ``SIP_GRUND_ZUSTAND`` and ``SIP_GRUND_ZUSTAND_EINGEHEND``). ``dauer_sek`` counts from the answer. A call
         that is already in a final state is returned unchanged (no-op).
         """
         _text_pruefen(self.env, notiz, self.env._("Notiz"), MAX_NOTIZ, pflicht=False)
@@ -363,11 +375,13 @@ class WbVoipAnruf(models.Model):
                 werte['zustand'] = 'beendet'
                 werte['dauer_sek'] = max(0, int((jetzt - anruf.annahme).total_seconds()))
             else:
-                werte['zustand'] = SIP_GRUND_ZUSTAND.get(sip_grund or '', 'fehlgeschlagen')
+                zuordnung = (SIP_GRUND_ZUSTAND_EINGEHEND if anruf.richtung == 'eingehend'
+                             else SIP_GRUND_ZUSTAND)
+                werte['zustand'] = zuordnung.get(sip_grund or '', 'fehlgeschlagen')
             if notiz:
                 werte['notiz'] = notiz
             anruf.write(werte)
-        if not anruf.protokoll_id:
+        if not anruf.protokoll_id and anruf.zustand != 'anderswo':
             anruf._wb_voip_protokollieren()
         return anruf.with_user(self.env.user)._wb_voip_client_daten()
 

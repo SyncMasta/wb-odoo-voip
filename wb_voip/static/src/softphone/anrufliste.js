@@ -17,6 +17,8 @@ const ZUSTAENDE = {
     abgelehnt: _t("Abgelehnt"),
     besetzt: _t("Besetzt"),
     fehlgeschlagen: _t("Nicht erreicht"),
+    verpasst: _t("Verpasst"),
+    anderswo: _t("Anderswo angenommen"),
 };
 
 /** Reiter „Anrufe“: die letzten eigenen Anrufe, neu geladen nach jedem Anrufende. */

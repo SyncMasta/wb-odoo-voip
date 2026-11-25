@@ -245,6 +245,7 @@ class TestHaertung(WbVoipCase):
     def test_sip_gruende_konstanten(self):
         SIP_GRUND_ZUSTAND = getattr(wb_voip_anruf, 'SIP_GRUND_ZUSTAND', {})
         self.assertEqual(SIP_GRUND_ZUSTAND['603'], 'abgelehnt')
+        # 487/480 gelten nur ausgehend als abgelehnt; eingehend -> verpasst (test_verpasst.py)
         self.assertEqual(SIP_GRUND_ZUSTAND['487'], 'abgelehnt')
         self.assertEqual(SIP_GRUND_ZUSTAND['480'], 'abgelehnt')
         self.assertEqual(SIP_GRUND_ZUSTAND['486'], 'besetzt')

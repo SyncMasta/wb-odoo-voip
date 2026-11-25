@@ -319,7 +319,8 @@ class WbVoipAktion(models.Model):
         if self.richtung != 'beide' and self.richtung != anruf.richtung:
             return False
         if self.zustand == 'beendet':
-            if anruf.zustand not in ('beendet', 'abgelehnt', 'besetzt', 'fehlgeschlagen'):
+            if anruf.zustand not in ('beendet', 'abgelehnt', 'besetzt', 'fehlgeschlagen',
+                                    'verpasst', 'anderswo'):
                 return False
         elif self.zustand != 'immer' and self.zustand != anruf.zustand:
             return False

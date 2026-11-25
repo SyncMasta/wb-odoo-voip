@@ -58,7 +58,7 @@ class TestAnruf(WbVoipCase):
         daten = self._beginnen()
         anruf = self.env['wb.voip.anruf'].with_user(self.user_a).browse(daten['id'])
         ergebnis = anruf.wb_voip_beendet(False, '480')
-        self.assertEqual(ergebnis['zustand'], 'abgelehnt')
+        self.assertEqual(ergebnis['zustand'], 'verpasst')
         protokoll = self.env['wb.voip.protokoll'].browse(ergebnis['protokoll_id'])
         self.assertEqual(protokoll.ergebnis, 'nicht_erreicht')
 

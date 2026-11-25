@@ -18,3 +18,4 @@ from . import test_zuordnen
 from . import test_layout
 from . import test_layout_kontext
 from . import test_aktion_assistent
+from . import test_verpasst
