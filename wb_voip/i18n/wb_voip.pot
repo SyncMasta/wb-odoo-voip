@@ -1,0 +1,3438 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* wb_voip
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0-20261112\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-25 21:25+0000\n"
+"PO-Revision-Date: 2026-11-25 21:25+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+msgid "%(art)s: %(fehler)s"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/systray.js:0
+msgid "%s, %s ungesehene verpasste Anrufe"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.xml:0
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_aktion_assistent_view_form
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_zuordnen_view_form
+msgid "Abbrechen"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufliste.js:0
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_anruf__zustand__abgelehnt
+msgid "Abgelehnt"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/team/team_liste.js:0
+msgid "Abgemeldet"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/anrufer_fenster/anrufer_fenster.xml:0
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+msgid "Ablehnen"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model,name:wb_voip.model_res_groups
+msgid "Access Groups"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__message_needaction
+msgid "Action Needed"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__activity_ids
+msgid "Activities"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model,name:wb_voip.model_mail_activity
+msgid "Activity"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__activity_exception_decoration
+msgid "Activity Exception Decoration"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__activity_state
+msgid "Activity State"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__activity_type_icon
+msgid "Activity Type Icon"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/softphone.xml:0
+msgid ""
+"Administrator: Umgebungsvariable WB_VOIP_FERNET_KEY im Odoo-Server setzen und\n"
+"                        Odoo neu starten."
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion_assistent__schritt__aktion
+msgid "Aktion"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/team/team_liste.js:0
+msgid "Aktion konnte nicht ausgeführt werden."
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion__active
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_layout__active
+msgid "Aktiv"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/aufgabenliste.xml:0
+msgid "Aktualisieren"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+msgid "Alle Benutzer"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_layout_view_form
+msgid ""
+"Alle Blöcke werden auf den Auslieferungszustand zurückgesetzt. Fortfahren?"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/waehlen_hilfe.js:0
+msgid "An das Telefon im anderen Tab übergeben"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufliste.js:0
+#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.xml:0
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_anruf__zustand__anderswo
+msgid "Anderswo angenommen"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/res_users.py:0
+msgid "Angemeldet"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_anruf.py:0
+msgid "Angenommen"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anruf__angenommen_anruf_id
+msgid "Angenommen mit"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_anruf.py:0
+msgid "Angenommen von %s"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/sip_agent.js:0
+msgid "Anlage antwortet nicht auf REGISTER."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_anlage.py:0
+msgid "Anlagen darf nur die Systemverwaltung anlegen."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_anlage.py:0
+msgid "Anlagen darf nur die Systemverwaltung löschen."
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anruf__annahme
+msgid "Annahme"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/anrufer_fenster/anrufer_fenster.xml:0
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+msgid "Annehmen"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+msgid "Annehmen und laufendes Gespräch halten"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__anruf_id
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_zuordnen__anruf_id
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion_assistent__ziel__anruf
+msgid "Anruf"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_protokoll.py:0
+msgid "Anruf %(richtung)s · %(ergebnis)s · %(dauer)s"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/anrufer_fenster/anrufer_fenster.xml:0
+msgid "Anruf beendet"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/waehlen_hilfe.js:0
+msgid "Anruf konnte nicht gestartet werden."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/protokoll_popup.js:0
+msgid "Anruf protokollieren"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.actions.act_window,name:wb_voip.wb_voip_aktion_action
+#: model:ir.ui.menu,name:wb_voip.wb_voip_menu_aktion
+msgid "Anruf-Buttons"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_res_config_settings__wb_voip_aufbewahrung_monate
+msgid "Anrufdaten aufbewahren (Monate)"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#. odoo-python
+#: code:addons/wb_voip/models/res_partner.py:0
+#: code:addons/wb_voip/static/src/softphone/anrufliste.js:0
+#: model:ir.actions.act_window,name:wb_voip.wb_voip_anruf_action
+#: model:ir.model.fields,field_description:wb_voip.field_res_partner__wb_voip_protokoll_anzahl
+#: model:ir.model.fields,field_description:wb_voip.field_res_users__wb_voip_protokoll_anzahl
+#: model:ir.ui.menu,name:wb_voip.wb_voip_menu_anruf
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_res_partner_view_form
+msgid "Anrufe"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufliste.js:0
+msgid "Anrufe konnten nicht geladen werden."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufliste.xml:0
+#: code:addons/wb_voip/static/src/softphone/aufgabenliste.xml:0
+#: code:addons/wb_voip/static/src/softphone/kontaktliste.xml:0
+#: code:addons/wb_voip/static/src/softphone/waehltastatur.xml:0
+msgid "Anrufen"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/team/team_liste.js:0
+msgid "Anrufen: %s"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/anrufer_fenster/anrufer_fenster.xml:0
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_layout__ort__anrufer_fenster
+msgid "Anrufer-Fenster"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/anrufer_fenster/anrufer_fenster.xml:0
+msgid "Anrufer-Fenster schließen"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,help:wb_voip.field_wb_voip_layout__breite
+msgid ""
+"Anrufer-Fenster: 720, 960 oder 1200 px (höchstens Bildschirmbreite). Popup: "
+"Dialoggröße groß, extra groß oder Vollbild."
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.actions.act_window,name:wb_voip.wb_voip_protokoll_action
+#: model:ir.ui.menu,name:wb_voip.wb_voip_menu_protokoll
+msgid "Anrufprotokolle"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_layout.py:0
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+#: code:addons/wb_voip/tools/eingaben.py:0
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_layout_block__anzahl
+msgid "Anzahl"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+msgid "Anzahl 1 bis 20."
+msgstr ""
+
+#. module: wb_voip
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_aktion_view_form
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_layout_view_form
+msgid "Archiviert"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion__art
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent_option__art
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_layout_block__art
+msgid "Art"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent_option__assistent_id
+msgid "Assistent"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__message_attachment_count
+msgid "Attachment Count"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_layout_view_form
+msgid "Auf Standard zurücksetzen"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+msgid "Aufbau"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/mail_activity.py:0
+msgid "Aufgabe erledigt"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/aufgabenliste.js:0
+msgid "Aufgaben"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/aufgabenliste.js:0
+msgid "Aufgaben konnten nicht geladen werden."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/anrufer_fenster/anrufer_fenster.xml:0
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+msgid "Auflegen"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.js:0
+msgid "Auflegen und zurück"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/status.js:0
+msgid "Aus"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufliste.xml:0
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion__richtung__ausgehend
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion_assistent__richtung__ausgehend
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_anruf__richtung__ausgehend
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_protokoll__richtung__ausgehend
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_protokoll_view_search
+msgid "Ausgehend"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__wert_auswahl_option_id
+msgid "Auswahl"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion_assistent_option__art__auswahl
+msgid "Auswahlwert"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion__partner_domain
+msgid "Bedingung für Kontakte"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufliste.js:0
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_anruf__zustand__beendet
+msgid "Beendet"
+msgstr ""
+
+#. module: wb_voip
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_res_config_settings_view_form
+msgid ""
+"Beendete Anrufe nach dieser Zahl von Monaten löschen (0 = nie). "
+"Anrufprotokolle bleiben erhalten."
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,help:wb_voip.field_res_config_settings__wb_voip_aufbewahrung_monate
+msgid ""
+"Beendete Anrufe, die älter sind, löscht ein täglicher Lauf. 0 = nie löschen."
+" Anrufprotokolle bleiben erhalten."
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anruf__beginn
+msgid "Beginn"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_aktion.py:0
+msgid ""
+"Bei Buttons mit Python-Code dürfen nur Systemadministratoren ändern, wer den"
+" Button sieht und wann."
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion__richtung__beide
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion_assistent__richtung__beide
+msgid "Beide"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_layout.py:0
+msgid ""
+"Beim Standard-Layout lassen sich Standard-Kennzeichen und Fenster nicht "
+"ändern."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+msgid "Beispiel"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+msgid "Beispiel-Button"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+msgid "Beispielaufgabe"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+msgid "Beispielkontakt"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anruf__user_id
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__user_id
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_protokoll_view_search
+msgid "Benutzer"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__beschreibung
+msgid "Beschreibung"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufliste.js:0
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_anruf__zustand__besetzt
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_protokoll__ergebnis__besetzt
+msgid "Besetzt"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__name
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent_option__label
+msgid "Bezeichnung"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/wizards/wb_voip_aktion_assistent.py:0
+msgid "Bitte Python-Code (höchstens %s Zeichen) angeben."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/wizards/wb_voip_aktion_assistent.py:0
+msgid "Bitte als Ziel Kontakt oder Datensatz wählen."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/wizards/wb_voip_aktion_assistent.py:0
+msgid "Bitte ein erlaubtes Modell wählen."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/wizards/wb_voip_aktion_assistent.py:0
+msgid "Bitte eine Bezeichnung (höchstens %s Zeichen) angeben."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_aktion.py:0
+msgid "Bitte eine Fensteraktion wählen."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_aktion.py:0
+msgid "Bitte eine Serveraktion wählen."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/wizards/wb_voip_aktion_assistent.py:0
+msgid "Bitte eine Sprache wählen."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/wizards/wb_voip_aktion_assistent.py:0
+msgid "Bitte eine Vorlage wählen."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_aktion.py:0
+msgid "Bitte eine Webadresse angeben."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/wizards/wb_voip_aktion_assistent.py:0
+msgid "Bitte einen Datensatz aus „%s“ wählen."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/wizards/wb_voip_aktion_assistent.py:0
+msgid "Bitte einen Datensatz wählen, den Sie lesen dürfen."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/wizards/wb_voip_zuordnen.py:0
+msgid "Bitte einen Kontakt wählen."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/wizards/wb_voip_aktion_assistent.py:0
+msgid "Bitte einen Wert der Auswahl wählen."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
+msgid "Bitte erst auflegen."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_layout.py:0
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+msgid "Bitte mindestens ein Feld wählen."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_aktion.py:0
+#: code:addons/wb_voip/wizards/wb_voip_aktion_assistent.py:0
+msgid "Bitte mindestens einen Ort wählen."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_aktion.py:0
+msgid "Bitte mit dem Assistenten neu anlegen."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/softphone.xml:0
+msgid "Bitte wenden Sie sich an Ihren Administrator."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/wizards/wb_voip_aktion_assistent.py:0
+msgid "Bitte wählen, was passieren soll."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_layout.py:0
+msgid "Block"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+msgid "Block %(art)s an Position %(pos)s"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+msgid "Block %(art)s an Position %(pos)s in Spalte %(spalte)s"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+msgid "Block in der Mitte wählen."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_layout.py:0
+msgid "Blockart"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+msgid "Blockarten"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_layout.py:0
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_layout__block_ids
+msgid "Blöcke"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_layout__breite__breit
+msgid "Breit"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_layout.py:0
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_layout__breite
+msgid "Breite"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_anruf.py:0
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__aktion_id
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion_assistent__schritt__button
+msgid "Button"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.actions.act_window,name:wb_voip.wb_voip_aktion_assistent_action
+#: model:ir.ui.menu,name:wb_voip.wb_voip_menu_aktion_assistent
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_aktion_view_list
+msgid "Button mit Assistent anlegen"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_aktion.py:0
+msgid "Button mit Assistent bearbeiten"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/wizards/wb_voip_aktion_assistent.py:0
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_aktion_assistent_view_form
+msgid "Button-Assistent"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/layout/bloecke.js:0
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_layout_block__art__buttons
+msgid "Buttons"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_aktion.py:0
+msgid "Buttons mit Python-Code dürfen nur Systemadministratoren löschen."
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model,name:wb_voip.model_res_company
+msgid "Companies"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model,name:wb_voip.model_res_config_settings
+msgid "Config Settings"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model,name:wb_voip.model_res_partner
+msgid "Contact"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion__create_uid
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__create_uid
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent_option__create_uid
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anlage__create_uid
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anruf__create_uid
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_layout__create_uid
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_layout_block__create_uid
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__create_uid
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_zuordnen__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion__create_date
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__create_date
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent_option__create_date
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anlage__create_date
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anruf__create_date
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_layout__create_date
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_layout_block__create_date
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__create_date
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_zuordnen__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: wb_voip
+#: model:res.groups,comment:wb_voip.group_wb_voip_user
+msgid "Darf das Softphone nutzen und eigene Anrufe protokollieren."
+msgstr ""
+
+#. module: wb_voip
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_aktion_assistent_view_form
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_aktion_view_form
+msgid "Darstellung"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/wizards/wb_voip_zuordnen.py:0
+msgid ""
+"Das Feld ist schon belegt. „Ersetzen“ anhaken oder ein anderes Feld wählen."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_layout.py:0
+msgid "Das Feld „%(feld)s“ ist in Layouts nicht erlaubt."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
+msgid "Das Gespräch ist inzwischen beendet."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/res_users.py:0
+msgid "Das SIP-Passwort anderer Benutzer setzen nur VoIP-Administratoren."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_layout.py:0
+msgid "Das Standard-Layout gilt für alle; Gruppen nur an eigenen Layouts."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_layout.py:0
+msgid "Das Standard-Layout kann nicht archiviert werden."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_layout.py:0
+msgid "Das Standard-Layout kann nicht gelöscht werden."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_layout.py:0
+msgid "Das Standard-Layout muss aktiv bleiben."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_aktion.py:0
+#: code:addons/wb_voip/wizards/wb_voip_aktion_assistent.py:0
+msgid "Das Symbol muss eine Font-Awesome-Klasse sein, z. B. fa-user."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+msgid ""
+"Daten des Beispielkontakts nicht verfügbar, die Vorschau zeigt Platzhalter:"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_anruf.py:0
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__wert_res_id
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anruf__res_id
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__res_id
+msgid "Datensatz"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion_assistent__ziel__datensatz
+msgid "Datensatz des Anrufs"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_anruf.py:0
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anruf__res_model
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__res_model
+msgid "Datensatz-Modell"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__wert_date
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__datum
+msgid "Datum"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anruf__dauer_sek
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__dauer_sek
+msgid "Dauer (s)"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/wizards/wb_voip_zuordnen.py:0
+msgid "Der Anruf fehlt."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/wizards/wb_voip_aktion_assistent.py:0
+msgid "Der Button existiert nicht mehr."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_layout.py:0
+msgid "Der Text darf höchstens %(max)s Zeichen lang sein."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/wizards/wb_voip_aktion_assistent.py:0
+msgid "Der Text ist zu lang."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/wizards/wb_voip_aktion_assistent.py:0
+msgid "Der Wert ist zu lang."
+msgstr ""
+
+#. module: wb_voip
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_aktion_assistent_view_form
+msgid "Der gewählte Datensatz wird hinzugefügt, vorhandene bleiben erhalten."
+msgstr ""
+
+#. module: wb_voip
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_layout_view_form
+msgid "Designer öffnen"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/softphone.xml:0
+msgid "Desktop-Benachrichtigung erlauben"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/softphone.xml:0
+msgid "Desktop-Benachrichtigung für eingehende Anrufe erlauben"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__wert_float
+msgid "Dezimalzahl"
+msgstr ""
+
+#. module: wb_voip
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_aktion_view_form
+msgid ""
+"Die Aktion dieses Buttons wurde mit dem Assistenten angelegt und lässt\n"
+"                        sich nur dort ändern."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_aktion.py:0
+msgid ""
+"Die Aktion dieses Buttons wurde mit dem Assistenten angelegt. Bitte mit „Mit"
+" Assistent bearbeiten“ ändern."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_layout.py:0
+msgid "Die Anzahl muss zwischen %(min)s und %(max)s liegen."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_layout.py:0
+msgid "Die Blockart „%(art)s“ gibt es im Fenster „%(ort)s“ nicht."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_anruf.py:0
+msgid "Die Fensteraktion des Buttons ist ungültig."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_button_schutz.py:0
+msgid ""
+"Die Gruppe „%s“ ist technisch und darf keinem Benutzer zugewiesen werden."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_button_schutz.py:0
+msgid ""
+"Die Gruppe „%s“ ist technisch und darf weder Benutzer noch übergeordnete "
+"Gruppen haben."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_anruf.py:0
+msgid "Die Serveraktion des Buttons ist fehlerhaft."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/wizards/wb_voip_aktion_assistent.py:0
+msgid "Die Serveraktion konnte nicht sicher angelegt werden."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_anruf.py:0
+msgid "Die Serveraktion passt nicht zu diesem Anruf."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/team/team_liste.xml:0
+msgid "Die Team-Übersicht ist ausgeschaltet."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_anlage.py:0
+msgid ""
+"Die WebSocket-URL muss mit wss:// beginnen, z. B. wss://anlage.example/ws."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_anruf.py:0
+msgid "Die Webadresse des Buttons ist ungültig."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_aktion.py:0
+msgid ""
+"Die Webadresse muss mit https:// beginnen, höchstens %(max)s Zeichen lang "
+"sein und darf nur {nummer}, {nummer_e164} und {partner_id} als Platzhalter "
+"enthalten."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+msgid "Die Änderungen am Layout sind nicht gespeichert. Verwerfen?"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_anruf.py:0
+msgid "Dies ist kein offener Verpasst-Eintrag."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_anruf.py:0
+msgid "Dies ist nicht Ihr Anruf."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_protokoll.py:0
+msgid "Dies ist nicht Ihr Anrufprotokoll."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_aktion.py:0
+#: code:addons/wb_voip/models/wb_voip_anruf.py:0
+msgid "Diese Art von Serveraktion ist für Anruf-Buttons nicht erlaubt."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/wizards/wb_voip_aktion_assistent.py:0
+msgid "Diese Art wird direkt gespeichert."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/tools/serverfelder.py:0
+msgid "Diese Felder setzt nur der Server: %s"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.constraint,message:wb_voip.constraint_wb_voip_anruf_sip_call_id_je_benutzer
+msgid "Diese SIP-Call-ID existiert für den Benutzer schon."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_button_schutz.py:0
+msgid ""
+"Diese Serveraktion gehört zu einem Anruf-Button von WB VoIP und läuft nur "
+"über den Button."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
+msgid "Dieser Browser unterstützt das Softphone nicht."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_aktion.py:0
+#: code:addons/wb_voip/models/wb_voip_anruf.py:0
+msgid "Dieser Button passt nicht zu diesem Anruf."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_aktion.py:0
+#: code:addons/wb_voip/wizards/wb_voip_aktion_assistent.py:0
+msgid "Dieser Button wurde nicht mit dem Assistenten angelegt."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/wizards/wb_voip_aktion_assistent.py:0
+msgid "Dieses Feld darf ein Button nicht setzen."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/wizards/wb_voip_aktion_assistent.py:0
+msgid "Dieses Modell ist nicht erlaubt."
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_ir_actions_server__display_name
+#: model:ir.model.fields,field_description:wb_voip.field_ir_http__display_name
+#: model:ir.model.fields,field_description:wb_voip.field_mail_activity__display_name
+#: model:ir.model.fields,field_description:wb_voip.field_res_company__display_name
+#: model:ir.model.fields,field_description:wb_voip.field_res_config_settings__display_name
+#: model:ir.model.fields,field_description:wb_voip.field_res_groups__display_name
+#: model:ir.model.fields,field_description:wb_voip.field_res_partner__display_name
+#: model:ir.model.fields,field_description:wb_voip.field_res_users__display_name
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion__display_name
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__display_name
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent_option__display_name
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anlage__display_name
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anruf__display_name
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_layout__display_name
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_layout_block__display_name
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__display_name
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_zuordnen__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,help:wb_voip.field_wb_voip_aktion__partner_domain
+msgid ""
+"Domain auf Kontakte, z. B. [('is_company', '=', True)]. Leer = immer; ohne "
+"Kontakt am Anruf passt eine Bedingung nie."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+msgid "Dreier-Konferenz mit beiden Gesprächen"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+msgid "Eigenschaften"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_layout.py:0
+msgid "Ein Layout hat höchstens einen Notiz-Block."
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,help:wb_voip.field_wb_voip_zuordnen__ersetzen
+msgid "Eine vorhandene Nummer im gewählten Feld überschreiben."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufliste.xml:0
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion__richtung__eingehend
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion_assistent__richtung__eingehend
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_anruf__richtung__eingehend
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_protokoll__richtung__eingehend
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_protokoll_view_search
+msgid "Eingehend"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/benachrichtigung.js:0
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.js:0
+msgid "Eingehender Anruf"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anruf__ende
+msgid "Ende"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+msgid "Entfernen"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+msgid "Entfernen: %s"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__ergebnis
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_protokoll_view_search
+msgid "Ergebnis"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.js:0
+msgid "Erledigen ist fehlgeschlagen."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_anruf.py:0
+#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.xml:0
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anruf__erledigt
+msgid "Erledigt"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anruf__erledigt_am
+msgid "Erledigt am"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anruf__erledigt_durch_protokoll_id
+msgid "Erledigt durch Protokoll"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anruf__erledigt_text
+msgid "Erledigt wie"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_protokoll__ergebnis__erreicht
+msgid "Erreicht"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_zuordnen__ersetzen
+msgid "Ersetzen"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
+msgid "Es läuft bereits ein Anruf."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
+msgid "Es sind bereits zwei Leitungen belegt."
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion__farbe
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__farbe
+msgid "Farbe"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_anruf__zustand__fehlgeschlagen
+msgid "Fehlgeschlagen"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__feld_option_id
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent_option__feld_name
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion_assistent__schritt__feld
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion_assistent_option__art__feld
+msgid "Feld"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/wizards/wb_voip_aktion_assistent.py:0
+msgid "Feld setzen"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+msgid "Feld suchen …"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_layout.py:0
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_layout_block__feld_ids
+msgid "Felder"
+msgstr ""
+
+#. module: wb_voip
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_layout_view_form
+msgid "Felder im Designer wählen."
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__feld_typ
+msgid "Feldtyp"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_layout.py:0
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_layout__ort
+msgid "Fenster"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion__art__fenster
+msgid "Fenster öffnen"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.actions.act_window,name:wb_voip.wb_voip_layout_action
+#: model:ir.ui.menu,name:wb_voip.wb_voip_menu_layout
+msgid "Fenster-Layouts"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion__act_window_id
+msgid "Fensteraktion"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anruf__company_id
+msgid "Firma"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_protokoll.py:0
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_protokoll_view_form_popup
+msgid "Folgeaktivität planen"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__message_follower_ids
+msgid "Followers"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__message_partner_ids
+msgid "Followers (Partners)"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,help:wb_voip.field_wb_voip_protokoll__activity_type_icon
+msgid "Font awesome icon e.g. fa-tasks"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,help:wb_voip.field_wb_voip_aktion__icon
+#: model:ir.model.fields,help:wb_voip.field_wb_voip_aktion_assistent__icon
+msgid "Font-Awesome-Klasse, z. B. fa-user"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/team/team_liste.js:0
+msgid "Frei"
+msgstr ""
+
+#. module: wb_voip
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_aktion_assistent_view_form
+msgid "Für wen?"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+msgid "Gehalten:"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+msgid "Gehaltenes Gespräch mit diesem verbinden"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion__farbe__warning
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion_assistent__farbe__warning
+msgid "Gelb"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anruf__gesehen
+msgid "Gesehen"
+msgstr ""
+
+#. module: wb_voip
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_res_users_view_form
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_res_users_view_form_simple
+msgid "Gespeichert – zum Ändern neu eingeben"
+msgstr ""
+
+#. module: wb_voip
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_res_config_settings_view_form
+msgid "Gesprächsdauer im Team anzeigen"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_layout.py:0
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion__group_ids
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__group_ids
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_layout__group_ids
+msgid "Gruppen"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion__farbe__success
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion_assistent__farbe__success
+msgid "Grün"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model,name:wb_voip.model_ir_http
+msgid "HTTP Routing"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+msgid "Halten"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__has_message
+msgid "Has Message"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anlage__heranholen_praefix
+msgid "Heranholen-Präfix"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_anlage.py:0
+msgid "Heranholen-Präfix: höchstens 8 Zeichen, nur Ziffern, * und #."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/team/team_liste.js:0
+msgid "Heranholen: %s"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/layout/bloecke.js:0
+msgid "Hinweis"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anlage__ice_server_urls
+msgid "ICE-Server (STUN)"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_anlage.py:0
+msgid ""
+"ICE-Server: höchstens %(anzahl)s Zeilen, je eine URL mit stun:, z. B. "
+"stun:stun.example.org:3478. Nur stun: ist erlaubt, TURN wird noch nicht "
+"unterstützt."
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_ir_actions_server__id
+#: model:ir.model.fields,field_description:wb_voip.field_ir_http__id
+#: model:ir.model.fields,field_description:wb_voip.field_mail_activity__id
+#: model:ir.model.fields,field_description:wb_voip.field_res_company__id
+#: model:ir.model.fields,field_description:wb_voip.field_res_config_settings__id
+#: model:ir.model.fields,field_description:wb_voip.field_res_groups__id
+#: model:ir.model.fields,field_description:wb_voip.field_res_partner__id
+#: model:ir.model.fields,field_description:wb_voip.field_res_users__id
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion__id
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__id
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent_option__id
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anlage__id
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anruf__id
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_layout__id
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_layout_block__id
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__id
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_zuordnen__id
+msgid "ID"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__activity_exception_icon
+msgid "Icon"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,help:wb_voip.field_wb_voip_protokoll__activity_exception_icon
+msgid "Icon to indicate an exception activity."
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,help:wb_voip.field_wb_voip_protokoll__message_needaction
+msgid "If checked, new messages require your attention."
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,help:wb_voip.field_wb_voip_protokoll__message_has_error
+#: model:ir.model.fields,help:wb_voip.field_wb_voip_protokoll__message_has_sms_error
+msgid "If checked, some messages have a delivery error."
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion__ort_anrufer_fenster
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__ort_anrufer_fenster
+msgid "Im Anrufer-Fenster"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.js:0
+msgid "Im Gespräch"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion__ort_protokoll_popup
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__ort_protokoll_popup
+msgid "Im Protokoll-Popup"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion__ort_softphone
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__ort_softphone
+msgid "Im Softphone"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion__zustand__immer
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion_assistent__zustand__immer
+msgid "Immer"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+msgid "In diesem Fenster nicht erlaubt."
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__message_is_follower
+msgid "Is Follower"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_layout.py:0
+msgid "Ja"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__wert_boolean
+msgid "Ja/Nein"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_layout.py:0
+#: model:ir.model.constraint,message:wb_voip.constraint_wb_voip_layout_wb_voip_layout_standard_je_ort
+msgid "Je Fenster gibt es genau ein Standard-Layout."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.xml:0
+msgid "Jetzt anrufen"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+msgid "Jetzt weiterleiten"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__wert_kategorie_id
+msgid "Kategorie"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/wizards/wb_voip_aktion_assistent.py:0
+msgid "Kategorie am Kontakt hinzufügen"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+msgid "Kein Beispielkontakt gewählt, die Vorschau zeigt Platzhalter."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
+msgid "Kein Telefon-Tab gefunden."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/team/team_liste.xml:0
+msgid "Keine Kollegen im Team."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/aufgabenliste.xml:0
+msgid "Keine offenen Aufgaben mit Telefonnummer."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.xml:0
+msgid "Keine offenen verpassten Anrufe."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
+msgid "Keine wählbare Nummer."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufliste.js:0
+#: code:addons/wb_voip/static/src/team/team_liste.js:0
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_anruf__zustand__klingelt
+msgid "Klingelt"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.js:0
+msgid "Klingelt …"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.js:0
+msgid "Kollege"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/layout/bloecke.xml:0
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+msgid "Kollegen, die diesen Anruf verpasst haben, sehen diese Notiz."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+#: code:addons/wb_voip/static/src/team/team_liste.xml:0
+msgid "Konferenz"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+msgid "Konferenz beenden"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+msgid "Konferenz beenden (beide auflegen)"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
+msgid "Konferenz geht erst mit zwei angenommenen Leitungen."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
+msgid ""
+"Konferenz konnte nicht aufgebaut werden – bitte im Gespräch „Konferenz“ "
+"drücken."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.js:0
+msgid "Konferenz nicht möglich."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
+msgid "Konferenz nicht möglich: Ton einer Leitung fehlt."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/team/team_liste.js:0
+msgid "Konferenz: %s"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/konferenz.js:0
+msgid "Konferenz: Ton einer Leitung fehlt."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/konferenz.js:0
+msgid "Konferenz: keine Audiospur für die Mischung."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_layout.py:0
+#: code:addons/wb_voip/static/src/layout/bloecke.js:0
+#: code:addons/wb_voip/static/src/layout/popup_layout.xml:0
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anruf__partner_id
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__partner_id
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_zuordnen__partner_id
+msgid "Kontakt"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion_assistent__ziel__kontakt
+msgid "Kontakt des Anrufs"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/layout/bloecke.xml:0
+msgid "Kontakt öffnen"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/kontaktliste.js:0
+msgid "Kontakte"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/kontaktliste.js:0
+msgid "Kontakte konnten nicht geladen werden."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/kontaktliste.xml:0
+msgid "Kontakte suchen"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/layout/bloecke.js:0
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_layout_block__art__felder
+msgid "Kontaktfelder"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_layout_block__art__kontaktkopf
+msgid "Kontaktkopf"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anlage__country_id
+msgid "Land"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion__write_uid
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__write_uid
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent_option__write_uid
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anlage__write_uid
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anruf__write_uid
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_layout__write_uid
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_layout_block__write_uid
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__write_uid
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_zuordnen__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion__write_date
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__write_date
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent_option__write_date
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anlage__write_date
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anruf__write_date
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_layout__write_date
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_layout_block__write_date
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__write_date
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_zuordnen__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_layout.py:0
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_layout_block__layout_id
+msgid "Layout"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+msgid "Layout gespeichert."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_layout.py:0
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+#: model:ir.actions.client,name:wb_voip.wb_voip_layout_designer_action
+#: model:ir.ui.menu,name:wb_voip.wb_voip_menu_layout_designer
+msgid "Layout-Designer"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,help:wb_voip.field_wb_voip_aktion__group_ids
+#: model:ir.model.fields,help:wb_voip.field_wb_voip_aktion_assistent__group_ids
+msgid "Leer = alle Benutzer von WB VoIP."
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,help:wb_voip.field_wb_voip_layout__group_ids
+msgid ""
+"Leer = alle Benutzer von WB VoIP. Bei mehreren passenden Layouts gewinnt die"
+" kleinste Reihenfolge."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/layout/bloecke.js:0
+#: code:addons/wb_voip/static/src/layout/bloecke.xml:0
+msgid "Letzte Gespräche"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_layout_block__art__protokolle
+msgid "Letzte Protokolle"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/waehltastatur.xml:0
+msgid "Letzte Ziffer löschen"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+msgid "Letztes Gespräch"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/softphone.xml:0
+msgid "Lizenz aktivieren"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#. odoo-python
+#: code:addons/wb_voip/models/res_users.py:0
+#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
+#: code:addons/wb_voip/static/src/softphone/status.js:0
+msgid "Lizenz fehlt oder abgelaufen"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/res_users.py:0
+msgid "Lizenz konnte nicht geprüft werden."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/anrufer_fenster/anrufer_fenster.xml:0
+msgid "Lädt …"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufliste.js:0
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_anruf__zustand__laeuft
+msgid "Läuft"
+msgstr ""
+
+#. module: wb_voip
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_res_config_settings_view_form
+msgid "Löschfrist für Anrufdaten"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_protokoll__ergebnis__mailbox
+msgid "Mailbox"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/aktionen/aktions_leiste.xml:0
+msgid "Mehr"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__message_has_error
+msgid "Message Delivery error"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__message_ids
+msgid "Messages"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion__wb_voip_assistent
+msgid "Mit Assistent angelegt"
+msgstr ""
+
+#. module: wb_voip
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_aktion_view_form
+msgid "Mit Assistent bearbeiten"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+#: code:addons/wb_voip/static/src/team/team_liste.xml:0
+msgid "Mit Rückfrage"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/team/team_liste.js:0
+msgid "Mit Rückfrage: %s"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/telefonfeld/telefonfeld.xml:0
+msgid "Mit dem Softphone anrufen"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__modell
+msgid "Modell"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anlage__modus
+msgid "Modus"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__my_activity_date_deadline
+msgid "My Activity Deadline"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion__zustand__beendet
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion_assistent__zustand__beendet
+msgid "Nach dem Anruf"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+msgid "Nach oben"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+msgid "Nach oben: %s"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+msgid "Nach unten"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+msgid "Nach unten: %s"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_layout.py:0
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion__name
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anlage__name
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_layout__name
+msgid "Name"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/kontaktliste.xml:0
+msgid "Name, E-Mail oder Nummer"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/res_users.py:0
+#: model:ir.model.constraint,message:wb_voip.constraint_res_users_wb_voip_nebenstelle_eindeutig
+msgid "Nebenstelle ist bereits einem anderen Benutzer zugeordnet."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/res_users.py:0
+msgid "Nebenstelle und Telefonanlage setzen nur VoIP-Administratoren."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_layout.py:0
+msgid "Nein"
+msgstr ""
+
+#. module: wb_voip
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_anlage_view_form
+msgid "Netzwerk"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufliste.js:0
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_anruf__zustand__neu
+msgid "Neu"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/softphone.xml:0
+msgid "Neu verbinden"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_anruf.py:0
+#: code:addons/wb_voip/static/src/anrufer_fenster/anrufer_fenster.xml:0
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion__art__neuer_kontakt
+#: model:wb.voip.aktion,name:wb_voip.wb_voip_aktion_neuer_kontakt
+msgid "Neuer Kontakt"
+msgstr ""
+
+#. module: wb_voip
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_res_users_view_form
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_res_users_view_form_simple
+msgid "Neues Passwort eingeben"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__activity_calendar_event_id
+msgid "Next Activity Calendar Event"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__activity_date_deadline
+msgid "Next Activity Deadline"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__activity_summary
+msgid "Next Activity Summary"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__activity_type_id
+msgid "Next Activity Type"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufliste.js:0
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_protokoll__ergebnis__nicht_erreicht
+msgid "Nicht erreicht"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/wizards/wb_voip_zuordnen.py:0
+msgid "Nicht speichern"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/status.js:0
+msgid "Nicht verbunden"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufliste.xml:0
+msgid "Noch keine Anrufe."
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_layout__breite__normal
+msgid "Normal"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_anruf.py:0
+#: code:addons/wb_voip/models/wb_voip_layout.py:0
+#: code:addons/wb_voip/static/src/layout/bloecke.js:0
+#: code:addons/wb_voip/static/src/layout/bloecke.xml:0
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anruf__notiz
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_layout_block__art__notiz
+msgid "Notiz"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.xml:0
+msgid "Notiz des Kollegen"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/layout/bloecke.xml:0
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+msgid "Notiz zum Gespräch"
+msgstr ""
+
+#. module: wb_voip
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_protokoll_view_form
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_protokoll_view_form_popup
+msgid "Notizen zum Gespräch"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__message_needaction_counter
+msgid "Number of Actions"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__message_has_error_counter
+msgid "Number of errors"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,help:wb_voip.field_wb_voip_protokoll__message_needaction_counter
+msgid "Number of messages requiring action"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,help:wb_voip.field_wb_voip_protokoll__message_has_error_counter
+msgid "Number of messages with delivery error"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_anruf.py:0
+#: code:addons/wb_voip/static/src/softphone/waehltastatur.xml:0
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anruf__nummer
+msgid "Nummer"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anruf__nummer_e164
+msgid "Nummer (E.164)"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_zuordnen__feld
+msgid "Nummer speichern in"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,help:wb_voip.field_wb_voip_layout_block__text
+msgid "Nur Klartext, höchstens 2000 Zeichen."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_layout.py:0
+msgid "Nur das Standard-Layout lässt sich zurücksetzen."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_layout.py:0
+#: code:addons/wb_voip/tools/rechte.py:0
+msgid "Nur für Administratoren von WB VoIP."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/tools/rechte.py:0
+msgid "Nur für Benutzer von WB VoIP."
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,help:wb_voip.field_wb_voip_aktion__url_vorlage
+msgid "Nur https://. Platzhalter: {nummer}, {nummer_e164}, {partner_id}."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/layout/bloecke.js:0
+#: code:addons/wb_voip/static/src/layout/bloecke.xml:0
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_layout_block__art__aufgaben
+msgid "Offene Aufgaben"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__option_ids
+msgid "Option"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,help:wb_voip.field_wb_voip_anlage__ice_server_urls
+msgid ""
+"Optional, eine URL je Zeile, z. B. stun:stun.example.org:3478. TURN-Server "
+"werden noch nicht unterstützt. Leer = kein STUN; das reicht, wenn die Anlage"
+" Medien selbst vermittelt."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_anruf.py:0
+msgid "Ort"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion__farbe__primary
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion_assistent__farbe__primary
+msgid "Primär"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_anlage__modus__prod
+msgid "Produktiv"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anruf__protokoll_id
+msgid "Protokoll"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_layout__ort__protokoll_popup
+msgid "Protokoll-Popup"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,help:wb_voip.field_wb_voip_layout_block__anzahl
+msgid "Protokolle/Aufgaben, 1 bis 20."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/wizards/wb_voip_aktion_assistent.py:0
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__code
+msgid "Python-Code"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/wizards/wb_voip_aktion_assistent.py:0
+msgid "Python-Code dürfen nur Systemadministratoren anlegen."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_aktion.py:0
+#: code:addons/wb_voip/wizards/wb_voip_aktion_assistent.py:0
+msgid "Python-Code dürfen nur Systemadministratoren bearbeiten."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/sip_agent.js:0
+msgid "Registrierung an der Anlage verloren"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion__sequence
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_layout__sequence
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_layout_block__sequence
+msgid "Reihenfolge"
+msgstr ""
+
+#. module: wb_voip
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_res_config_settings_view_form
+msgid ""
+"Reiter „Team“ im Softphone: Anwesenheit und Telefonstatus der Kollegen. Vor "
+"dem Einschalten die Beschäftigten informieren und ggf. den Betriebsrat "
+"beteiligen."
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__activity_user_id
+msgid "Responsible User"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion__richtung
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__richtung
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anruf__richtung
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__richtung
+msgid "Richtung"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion__farbe__danger
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion_assistent__farbe__danger
+msgid "Rot"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_zuordnen__nummer
+msgid "Rufnummer"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_anruf.py:0
+msgid "Rufnummer zuordnen"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_res_partner__wb_voip_nummern_e164
+#: model:ir.model.fields,field_description:wb_voip.field_res_users__wb_voip_nummern_e164
+msgid "Rufnummern (E.164)"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+msgid "Rückfrage"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.js:0
+msgid "Rückfrage beenden"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.js:0
+msgid "Rückfrage nicht möglich."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
+msgid "Rückfrage nur während eines Gesprächs."
+msgstr ""
+
+#. module: wb_voip
+#: model:mail.activity.type,name:wb_voip.wb_voip_activity_type_rueckruf
+msgid "Rückruf"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anruf__rueckruf_aktivitaet_id
+msgid "Rückruf-Aktivität"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_anruf.py:0
+#: model:mail.activity.type,summary:wb_voip.wb_voip_activity_type_rueckruf
+msgid "Rückruf: verpasster Anruf"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_res_users__wb_voip_sip_benutzer
+msgid "SIP-Benutzer"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/sip_agent.js:0
+msgid "SIP-Bibliothek konnte nicht geladen werden."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_anruf.py:0
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anruf__sip_call_id
+msgid "SIP-Call-ID"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anlage__sip_domain
+msgid "SIP-Domain"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_anruf.py:0
+msgid "SIP-Grund"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_res_users__wb_voip_sip_passwort
+msgid "SIP-Passwort"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_res_users__wb_voip_sip_passwort_enc
+msgid "SIP-Passwort (verschlüsselt)"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_res_users__wb_voip_sip_passwort_gesetzt
+msgid "SIP-Passwort gespeichert"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/tools/geheimnis.py:0
+msgid "SIP-Passwort nicht lesbar, bitte neu eingeben."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/sip_agent.js:0
+msgid "SIP-Zugang unvollständig (WebSocket, Domain oder Benutzer fehlt)."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/res_users.py:0
+msgid "SIP-Zugangsdaten sind nur für den Benutzer selbst lesbar."
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__message_has_sms_error
+msgid "SMS Delivery error"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__schritt
+msgid "Schritt"
+msgstr ""
+
+#. module: wb_voip
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_aktion_assistent_view_form
+msgid "Schritt 1: Wie sieht der Button aus, wo und wann erscheint er?"
+msgstr ""
+
+#. module: wb_voip
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_aktion_assistent_view_form
+msgid ""
+"Schritt 2: Was passiert beim Klick? Die Aktion läuft immer mit den\n"
+"                    Rechten des Benutzers, der klickt."
+msgstr ""
+
+#. module: wb_voip
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_aktion_assistent_view_form
+msgid "Schritt 3: Welches Feld bekommt welchen Wert?"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_layout__breite__sehr_breit
+msgid "Sehr breit"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion__farbe__secondary
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion_assistent__farbe__secondary
+msgid "Sekundär"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model,name:wb_voip.model_ir_actions_server
+msgid "Server Action"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion__server_action_id
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion__art__serveraktion
+msgid "Serveraktion"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_anruf.py:0
+msgid "Sie dürfen diese Fensteraktion nicht öffnen."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_anruf.py:0
+msgid "Sie dürfen diese Serveraktion nicht ausführen."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_anruf.py:0
+#: code:addons/wb_voip/wizards/wb_voip_zuordnen.py:0
+msgid "Sie dürfen diesen Kontakt nicht lesen."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/wizards/wb_voip_aktion_assistent.py:0
+msgid "Sie dürfen dieses Feld nicht ändern."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/softphone.xml:0
+msgid "Softphone"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
+msgid "Softphone ist auf dem Server nicht konfiguriert."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/softphone.xml:0
+msgid "Softphone schließen"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_layout.py:0
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_layout_block__spalte
+msgid "Spalte"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_layout_block__spalte__1
+msgid "Spalte 1"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_layout_block__spalte__2
+msgid "Spalte 2"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.xml:0
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_aktion_assistent_view_form
+msgid "Speichern"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__wert_sprache
+msgid "Sprache"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/wizards/wb_voip_aktion_assistent.py:0
+msgid "Sprache des Kontakts setzen"
+msgstr ""
+
+#. module: wb_voip
+#: model:wb.voip.layout,name:wb_voip.wb_voip_layout_anrufer_fenster_standard
+msgid "Standard Anrufer-Fenster"
+msgstr ""
+
+#. module: wb_voip
+#: model:wb.voip.layout,name:wb_voip.wb_voip_layout_protokoll_popup_standard
+msgid "Standard Protokoll-Popup"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_layout__ist_standard
+msgid "Standard-Layout"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_layout.py:0
+msgid "Standard-Layouts kommen nur aus den Moduldaten."
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,help:wb_voip.field_wb_voip_protokoll__activity_state
+msgid ""
+"Status based on activities\n"
+"Overdue: Due date is already passed\n"
+"Today: Activity date is today\n"
+"Planned: Future activities."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/anrufer_fenster/anrufer_fenster.xml:0
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+msgid "Stumm"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/tools/eingaben.py:0
+msgid "Suchtext"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion__icon
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__icon
+msgid "Symbol"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+msgid "Tastatur"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/team/team_liste.js:0
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_anlage_view_form
+msgid "Team"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/team/team_liste.js:0
+msgid "Team konnte nicht geladen werden."
+msgstr ""
+
+#. module: wb_voip
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_res_config_settings_view_form
+msgid "Team-Übersicht anzeigen"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+msgid "Team: Übergeben oder Rückfrage"
+msgstr ""
+
+#. module: wb_voip
+#: model:res.groups,comment:wb_voip.group_wb_voip_button_aktion
+msgid ""
+"Technische Gruppe – nie Benutzern zuweisen. Serveraktionen aus dem Button-"
+"Assistenten laufen nur über die Anruf-Buttons; Odoo lehnt Mitglieder dieser "
+"Gruppe ab."
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__wert_auswahl
+msgid "Technischer Auswahlwert"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__feld_name
+msgid "Technischer Feldname"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent_option__name
+msgid "Technischer Name"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/softphone.xml:0
+msgid "Telefon"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
+msgid "Telefon ist für diesen Benutzer nicht eingerichtet."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
+msgid "Telefon ist nicht verbunden."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/status.js:0
+msgid "Telefon läuft in einem anderen Tab"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/systray.js:0
+msgid "Telefon: %s"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model,name:wb_voip.model_wb_voip_anlage
+#: model:ir.model.fields,field_description:wb_voip.field_res_users__wb_voip_anlage_id
+msgid "Telefonanlage"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/softphone.xml:0
+msgid ""
+"Telefonanlage und SIP-Benutzer im Benutzerformular (Reiter Telefonie) "
+"zuordnen."
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.actions.act_window,name:wb_voip.wb_voip_anlage_action
+#: model:ir.ui.menu,name:wb_voip.wb_voip_menu_anlage
+msgid "Telefonanlagen"
+msgstr ""
+
+#. module: wb_voip
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_res_users_view_form
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_res_users_view_form_simple
+msgid "Telefonie"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/softphone.xml:0
+#: code:addons/wb_voip/static/src/softphone/status.js:0
+msgid "Telefonie ist noch nicht eingerichtet."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/team/team_liste.js:0
+msgid "Telefoniert"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/team/team_liste.js:0
+msgid "Telefoniert %s"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_anlage__modus__test
+msgid "Test"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_anruf.py:0
+#: code:addons/wb_voip/models/wb_voip_layout.py:0
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__wert_text
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_layout_block__text
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_layout_block__art__text
+msgid "Text"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+msgid "Text (nur Klartext)"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+msgid "Text zu lang."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_layout.py:0
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_layout_block__titel
+msgid "Titel"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+msgid "Titel zu lang."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/konferenz.js:0
+msgid "Ton für die Konferenz nicht verfügbar – bitte erneut klicken."
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,help:wb_voip.field_wb_voip_protokoll__activity_exception_decoration
+msgid "Type of the exception activity on record."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufliste.js:0
+#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.js:0
+msgid "Unbekannt"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/anrufer_fenster/anrufer_fenster.xml:0
+msgid "Unbekannte Nummer"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/aktionen/aktions_leiste.js:0
+#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
+msgid "Unbekannter Fehler"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/res_users.py:0
+msgid "Unbekanntes Fenster."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+msgid "Ungespeicherte Änderungen"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/res_users.py:0
+#: code:addons/wb_voip/models/wb_voip_anruf.py:0
+#: code:addons/wb_voip/tools/eingaben.py:0
+msgid "Ungültige Angabe: %s."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_aktion.py:0
+msgid "Ungültige Bedingung für Kontakte."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_layout.py:0
+msgid "Ungültige Layout-Daten: %s."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_anruf.py:0
+msgid "Ungültige Richtung."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/sip_agent.js:0
+msgid "Ungültige SIP-Adresse."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/wizards/wb_voip_zuordnen.py:0
+msgid "Ungültiges Feld."
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model,name:wb_voip.model_res_users
+msgid "User"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.js:0
+#: code:addons/wb_voip/static/src/softphone/status.js:0
+msgid "Verbinde …"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+msgid "Verbinden"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/sip_agent.js:0
+msgid "Verbinden fehlgeschlagen (%s)"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
+msgid "Verbinden fehlgeschlagen."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
+msgid "Verbinden geht erst, wenn die Rückfrage angenommen ist."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.js:0
+msgid "Verbinden nicht möglich."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/sip_agent.js:0
+msgid "Verbinden: keine Bestätigung der Anlage."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/sip_agent.js:0
+#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
+msgid "Verbindung zur Anlage getrennt"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_anlage.py:0
+msgid "Verbindungsdaten der Anlage darf nur die Systemverwaltung ändern."
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anlage__verbindung_gesperrt
+msgid "Verbindungsdaten gesperrt"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/status.js:0
+msgid "Verbunden"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufliste.js:0
+#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.js:0
+#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.xml:0
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_anruf__zustand__verpasst
+msgid "Verpasst"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.js:0
+msgid "Verpasste Anrufe konnten nicht geladen werden."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_anruf.py:0
+msgid "Verpasster Anruf von %s"
+msgstr ""
+
+#. module: wb_voip
+#: model:res.groups,comment:wb_voip.group_wb_voip_manager
+msgid "Verwaltet Telefonanlagen und sieht alle Anrufe."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+msgid "Verwerfen"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_res_users__wb_voip_registriert
+msgid "VoIP: an der Anlage angemeldet"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_res_users__wb_voip_lebenszeichen
+msgid "VoIP: letztes Lebenszeichen"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/wizards/wb_voip_aktion_assistent.py:0
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__vorlage
+msgid "Vorlage"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+msgid "Vorschau"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.ui.menu,name:wb_voip.wb_voip_menu_root
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_res_config_settings_view_form
+msgid "WB VoIP"
+msgstr ""
+
+#. module: wb_voip
+#: model:res.groups,name:wb_voip.group_wb_voip_manager
+msgid "WB VoIP: Administrator"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model,name:wb_voip.model_wb_voip_anruf
+msgid "WB VoIP: Anruf"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model,name:wb_voip.model_wb_voip_aktion
+msgid "WB VoIP: Anruf-Button"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model,name:wb_voip.model_wb_voip_protokoll
+msgid "WB VoIP: Anrufprotokoll"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model,name:wb_voip.model_wb_voip_aktion_assistent_option
+msgid "WB VoIP: Auswahl im Button-Assistenten"
+msgstr ""
+
+#. module: wb_voip
+#: model:res.groups,name:wb_voip.group_wb_voip_user
+msgid "WB VoIP: Benutzer"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model,name:wb_voip.model_wb_voip_aktion_assistent
+msgid "WB VoIP: Button-Assistent"
+msgstr ""
+
+#. module: wb_voip
+#: model:res.groups,name:wb_voip.group_wb_voip_button_aktion
+msgid "WB VoIP: Button-Serveraktionen (technisch)"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model,name:wb_voip.model_wb_voip_layout
+msgid "WB VoIP: Fenster-Layout"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_res_company__wb_voip_team_dauer
+#: model:ir.model.fields,field_description:wb_voip.field_res_config_settings__wb_voip_team_dauer
+msgid "WB VoIP: Gesprächsdauer im Team anzeigen"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model,name:wb_voip.model_wb_voip_layout_block
+msgid "WB VoIP: Layout-Block"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.actions.server,name:wb_voip.ir_cron_voip_loeschfrist_ir_actions_server
+msgid "WB VoIP: Löschfrist für Anrufdaten"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model,name:wb_voip.model_wb_voip_zuordnen
+msgid "WB VoIP: Rufnummer einem Kontakt zuordnen"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/tools/geheimnis.py:0
+msgid "WB VoIP: Schlüssel WB_VOIP_FERNET_KEY fehlt auf dem Server."
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_res_company__wb_voip_team_aktiv
+#: model:ir.model.fields,field_description:wb_voip.field_res_config_settings__wb_voip_team_aktiv
+msgid "WB VoIP: Team-Übersicht anzeigen"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.actions.server,name:wb_voip.ir_cron_voip_aufraeumen_ir_actions_server
+msgid "WB VoIP: verwaiste Anrufe aufräumen"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,help:wb_voip.field_wb_voip_anlage__heranholen_praefix
+msgid ""
+"Wahlpräfix der Anlage, um einen klingelnden Anruf eines Kollegen "
+"heranzuholen, z. B. **. Höchstens 8 Zeichen aus 0-9, * und #. Leer = "
+"Heranholen aus."
+msgstr ""
+
+#. module: wb_voip
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_aktion_assistent_view_form
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_aktion_view_form
+msgid "Wann?"
+msgstr ""
+
+#. module: wb_voip
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_aktion_view_form
+msgid "Was passiert?"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__art
+msgid "Was soll passieren?"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anlage__ws_url
+msgid "WebSocket-URL"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion__url_vorlage
+msgid "Webadresse"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion__art__url
+msgid "Webadresse öffnen"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__website_message_ids
+msgid "Website Messages"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,help:wb_voip.field_wb_voip_protokoll__website_message_ids
+msgid "Website communication history"
+msgstr ""
+
+#. module: wb_voip
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_aktion_assistent_view_form
+msgid "Weiter"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/aktionen/aktions_leiste.xml:0
+msgid "Weitere Aktionen"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+msgid "Weiterleiten"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+msgid "Weiterleiten an"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.js:0
+msgid "Weiterleiten nicht möglich."
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__wert_char
+msgid "Wert"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__wert_res_model
+msgid "Wert Res Model"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.xml:0
+msgid "Wie erledigt?"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,help:wb_voip.field_wb_voip_layout__ist_standard
+msgid ""
+"Wird mit dem Modul ausgeliefert, gilt ohne passendes eigenes Layout. Nicht "
+"löschbar, nicht archivierbar."
+msgstr ""
+
+#. module: wb_voip
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_aktion_assistent_view_form
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_aktion_view_form
+msgid "Wo wird der Button gezeigt?"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/waehltastatur.js:0
+msgid "Wählen"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.js:0
+msgid "Wählt …"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion__zustand__laeuft
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion_assistent__zustand__laeuft
+msgid "Während des Gesprächs"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion__zustand__klingelt
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion_assistent__zustand__klingelt
+msgid "Während es klingelt"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__wert_integer
+msgid "Zahl"
+msgstr ""
+
+#. module: wb_voip
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_res_config_settings_view_form
+msgid "Zeigt in der Team-Übersicht, seit wann ein Kollege telefoniert."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+msgid "Ziehen zum Verschieben"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__ziel
+msgid "Ziel"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.constraint,message:wb_voip.constraint_wb_voip_protokoll_anruf_eindeutig
+msgid "Zu diesem Anruf gibt es schon ein Protokoll."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+msgid "Zu viele Felder."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/wizards/wb_voip_zuordnen.py:0
+msgid ""
+"Zugeordnet. Die Nummer wurde nicht am Kontakt gespeichert (keine "
+"Schreibrechte)."
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anruf__zuletzt_gesehen
+msgid "Zuletzt gesehen"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/anrufer_fenster/anrufer_fenster.xml:0
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_zuordnen_view_form
+msgid "Zuordnen"
+msgstr ""
+
+#. module: wb_voip
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_aktion_assistent_view_form
+msgid "Zurück"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_anruf.py:0
+msgid "Zurückgerufen von %s"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion__zustand
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__zustand
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anruf__zustand
+msgid "Zustand"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,help:wb_voip.field_wb_voip_layout_block__spalte
+msgid "Zwei Spalten gibt es ab der Breite „Breit“."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+msgid "Zweiten Anruf ablehnen"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+msgid "Zweiter Anruf:"
+msgstr ""
+
+#. module: wb_voip
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_aktion_view_form
+msgid "[('is_company', '=', True)]"
+msgstr ""
+
+#. module: wb_voip
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_aktion_assistent_view_form
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_aktion_view_form
+msgid "fa-user"
+msgstr ""
+
+#. module: wb_voip
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_aktion_view_form
+msgid "https://beispiel.example/suche?nr={nummer_e164}"
+msgstr ""
+
+#. module: wb_voip
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_anlage_view_form
+msgid "leer = kein STUN/TURN"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/res_partner.py:0
+msgid "partner_id"
+msgstr ""
+
+#. module: wb_voip
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_aktion_assistent_view_form
+msgid "record.write({'function': 'Rückruf'})"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/softphone.xml:0
+msgid "ungesehen"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/wizards/wb_voip_aktion_assistent.py:0
+msgid "vorlage"
+msgstr ""
+
+#. module: wb_voip
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_anlage_view_form
+msgid "z. B. ** (leer = Heranholen aus)"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,help:wb_voip.field_wb_voip_anlage__ws_url
+msgid "z. B. wss://anlage.example/ws"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/team/team_liste.xml:0
+msgid "Übergeben"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/team/team_liste.js:0
+msgid "Übergeben: %s"
+msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields,help:wb_voip.field_wb_voip_aktion_assistent__ziel
+msgid ""
+"„Datensatz des Anrufs“ ist der Datensatz, aus dem heraus angerufen wurde. "
+"„Anruf“ nur für Python-Code."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.js:0
+msgid "↪ angenommen von %s"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.js:0
+msgid "↪ angenommen von %s (%s)"
+msgstr ""

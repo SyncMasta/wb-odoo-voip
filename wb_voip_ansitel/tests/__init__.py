@@ -5,3 +5,4 @@ from . import test_intern
 from . import test_leiste
 from . import test_js
 from . import test_abgleich
+from . import test_i18n
