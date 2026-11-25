@@ -17,8 +17,9 @@
                                 <span class="o_wb_voip_team_name" t-esc="kollege.name"/>
                                 <t t-if="kollege.nebenstelle">
                                     <span class="o_wb_voip_team_trenner text-muted fw-normal px-1" aria-hidden="true">·</span>
-                                    <span class="o_wb_voip_team_nebenstelle text-muted fw-normal"
-                                          t-esc="kollege.nebenstelle"/>
+                                    <span class="o_wb_voip_team_nebenstelle text-muted fw-normal">
+                                        <span class="visually-hidden">Nebenstelle </span><t t-esc="kollege.nebenstelle"/>
+                                    </span>
                                 </t>
                             </div>
                             <div class="o_wb_voip_team_status small" t-esc="statusText(kollege)"/>

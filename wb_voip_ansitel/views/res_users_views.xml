@@ -8,7 +8,7 @@
         <field name="arch" type="xml">
             <xpath expr="//field[@name='wb_voip_sip_passwort']/.." position="after">
                 <group string="Schnelltasten">
-                    <field name="wb_voip_handy" readonly="0" placeholder="+49 152 28817386"/>
+                    <field name="wb_voip_handy" readonly="0" placeholder="+49 30 23125 101"/>
                     <field name="wb_voip_ansitel_tastenleiste" readonly="0"/>
                 </group>
             </xpath>

@@ -45,7 +45,7 @@ class ResUsers(models.Model):
     # liest und schreibt die Nummer über SELF_READABLE/SELF_WRITEABLE
     wb_voip_handy = fields.Char(
         string='Mein Handy', copy=False, groups='base.group_system',
-        help="Ziel der Weiterleitungstaste „Eigenes Handy“, z. B. +49 152 28817386.")
+        help="Ziel der Weiterleitungstaste „Eigenes Handy“, z. B. +49 30 23125 101.")
 
     # Wo die Tastenleiste erscheint; der Benutzer stellt sie selbst ein (wirkt nach dem Neuladen)
     wb_voip_ansitel_tastenleiste = fields.Selection(

@@ -29,7 +29,7 @@ msgstr ""
 
 #. module: wb_voip_ansitel
 #: model_terms:ir.ui.view,arch_db:wb_voip_ansitel.wb_voip_taste_view_form
-msgid "+49 152 28817386 bzw. 100"
+msgid "+49 30 23125 101 bzw. 100"
 msgstr ""
 
 #. module: wb_voip_ansitel
@@ -648,7 +648,7 @@ msgstr ""
 #. module: wb_voip_ansitel
 #: model:ir.model.fields,help:wb_voip_ansitel.field_wb_voip_taste__ziel
 msgid ""
-"Rufnummer, z. B. +49 152 28817386, bei „Interne Nebenstelle“ die Nebenstelle"
+"Rufnummer, z. B. +49 30 23125 101, bei „Interne Nebenstelle“ die Nebenstelle"
 " oder Rufgruppe, z. B. 100. Eine Weiterleitungstaste mit fester Nummer oder "
 "interner Nebenstelle ohne gültiges Ziel bleibt ausgeblendet."
 msgstr ""
@@ -877,7 +877,7 @@ msgstr ""
 
 #. module: wb_voip_ansitel
 #: model:ir.model.fields,help:wb_voip_ansitel.field_res_users__wb_voip_handy
-msgid "Ziel der Weiterleitungstaste „Eigenes Handy“, z. B. +49 152 28817386."
+msgid "Ziel der Weiterleitungstaste „Eigenes Handy“, z. B. +49 30 23125 101."
 msgstr ""
 
 #. module: wb_voip_ansitel
@@ -910,7 +910,7 @@ msgstr ""
 #. module: wb_voip_ansitel
 #. odoo-python
 #: code:addons/wb_voip_ansitel/models/wb_voip_taste.py:0
-msgid "„%s“ ist keine gültige Rufnummer (z. B. +49 152 28817386)."
+msgid "„%s“ ist keine gültige Rufnummer (z. B. +49 30 23125 101)."
 msgstr ""
 
 #. module: wb_voip_ansitel
