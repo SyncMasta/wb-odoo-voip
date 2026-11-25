@@ -100,3 +100,18 @@ class WbVoipAnruf(models.Model):
             anruf.protokoll_id.with_user(self.env.user).write(werte)
         anruf._wb_voip_kontext_melden()
         return True
+
+    def _wb_voip_rueckruf_ziel(self):
+        """Return the lead of the call as target of the callback activity, else the contact.
+
+        The lead counts only while it is active and not won at creation time; the read check
+        for the call's user (and the fall back to the contact) is done by the core. A lead
+        read here as sudo is only returned, never its data.
+        """
+        self.ensure_one()
+        anruf = self.sudo()
+        if anruf.res_model == LEAD_MODELL and anruf.res_id:
+            lead = self.env[LEAD_MODELL].sudo().browse(anruf.res_id).exists()
+            if lead and lead.active and lead.probability < 100:
+                return lead
+        return super()._wb_voip_rueckruf_ziel()
