@@ -17,7 +17,8 @@ Schnelltasten
 -------------
 
 * Am Benutzer (Reiter Telefonie): Ansitel-Nebenstelle (VoIP-Administratoren lesen sie, setzen darf sie nur die
-  Systemverwaltung; je Anlage eindeutig; Änderungen stehen mit Benutzerkennungen im Log),
+  Systemverwaltung; je Anlage eindeutig; Änderungen stehen mit Benutzerkennungen im Log; wechselt jemand ohne
+  Systemrecht die Anlage des Benutzers, werden Nebenstelle und persönlicher Token gelöscht),
   persönlicher Token und „AB über zentralen Token schalten“ (nur Systemverwaltung, Token nur als Chiffrat).
   Der Benutzer selbst sieht davon nichts. Wechselt jemand ohne Systemrecht die Anlage, wird der persönliche
   Token gelöscht; ebenso alle persönlichen Token einer Anlage, deren URL ohne Systemrecht geändert wird.
@@ -44,10 +45,14 @@ Eine Weiterleitung lässt die Anlage auf Kosten des Anschlusses nach außen wäh
 und für feste Tastenziele dieselbe Prüfung (``wb.voip.taste._ziel_pruefen``), beim Speichern und erneut bei jedem
 Schalten (ein früher gespeichertes Ziel wird nicht gewählt, die Taste bleibt grau mit Hinweis):
 
+* nur die Ziffern 0–9 (keine anderen Unicode-Ziffern);
+* alle Regeln gelten für die Normalform (Ländervorwahl + nationale Rufnummer), ``+49 (0) 900…`` zählt also wie
+  ``0900…``; gespeichert und gewählt wird nur die Normalform (``+49…`` bzw. ``0049…`` an die Anlage);
 * mindestens 6 Ziffern, gültige Rufnummer;
 * keine Notruf-, Kurzwahl- und Auskunftsnummern (110, 112, 115, 116xxx, 118xx);
-* keine deutschen Sonder- und Mehrwertnummern (0900, 0137, 0138, 0180, 0190, 0191–0194, 0700), auch nicht als
-  +49/0049;
+* keine Sonder- und Mehrwertnummern: Deutschland 012x, 0137, 0138, 0180–0189, 0190–0194, 031, 0700, 0900;
+  Österreich 0900, 0901, 0930, 0939; Schweiz 0900, 0901, 0906 (je nach Ländervorwahl der Nummer);
+* Satelliten- und globale Dienste (+881, +882, +883) immer gesperrt;
 * Ziele mit anderer Ländervorwahl als das Land der Anlage nur, wenn der Systemparameter
   ``wb_voip_ansitel.ausland_erlaubt`` den Wert ``1`` hat (Standard: gesperrt).
 

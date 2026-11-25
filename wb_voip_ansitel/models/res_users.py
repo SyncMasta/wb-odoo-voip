@@ -84,6 +84,14 @@ class ResUsers(models.Model):
                 vals[feld] = (vals[feld] or '').strip() or False
         return vals
 
+    def _wb_voip_handy_normalisieren(self, vals, anlage):
+        """Store a valid mobile in E.164 form; an invalid one stays for the constraint message."""
+        if vals.get('wb_voip_handy'):
+            land = anlage.sudo().country_id.code or 'DE'
+            Taste = self.env['wb.voip.taste']
+            if not Taste._ziel_pruefen(vals['wb_voip_handy'], land):
+                vals['wb_voip_handy'] = Taste._ziel_e164(vals['wb_voip_handy'], land)
+
     def _wb_voip_nebenstelle_fehler(self):
         return AccessError(self.env._("Die Ansitel-Nebenstelle darf nur die Systemverwaltung setzen."))
 
@@ -91,6 +99,8 @@ class ResUsers(models.Model):
     def create(self, vals_list):
         for vals in vals_list:
             self._wb_voip_ansitel_bereinigen(vals)
+            self._wb_voip_handy_normalisieren(
+                vals, self.env['wb.voip.anlage'].browse(self._wb_voip_wert(vals.get('wb_voip_anlage_id'))))
         mit_nebenstelle = [vals for vals in vals_list if vals.get('wb_voip_ansitel_nebenstelle')]
         if mit_nebenstelle and not self.env.user._is_system():
             raise self._wb_voip_nebenstelle_fehler()
@@ -102,6 +112,9 @@ class ResUsers(models.Model):
 
     def write(self, vals):
         self._wb_voip_ansitel_bereinigen(vals)
+        self._wb_voip_handy_normalisieren(vals, self.env['wb.voip.anlage'].browse(
+            self._wb_voip_wert(vals['wb_voip_anlage_id'])) if 'wb_voip_anlage_id' in vals
+            else self.sudo()[:1].wb_voip_anlage_id)
         # Nur echte Änderungen zählen (das Formular schickt unveränderte Werte nicht, andere evtl. schon)
         geaendert = self.browse()
         if 'wb_voip_ansitel_nebenstelle' in vals:
@@ -109,20 +122,36 @@ class ResUsers(models.Model):
             geaendert = self.sudo().filtered(lambda u: (u.wb_voip_ansitel_nebenstelle or False) != neu)
             if geaendert and not self.env.user._is_system():
                 raise self._wb_voip_nebenstelle_fehler()
-        # Wer ohne Systemrecht die Anlage wechselt, nimmt den persönlichen Token nicht mit
-        # (er gehört zum Ansitel-Benutzer der bisherigen Anlage)
-        wechsel = self.browse()
+        # Wer ohne Systemrecht die Anlage wechselt, nimmt weder Nebenstelle noch persönlichen Token mit:
+        # dieselbe Nummer kann an der neuen Anlage jemand anderem gehören
         if 'wb_voip_anlage_id' in vals and not self.env.user._is_system():
             neu = self._wb_voip_wert(vals['wb_voip_anlage_id'])
             wechsel = self.sudo().filtered(lambda u: (u.wb_voip_anlage_id.id or False) != neu)
+            if wechsel:
+                self._wb_voip_ansitel_loesen(wechsel)
         ergebnis = super().write(vals)
-        if wechsel:
-            wechsel.sudo().write({'wb_voip_ansitel_token_enc': False})
         if geaendert:
             # Nur Kennungen ins Log, keine Nummern
             _logger.info("[wb_voip_ansitel] Ansitel-Nebenstelle geändert: Benutzer %s durch Benutzer %s",
                          geaendert.ids, self.env.uid)
         return ergebnis
+
+    def _wb_voip_ansitel_loesen(self, benutzer):
+        """Clear extension and personal token of ``benutzer`` (sudo) before a PBX change.
+
+        Per SQL and before the actual write, so the uniqueness check at the new PBX does not
+        see the old extension; the guard for the extension does not apply (nothing is set).
+        """
+        felder = ['wb_voip_ansitel_nebenstelle', 'wb_voip_ansitel_token_enc']
+        benutzer.flush_recordset(felder)
+        mit_nebenstelle = benutzer.filtered('wb_voip_ansitel_nebenstelle')
+        self.env.cr.execute(SQL(
+            "UPDATE res_users SET wb_voip_ansitel_nebenstelle = NULL, wb_voip_ansitel_token_enc = NULL"
+            " WHERE id IN %s", tuple(benutzer.ids)))
+        benutzer.invalidate_recordset(felder)
+        if mit_nebenstelle:
+            _logger.info("[wb_voip_ansitel] Anlagenwechsel ohne Systemrecht: Ansitel-Nebenstelle von Benutzer %s "
+                         "gelöscht (durch Benutzer %s)", mit_nebenstelle.ids, self.env.uid)
 
     @api.constrains('wb_voip_anlage_id', 'wb_voip_ansitel_nebenstelle')
     def _check_wb_voip_ansitel_nebenstelle(self):
@@ -396,7 +425,8 @@ class ResUsers(models.Model):
         wunsch = (not ist) if an is None else an
         if wunsch and not ist:
             self._wb_voip_andere_aus(benutzer, anlage, nebenstelle, 'weiterleitung', peer_id)
-            A._weiterleitung_setzen(anlage, peer_id, taste._ziel_senden(ziel))
+            # Nur die geprüfte Normalform wählen
+            A._weiterleitung_setzen(anlage, peer_id, taste._ziel_senden(taste._ziel_e164(ziel, land)))
         elif ist and not wunsch:
             A._weiterleitung_setzen(anlage, peer_id, None)
 
