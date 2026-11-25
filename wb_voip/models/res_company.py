@@ -6,10 +6,11 @@ class ResCompany(models.Model):
     _inherit = 'res.company'
 
     # Team-Übersicht zeigt Anwesenheit und Telefonstatus der Kollegen (Leistungs- und
-    # Verhaltensdaten): Standard aus, der Betreiber schaltet sie bewusst ein (Art. 25 DSGVO,
-    # ggf. Mitbestimmung nach § 87 Abs. 1 Nr. 6 BetrVG)
+    # Verhaltensdaten): Standard an (Entscheidung 25.11.2026), der Betreiber informiert vor dem
+    # Produktiveinsatz die Beschäftigten (Art. 13 DSGVO) und beteiligt ggf. den Betriebsrat
+    # (§ 87 Abs. 1 Nr. 6 BetrVG). Die Gesprächsdauer ist heikler und bleibt Standard aus.
     wb_voip_team_aktiv = fields.Boolean(
-        string='WB VoIP: Team-Übersicht anzeigen', default=False)
+        string='WB VoIP: Team-Übersicht anzeigen', default=True)
     wb_voip_team_dauer = fields.Boolean(
         string='WB VoIP: Gesprächsdauer im Team anzeigen', default=False)
 

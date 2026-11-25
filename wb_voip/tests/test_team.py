@@ -1,3 +1,5 @@
+import importlib.util
+import os
 from datetime import timedelta
 from unittest.mock import patch
 
@@ -47,7 +49,7 @@ class TestTeam(WbVoipCase):
     def setUp(self):
         super().setUp()
         self._lizenz_gueltig()
-        # Standard ist aus; diese Klasse prüft die eingeschaltete Übersicht
+        # Team ist Standard an, Dauer aus; diese Klasse prüft beides eingeschaltet
         self.env.company.write({'wb_voip_team_aktiv': True, 'wb_voip_team_dauer': True})
         self._zaehler = 0
         self.bus = []
@@ -349,10 +351,28 @@ class TestTeam(WbVoipCase):
 
     # --- Schalter je Firma (Betriebsrat, Art. 25 DSGVO) ---
 
-    def test_schalter_standard_aus(self):
+    def test_schalter_standard_team_an_dauer_aus(self):
         firma = self.env['res.company'].create({'name': 'Neue Firma Team'})
-        self.assertIs(firma.wb_voip_team_aktiv, False)
+        self.assertIs(firma.wb_voip_team_aktiv, True)
         self.assertIs(firma.wb_voip_team_dauer, False)
+
+    def test_migration_setzt_team_an(self):
+        firma = self.env['res.company'].create({'name': 'Altfirma Team'})
+        firma.write({'wb_voip_team_aktiv': False, 'wb_voip_team_dauer': False})
+        self.env.company.wb_voip_team_aktiv = False
+        self.env.flush_all()
+        pfad = os.path.join(os.path.dirname(__file__), '..', 'migrations', '19.0.4.5.0',
+                            'post-migration.py')
+        spec = importlib.util.spec_from_file_location('wb_voip_mig_19_0_4_5_0', pfad)
+        modul = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(modul)
+        modul.migrate(self.env.cr, '19.0.4.4.0')
+        self.env.invalidate_all()
+        self.assertIs(firma.wb_voip_team_aktiv, True)
+        self.assertIs(self.env.company.wb_voip_team_aktiv, True)
+        # Gesprächsdauer bleibt, wie sie war
+        self.assertIs(firma.wb_voip_team_dauer, False)
+        self.assertIs(self.env.company.wb_voip_team_dauer, True)
 
     def test_aus_team_leer_mit_praefix(self):
         self.anlage.heranholen_praefix = '**'

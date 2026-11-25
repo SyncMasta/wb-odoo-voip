@@ -236,17 +236,19 @@ Team, zweite Leitung, Übergeben und Konferenz
 Team
 ~~~~
 
-Die Team-Übersicht ist **standardmäßig ausgeschaltet**. Einschalten je Firma unter Einstellungen › WB VoIP:
-„Team-Übersicht anzeigen“ und, getrennt davon, „Gesprächsdauer im Team anzeigen“ (ebenfalls Standard aus).
+**Vor dem Produktiveinsatz:** Die Übersicht zeigt Anwesenheit und Telefonstatus von Beschäftigten. Der Betreiber
+informiert vorher die Beschäftigten (Art. 13 DSGVO) und beteiligt, falls vorhanden, den Betriebsrat: Eine
+Einrichtung, die Verhalten oder Leistung überwachen kann, ist mitbestimmungspflichtig (§ 87 Abs. 1 Nr. 6 BetrVG).
+Wer das nicht will oder noch nicht geklärt hat, schaltet die Übersicht aus.
+
+Die Team-Übersicht ist **standardmäßig eingeschaltet** (ab 19.0.4.5.0; das Update schaltet sie für alle
+vorhandenen Firmen ein). Schalter je Firma unter Einstellungen › WB VoIP: „Team-Übersicht anzeigen“ und, getrennt
+davon, „Gesprächsdauer im Team anzeigen“ (Standard **aus**, weil die Dauer mehr über das Verhalten verrät).
 Maßgeblich ist die Firma, in der die Person gerade arbeitet (aktive Firma in der Firmenauswahl). Beim Ausschalten
 löscht Odoo die gespeicherten Lebenszeichen aller Benutzer dieser Firma.
 Ausgeschaltet zeigt der Reiter „Team“ nur „Die Team-Übersicht ist ausgeschaltet.“, der Telefon-Tab meldet keine
 Lebenszeichen (ein vorhandenes wird gelöscht) und in der Gesprächsansicht gibt es statt der Team-Auswahl nur die
 freie Nummer.
-
-Die Übersicht zeigt Anwesenheit und Telefonstatus von Beschäftigten. Wer sie einschaltet, informiert vorher die
-Beschäftigten (Art. 13 DSGVO) und beteiligt, falls vorhanden, den Betriebsrat: Eine Einrichtung, die
-Verhalten oder Leistung überwachen kann, ist mitbestimmungspflichtig (§ 87 Abs. 1 Nr. 6 BetrVG).
 
 Der Reiter „Team“ im Softphone zeigt die Kollegen mit ihrem Status:
 
