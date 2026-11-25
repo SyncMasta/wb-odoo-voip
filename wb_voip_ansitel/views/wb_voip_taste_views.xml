@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="wb_voip_taste_view_list" model="ir.ui.view">
+        <field name="name">wb.voip.taste.list</field>
+        <field name="model">wb.voip.taste</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="art"/>
+                <field name="ziel_art" invisible="art != 'weiterleitung'"/>
+                <field name="ziel" invisible="art != 'weiterleitung' or ziel_art != 'fest'"/>
+                <field name="ab_modus" invisible="art != 'anrufbeantworter'"/>
+                <field name="active" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="wb_voip_taste_view_form" model="ir.ui.view">
+        <field name="name">wb.voip.taste.form</field>
+        <field name="model">wb.voip.taste</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <widget name="web_ribbon" title="Archiviert" bg_color="text-bg-danger"
+                            invisible="active"/>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="art"/>
+                            <field name="icon" placeholder="fa-mobile"/>
+                            <field name="sequence"/>
+                            <field name="active" invisible="1"/>
+                        </group>
+                        <group invisible="art != 'weiterleitung'">
+                            <field name="ziel_art"/>
+                            <field name="ziel" invisible="ziel_art != 'fest'"
+                                   required="art == 'weiterleitung' and ziel_art == 'fest'"
+                                   placeholder="+49 170 1234567"/>
+                        </group>
+                        <group invisible="art != 'anrufbeantworter'">
+                            <field name="ab_modus"/>
+                            <field name="ab_sekunden" invisible="ab_modus != 'nach_rufzeit'"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="wb_voip_taste_action" model="ir.actions.act_window">
+        <field name="name">Softphone-Tasten</field>
+        <field name="res_model">wb.voip.taste</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'active_test': False}</field>
+    </record>
+
+    <menuitem id="wb_voip_menu_taste" name="Softphone-Tasten" parent="wb_voip.wb_voip_menu_root"
+              action="wb_voip_taste_action" sequence="60"
+              groups="wb_voip.group_wb_voip_manager"/>
+</odoo>

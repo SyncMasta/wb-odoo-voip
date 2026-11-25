@@ -7,14 +7,19 @@
 WB VoIP Ansitel
 ===============
 Verbindung von WB VoIP mit der REST-Schnittstelle einer Ansitel-Telefonanlage:
-Zugangsdaten an der Anlage (Token nur verschlüsselt) und ein gemeinsamer API-Client.
+Zugangsdaten an der Anlage (Token nur verschlüsselt), ein gemeinsamer API-Client und
+Schnelltasten für Weiterleitung, Nicht stören und Anrufbeantworter je Benutzer.
 """,
     'author': 'WISSEN BERATUNG (Tobias Wissen)',
     'website': 'https://www.wissen-beratung.de',
     'license': 'OPL-1',
     'depends': ['wb_voip'],
     'data': [
+        'security/ir.model.access.csv',
+        'data/tasten_data.xml',
         'views/wb_voip_anlage_views.xml',
+        'views/wb_voip_taste_views.xml',
+        'views/res_users_views.xml',
     ],
     'installable': True,
     'application': False,

@@ -46,8 +46,11 @@ class WbVoipAnlage(models.Model):
         return ergebnis
 
     def _ansitel_tokens_verwerfen(self):
-        """Delete all stored Ansitel tokens of these PBXs (extend for further token fields)."""
+        """Delete all stored Ansitel tokens of these PBXs: central and personal ones of their users."""
         self.sudo().write({'ansitel_token_enc': False})
+        benutzer = self.env['res.users'].sudo().with_context(active_test=False).search([
+            ('wb_voip_anlage_id', 'in', self.ids), ('wb_voip_ansitel_token_enc', '!=', False)])
+        benutzer.write({'wb_voip_ansitel_token_enc': False})
 
     @staticmethod
     def _ansitel_url_bereinigen(vals):
