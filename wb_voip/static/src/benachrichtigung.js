@@ -77,7 +77,8 @@ export class Benachrichtiger {
     beobachten(state) {
         effect(
             (s) => {
-                const anruf = s.anruf;
+                // ein wartender zweiter Anruf wird genauso gemeldet
+                const anruf = s.klopfend || s.anruf;
                 if (anruf && anruf.richtung === "eingehend" && !anruf.annahme) {
                     const schluessel = `${anruf.beginn}|${anruf.nummer}`;
                     if (schluessel !== this._schluessel) {

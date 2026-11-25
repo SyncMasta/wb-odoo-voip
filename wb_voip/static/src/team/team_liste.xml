@@ -19,13 +19,13 @@
                             </div>
                             <div class="o_wb_voip_team_status small" t-esc="statusText(kollege)"/>
                         </div>
-                        <button t-if="anrufbar(kollege)" type="button"
+                        <button t-if="anrufbar(kollege) and !props.auswahl" type="button"
                                 class="o_wb_voip_team_anrufen btn btn-sm btn-outline-success"
                                 t-att-title="beschriftung('anrufen', kollege)" t-att-aria-label="beschriftung('anrufen', kollege)"
                                 t-on-click="() => this.anrufen(kollege)">
                             <i class="fa fa-phone" aria-hidden="true"/>
                         </button>
-                        <button t-if="heranholbar(kollege)" type="button"
+                        <button t-if="heranholbar(kollege) and !props.auswahl" type="button"
                                 class="o_wb_voip_team_heranholen btn btn-sm btn-outline-warning"
                                 t-att-title="beschriftung('heranholen', kollege)" t-att-aria-label="beschriftung('heranholen', kollege)"
                                 t-on-click="() => this.heranholen(kollege)">

@@ -1,6 +1,6 @@
 import { describe, expect, test } from "@odoo/hoot";
 
-import { SipJsSitzung } from "@wb_voip/dienste/sip_agent";
+import { SipJsSitzung, sipfragStatus } from "@wb_voip/dienste/sip_agent";
 
 describe.current.tags("desktop");
 
@@ -72,4 +72,32 @@ test("Q.850;cause=200 allein ist 487 (nur Protokoll SIP zählt)", async () => {
 test("Mehrere Einträge in einem Reason-Header, auch mit Komma im Text", async () => {
     expect(await grundNachCancel(mitReasons(['Q.850;cause=16;text="a, b", SIP;cause=200']))).toBe("anderswo");
     expect(await grundNachCancel(mitReasons(['SIP;cause=2000', 'SIP;cause=487']))).toBe("487");
+});
+
+test("Verbinden: REFER mit der anderen Sitzung, Abschluss über NOTIFY (sipfrag)", async () => {
+    expect(sipfragStatus("SIP/2.0 200 OK\r\n")).toBe(200);
+    expect(sipfragStatus("Unsinn")).toBe(0);
+    const versuch = async (body) => {
+        const gehalten = fakeSitzung();
+        const andere = fakeSitzung();
+        let referiert;
+        gehalten.refer = (ziel, optionen) => {
+            referiert = { ziel, optionen };
+            return Promise.resolve();
+        };
+        const sitzung = new SipJsSitzung(FAKE_AGENT, gehalten, { ausgehend: false });
+        const zweite = new SipJsSitzung(FAKE_AGENT, andere, { ausgehend: true });
+        const ergebnis = sitzung.refer(zweite).then(
+            () => "ok",
+            (fehler) => fehler.message
+        );
+        await Promise.resolve();
+        expect(referiert.ziel).toBe(andere);
+        referiert.optionen.requestDelegate.onAccept();
+        referiert.optionen.onNotify({ request: { body: "SIP/2.0 100 Trying" }, accept: () => Promise.resolve() });
+        referiert.optionen.onNotify({ request: { body }, accept: () => Promise.resolve() });
+        return ergebnis;
+    };
+    expect(await versuch("SIP/2.0 200 OK")).toBe("ok");
+    expect(await versuch("SIP/2.0 503 Service Unavailable")).toMatch(/503/);
 });

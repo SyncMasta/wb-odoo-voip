@@ -12,7 +12,8 @@ export const POPUP_GROESSE = { normal: "lg", breit: "xl", sehr_breit: "fs" };
 
 /**
  * Öffnet nach dem Auflegen das Protokoll-Popup, aber nur in dem Tab, der den Anruf
- * geführt hat, und nur, wenn der Server ein Protokoll angelegt hat. Verwerfen lässt das
+ * geführt hat, und nur, wenn der Server ein Protokoll angelegt hat. Bei zwei Leitungen öffnet
+ * es nur für die zuletzt endende (``popup`` im Ereignis), damit sich keine Popups stapeln. Verwerfen lässt das
  * vorbelegte Ergebnis stehen (es liegt schon in der Datenbank). Der Dialog öffnet sofort
  * in der zuletzt gesehenen Größe; das Widget der rechten Spalte lädt das Layout selbst und
  * passt die Größe danach an (``breiteMerken``).
@@ -23,7 +24,8 @@ export const protokollPopupDienst = {
         let letzteBreite = "normal";
         telefon.bus.addEventListener("anruf-beendet", ({ detail }) => {
             const id = detail?.protokollId;
-            if (!detail?.eigenerTab || !Number.isInteger(id)) {
+            // popup false: neben dieser Leitung läuft noch eine andere (zweite Leitung)
+            if (!detail?.eigenerTab || !Number.isInteger(id) || detail.popup === false) {
                 return;
             }
             dialog.add(FormViewDialog, {

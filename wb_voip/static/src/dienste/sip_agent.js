@@ -4,6 +4,9 @@
 //            Ereignisse: "invitation" (Sitzung), "getrennt" (Text)
 //   Sitzung: callId, remoteNummer, accept(), reject({statusCode}), cancel(), bye(),
 //            hold(), unhold(), mute(an), dtmf(ziffer), refer(ziel)
+//            refer(ziel): ziel ist eine Nummer (blindes Übergeben, danach legt die Sitzung
+//            selbst auf) oder eine andere Sitzung (Verbinden: Refer-To mit Replaces,
+//            RFC 3891; Auflegen übernimmt der Dienst)
 //            Ereignisse: "fortschritt" ({statusCode, mitSdp}), "angenommen",
 //            "beendet" ({grund})
 //
@@ -28,6 +31,8 @@ export class Sender {
 }
 
 const REGISTER_TIMEOUT_MS = 30_000;
+/** Wartezeit auf das abschließende NOTIFY nach 202 beim Verbinden; danach gilt es als erledigt. */
+export const VERBINDEN_NOTIFY_MS = 10_000;
 const REGISTER_EXPIRES_S = 300;
 
 function zufall() {
@@ -238,6 +243,9 @@ export class SipJsSitzung extends Sender {
             .catch(() => {});
     }
     refer(ziel) {
+        if (ziel instanceof SipJsSitzung) {
+            return this._verbinden(ziel);
+        }
         const uri = this._agent._uri(ziel);
         return new Promise((resolve, reject) => {
             this._session
@@ -255,6 +263,58 @@ export class SipJsSitzung extends Sender {
                 .catch(reject);
         });
     }
+    /**
+     * Verbinden (Übergeben mit Rückfrage): REFER mit der anderen Sitzung als Ziel, SIP.js baut
+     * Refer-To mit Replaces. Erfüllt, sobald das NOTIFY ein 2xx meldet (oder nach 202 und
+     * ``VERBINDEN_NOTIFY_MS`` ohne Abschluss); abgelehnt bei REFER- oder NOTIFY-Fehler.
+     */
+    _verbinden(andere) {
+        return new Promise((resolve, reject) => {
+            let fertig = false;
+            let timer = null;
+            const ende = (fn, wert) => {
+                if (fertig) {
+                    return;
+                }
+                fertig = true;
+                clearTimeout(timer);
+                fn(wert);
+            };
+            this._session
+                .refer(andere._session, {
+                    requestDelegate: {
+                        onAccept: () => {
+                            timer = setTimeout(() => ende(resolve), VERBINDEN_NOTIFY_MS);
+                        },
+                        onReject: (antwort) =>
+                            ende(
+                                reject,
+                                new Error(`REFER abgelehnt (${antwort.message.statusCode})`)
+                            ),
+                    },
+                    onNotify: (meldung) => {
+                        try {
+                            Promise.resolve(meldung.accept?.()).catch(() => {});
+                        } catch {
+                            // NOTIFY schon beantwortet
+                        }
+                        const code = sipfragStatus(meldung.request?.body);
+                        if (code >= 200 && code < 300) {
+                            ende(resolve);
+                        } else if (code >= 300) {
+                            ende(reject, new Error(`Verbinden fehlgeschlagen (${code})`));
+                        }
+                    },
+                })
+                .catch((fehler) => ende(reject, fehler));
+        });
+    }
+}
+
+/** Statuscode aus einem message/sipfrag-Body („SIP/2.0 200 OK“), sonst 0. */
+export function sipfragStatus(body) {
+    const treffer = /^\s*SIP\/2\.0\s+(\d{3})/.exec(String(body ?? ""));
+    return treffer ? Number(treffer[1]) : 0;
 }
 
 export class SipJsAgent extends Sender {
@@ -424,8 +484,11 @@ class TestSitzung extends Sender {
     }
     mute() {}
     dtmf() {}
-    refer() {
-        this._spaeter(0, () => this._ende("bye"));
+    refer(ziel) {
+        // Verbinden: der Dienst legt beide Leitungen selbst auf
+        if (!(ziel instanceof TestSitzung)) {
+            this._spaeter(0, () => this._ende("bye"));
+        }
         return Promise.resolve();
     }
 }

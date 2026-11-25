@@ -111,7 +111,18 @@ export class TelefonDienst {
          * status: aus | verbinde | verbunden | getrennt | anderer_tab | ohne_lizenz
          *         | nicht_konfiguriert
          */
-        this.state = reactive({ status: "aus", anruf: null, fehler: null });
+        /**
+         * anruf: aktive Leitung; gehaltener: zweite, gehaltene Leitung (Rückfrage oder
+         * angenommener zweiter Anruf); klopfend: zweiter eingehender Anruf, der noch klingelt.
+         * Höchstens zwei Leitungen zugleich.
+         */
+        this.state = reactive({
+            status: "aus",
+            anruf: null,
+            gehaltener: null,
+            klopfend: null,
+            fehler: null,
+        });
 
         this._istHalter = false;
         this._halterTabId = null;
@@ -125,8 +136,11 @@ export class TelefonDienst {
         this._versuch = 0;
         this._wiederTimer = null;
         this._agent = null;
-        this._aktiv = null; // Kontext des laufenden Anrufs
-        this._lebenTimer = null;
+        this._aktiv = null; // Kontext der aktiven Leitung
+        this._gehalten = null; // Kontext der gehaltenen Leitung
+        this._klopfend = null; // Kontext des wartenden eingehenden Anrufs
+        this._rueckfrageLaeuft = false; // Halten vor der Rückfrage läuft noch
+        this._verbindet = null; // {aktiv, gehalten} während „Verbinden“
         this._teamTimer = null; // Takt des Team-Lebenszeichens (nur im Telefon-Tab)
         this._teamGemeldet = false; // dem Server zuletzt „angemeldet“ gemeldet
 
@@ -221,13 +235,10 @@ export class TelefonDienst {
         this._gestoppt = true;
         this._lauf++;
         this._wiederholungStoppen();
-        this._lebenszeichenStoppen();
         this._teamBeenden();
         this.klaenge?.aus();
-        if (this._aktiv) {
-            // Sitzung endet mit dem Agenten; Ende noch melden (sonst schließt der Cron)
-            this._beenden(this._aktiv, "fehler");
-        }
+        // Sitzungen enden mit dem Agenten; Ende noch melden (sonst schließt der Cron)
+        this._alleBeenden((kontext) => this._beenden(kontext, "fehler"));
         this._agentBeenden();
         this._istHalter = false;
         this._halterTabId = null;
@@ -255,7 +266,7 @@ export class TelefonDienst {
 
     /** Neuer Verbindungsversuch sofort; setzt die Wartezeiten zurück. */
     async neuVerbinden() {
-        if (this._aktiv) {
+        if (this._leitungen().length) {
             // Ein neuer Agent würde den laufenden Anruf abbrechen
             this.state.fehler = _t("Bitte erst auflegen.");
             return;
@@ -393,9 +404,7 @@ export class TelefonDienst {
     _ohneLizenz(meldung) {
         this._lauf++; // laufende Verbindungsversuche verwerfen
         this._wiederholungStoppen();
-        if (this._aktiv) {
-            this._anrufAbbrechen(this._aktiv);
-        }
+        this._alleBeenden((kontext) => this._anrufAbbrechen(kontext));
         this._agentBeenden();
         this.state.status = "ohne_lizenz";
         this.state.fehler = meldung || _t("Lizenz fehlt oder abgelaufen");
@@ -446,9 +455,7 @@ export class TelefonDienst {
         }
         this._lauf++; // spätere Antworten des alten Versuchs ignorieren
         this._agentBeenden();
-        if (this._aktiv) {
-            this._beenden(this._aktiv, "fehler");
-        }
+        this._alleBeenden((kontext) => this._beenden(kontext, "fehler"));
         this.state.status = "getrennt";
         this.state.fehler = text;
         const warten = WIEDERHOLUNG_MS[Math.min(this._versuch, WIEDERHOLUNG_MS.length - 1)];
@@ -589,7 +596,7 @@ export class TelefonDienst {
             this.state.fehler = _t("Telefon ist nicht verbunden.");
             return false;
         }
-        if (this._aktiv) {
+        if (this._leitungen().length) {
             this.state.fehler = _t("Es läuft bereits ein Anruf.");
             return false;
         }
@@ -606,17 +613,37 @@ export class TelefonDienst {
     }
 
     _eingehend(sitzung) {
+        let platz = "aktiv";
         if (this._aktiv) {
-            sitzung.reject({ statusCode: 486 });
-            return;
+            // Zweite Leitung nur neben einem laufenden Gespräch; sonst (oder als dritter
+            // Anruf) 480 wie bisher, der Anruf zählt als verpasst
+            if (!this._laufend() || this._gehalten || this._klopfend || this._rueckfrageLaeuft) {
+                sitzung.reject({ statusCode: 480 });
+                return;
+            }
+            platz = "klopfend";
         }
         // Kennung kommt von außen (SIP-Header): kürzen und Steuerzeichen entfernen
-        this._anrufBeginnen(sitzung, "eingehend", anruferKennung(sitzung.remoteNummer), false, false);
+        const kennung = anruferKennung(sitzung.remoteNummer);
+        this._anrufBeginnen(sitzung, "eingehend", kennung, false, false, platz);
         this.klaenge.klingeln(true);
     }
 
-    _anrufBeginnen(sitzung, richtung, nummer, resModel, resId) {
-        this.state.anruf = {
+    /** Alle belegten Leitungen; die aktive zuletzt (beim Beenden wird so nichts zurückgeholt). */
+    _leitungen() {
+        return [this._klopfend, this._gehalten, this._aktiv].filter(Boolean);
+    }
+
+    /** Beendet alle Leitungen mit ``fn``, ohne die gehaltene zurückzuholen. */
+    _alleBeenden(fn) {
+        this._verbindet = null;
+        for (const kontext of this._leitungen()) {
+            fn(kontext);
+        }
+    }
+
+    _anrufBeginnen(sitzung, richtung, nummer, resModel, resId, platz = "aktiv") {
+        const anruf = {
             id: false,
             richtung,
             nummer,
@@ -628,8 +655,16 @@ export class TelefonDienst {
             beginn: this.uhr.jetzt(),
             annahme: false,
         };
-        const kontext = { sitzung, anruf: this.state.anruf, beendet: false, angenommen: false };
-        this._aktiv = kontext;
+        const kontext = { sitzung, anruf: null, beendet: false, angenommen: false, lebenTimer: null };
+        if (platz === "klopfend") {
+            this.state.klopfend = anruf;
+            kontext.anruf = this.state.klopfend;
+            this._klopfend = kontext;
+        } else {
+            this.state.anruf = anruf;
+            kontext.anruf = this.state.anruf;
+            this._aktiv = kontext;
+        }
         kontext.idVersprechen = this.orm
             .call("wb.voip.anruf", "wb_voip_beginnen", [
                 richtung,
@@ -645,7 +680,7 @@ export class TelefonDienst {
                 return daten.id;
             })
             .catch(async (fehler) => {
-                if (this._aktiv === kontext) {
+                if (this._leitungen().includes(kontext)) {
                     this.state.fehler = fehlertext(fehler);
                 }
                 if (istOdooFehler(fehler)) {
@@ -679,7 +714,8 @@ export class TelefonDienst {
      * oder läuft. Nur der Telefon-Tab führt Anrufe, andere Tabs melden nie.
      */
     _aktivMelden(kontext) {
-        if (kontext.beendet || kontext.aktivGemeldet || !kontext.anruf.id) {
+        // ein wartender Anruf meldet sich erst, wenn er die aktive Leitung wird
+        if (kontext.beendet || kontext.aktivGemeldet || !kontext.anruf.id || this._aktiv !== kontext) {
             return;
         }
         if (!["klingelt", "laeuft"].includes(kontext.anruf.zustand)) {
@@ -698,8 +734,9 @@ export class TelefonDienst {
         kontext.anruf.zustand = "laeuft";
         kontext.anruf.annahme = this.uhr.jetzt();
         this._aktivMelden(kontext);
-        this._lebenszeichenStoppen();
-        this._lebenTimer = this.uhr.setInterval(
+        // Lebenszeichen je Leitung, auch für die gehaltene
+        this._lebenszeichenStoppen(kontext);
+        kontext.lebenTimer = this.uhr.setInterval(
             () => this._lebenszeichen(kontext),
             LEBENSZEICHEN_MS
         );
@@ -734,10 +771,10 @@ export class TelefonDienst {
         }
     }
 
-    _lebenszeichenStoppen() {
-        if (this._lebenTimer !== null) {
-            this.uhr.clearInterval(this._lebenTimer);
-            this._lebenTimer = null;
+    _lebenszeichenStoppen(kontext) {
+        if (kontext.lebenTimer !== null) {
+            this.uhr.clearInterval(kontext.lebenTimer);
+            kontext.lebenTimer = null;
         }
     }
 
@@ -745,27 +782,89 @@ export class TelefonDienst {
         if (kontext.beendet) {
             return;
         }
+        const verbinden = this._verbindet;
+        if (verbinden && (kontext === verbinden.aktiv || kontext === verbinden.gehalten)) {
+            // Während „Verbinden“ legt die Anlage eine Leitung auf: Übergabe läuft, beide enden
+            this._verbindet = null;
+            this._verbindenAbschliessen(verbinden);
+            return;
+        }
         kontext.beendet = true;
+        this._lebenszeichenStoppen(kontext);
         if (this._aktiv === kontext) {
             this._aktiv = null;
-            this._lebenszeichenStoppen();
             this.klaenge.aus();
             this.state.anruf = null;
+            if (this._gehalten) {
+                // Review Focus 3: Rückfrage endet (Kollege legt auf, besetzt, nicht erreicht)
+                this._fortsetzen();
+            } else if (this._klopfend) {
+                // der wartende Anruf klingelt jetzt als einziger weiter
+                const wartend = this._klopfend;
+                this._klopfend = null;
+                this.state.klopfend = null;
+                this._aktiv = wartend;
+                this.state.anruf = wartend.anruf;
+                this.klaenge.klingeln(true);
+                this._aktivMelden(wartend);
+            }
+        } else if (this._gehalten === kontext) {
+            this._gehalten = null;
+            this.state.gehaltener = null;
+        } else if (this._klopfend === kontext) {
+            this._klopfend = null;
+            this.state.klopfend = null;
+            this.klaenge.klingeln(false);
         }
+        // Protokoll-Popup nur, wenn keine andere Leitung weiterläuft (keine gestapelten Popups)
+        const popup = !this._aktiv && !this._gehalten;
         const id = await kontext.idVersprechen;
         if (!id) {
             return;
         }
         const notiz = String(kontext.anruf.notiz || "").slice(0, MAX_NOTIZ) || false;
         // angenommen mitschicken: wb_voip_angenommen kann noch unterwegs oder verloren sein
-        await this._beendetMelden(id, notiz, grund ? String(grund) : false, kontext.angenommen);
+        await this._beendetMelden(id, notiz, grund ? String(grund) : false, kontext.angenommen, popup);
+    }
+
+    /** Macht die gehaltene Leitung wieder zur aktiven und nimmt sie aus dem Halten. */
+    _fortsetzen() {
+        const kontext = this._gehalten;
+        this._gehalten = null;
+        this.state.gehaltener = null;
+        this._aktiv = kontext;
+        this.state.anruf = kontext.anruf;
+        if (kontext.anruf.id) {
+            // Anrufer-Fenster zeigt wieder dieses Gespräch
+            kontext.aktivGemeldet = true;
+            this.bus.trigger("anruf-aktiv", { anrufId: kontext.anruf.id, eigenerTab: true });
+        }
+        let ergebnis;
+        try {
+            ergebnis = kontext.sitzung.unhold();
+        } catch (fehler) {
+            ergebnis = Promise.reject(fehler);
+        }
+        Promise.resolve(ergebnis).then(
+            () => {
+                if (!kontext.beendet) {
+                    kontext.anruf.gehalten = false;
+                }
+            },
+            (fehler) => {
+                // bleibt gehalten; „Halten“ in der Anrufansicht versucht es erneut
+                if (!kontext.beendet) {
+                    this.state.fehler = fehlertext(fehler);
+                }
+            }
+        );
     }
 
     /**
      * Meldet das Ende an den Server; bei Netz- oder Serverfehlern bis zu drei neue
      * Versuche, bei fachlichen Fehlern (UserError, AccessError …) keiner.
      */
-    async _beendetMelden(id, notiz, grund, angenommen, versuch = 0) {
+    async _beendetMelden(id, notiz, grund, angenommen, popup = true, versuch = 0) {
         try {
             const daten = await this.orm.call("wb.voip.anruf", "wb_voip_beendet", [
                 [id],
@@ -777,11 +876,12 @@ export class TelefonDienst {
                 anrufId: id,
                 protokollId: daten?.protokoll_id || false,
                 eigenerTab: true,
+                popup,
             });
         } catch (fehler) {
             if (!istOdooFehler(fehler) && versuch < BEENDET_WIEDERHOLUNG_MS.length) {
                 this.uhr.setTimeout(
-                    () => this._beendetMelden(id, notiz, grund, angenommen, versuch + 1),
+                    () => this._beendetMelden(id, notiz, grund, angenommen, popup, versuch + 1),
                     BEENDET_WIEDERHOLUNG_MS[versuch]
                 );
             } else {
@@ -796,6 +896,9 @@ export class TelefonDienst {
     }
 
     async annehmen() {
+        if (this._klopfend) {
+            return this._klopfendAnnehmen(this._klopfend);
+        }
         const kontext = this._aktiv;
         if (!kontext || kontext.angenommen || kontext.anruf.richtung !== "eingehend") {
             return;
@@ -808,8 +911,49 @@ export class TelefonDienst {
         }
     }
 
+    /** Nimmt den wartenden Anruf an; das laufende Gespräch wird vorher gehalten. */
+    async _klopfendAnnehmen(wartend) {
+        this.klaenge.klingeln(false);
+        const laufend = this._laufend();
+        if (laufend && !laufend.anruf.gehalten) {
+            try {
+                await laufend.sitzung.hold();
+                laufend.anruf.gehalten = true;
+            } catch (fehler) {
+                this.state.fehler = fehlertext(fehler);
+                if (this._klopfend === wartend) {
+                    this.klaenge.klingeln(true);
+                }
+                return;
+            }
+        }
+        if (wartend.beendet) {
+            // Anrufer hat inzwischen aufgelegt: Gespräch wieder aufnehmen
+            if (laufend && this._aktiv === laufend) {
+                await this.halten(false);
+            }
+            return;
+        }
+        if (this._klopfend === wartend) {
+            this._klopfend = null;
+            this.state.klopfend = null;
+            if (laufend && !laufend.beendet && this._aktiv === laufend) {
+                this._gehalten = laufend;
+                this.state.gehaltener = laufend.anruf;
+            }
+            this._aktiv = wartend;
+            this.state.anruf = wartend.anruf;
+        }
+        // sonst ist der wartende nach dem Ende des ersten schon die aktive Leitung
+        try {
+            await wartend.sitzung.accept();
+        } catch (fehler) {
+            this.state.fehler = fehlertext(fehler);
+        }
+    }
+
     async ablehnen() {
-        const kontext = this._aktiv;
+        const kontext = this._klopfend || this._aktiv;
         if (!kontext || kontext.angenommen || kontext.anruf.richtung !== "eingehend") {
             return;
         }
@@ -871,6 +1015,121 @@ export class TelefonDienst {
             return;
         }
         kontext.sitzung.dtmf(String(ziffer));
+    }
+
+    /**
+     * Rückfrage: hält die aktive Leitung und wählt ``nummer`` als neue aktive Leitung.
+     * Endet die Rückfrage von selbst, kommt die gehaltene Leitung automatisch zurück.
+     */
+    async rueckfrage(nummer) {
+        const kontext = this._laufend();
+        const ziel = waehlbar(nummer);
+        if (!kontext) {
+            this.state.fehler = _t("Rückfrage nur während eines Gesprächs.");
+            return false;
+        }
+        if (this._gehalten || this._klopfend || this._rueckfrageLaeuft) {
+            this.state.fehler = _t("Es sind bereits zwei Leitungen belegt.");
+            return false;
+        }
+        if (!ziel) {
+            this.state.fehler = _t("Keine wählbare Nummer.");
+            return false;
+        }
+        if (this.state.status !== "verbunden" || !this._agent) {
+            this.state.fehler = _t("Telefon ist nicht verbunden.");
+            return false;
+        }
+        this._rueckfrageLaeuft = true;
+        try {
+            if (!kontext.anruf.gehalten) {
+                await kontext.sitzung.hold();
+                kontext.anruf.gehalten = true;
+            }
+        } catch (fehler) {
+            this.state.fehler = fehlertext(fehler);
+            return false;
+        } finally {
+            this._rueckfrageLaeuft = false;
+        }
+        if (kontext.beendet || this._aktiv !== kontext || !this._agent) {
+            this.state.fehler = _t("Das Gespräch ist inzwischen beendet.");
+            return false;
+        }
+        let sitzung;
+        try {
+            sitzung = this._agent.invite(ziel);
+        } catch (fehler) {
+            this.state.fehler = fehlertext(fehler);
+            await this.halten(false);
+            return false;
+        }
+        this.state.fehler = null;
+        this._gehalten = kontext;
+        this.state.gehaltener = kontext.anruf;
+        this._aktiv = null;
+        this._anrufBeginnen(sitzung, "ausgehend", String(nummer).trim(), false, false);
+        return true;
+    }
+
+    /** Legt die aktive Leitung (Rückfrage) auf; die gehaltene kommt zurück. */
+    async zurueck() {
+        if (!this._gehalten || !this._aktiv) {
+            return false;
+        }
+        await this.auflegen();
+        return true;
+    }
+
+    /**
+     * Verbindet die gehaltene mit der aktiven Leitung: REFER der gehaltenen mit
+     * ``Replaces`` auf die aktive (RFC 3891). Danach enden beide lokal wie beim Auflegen.
+     */
+    async verbinden() {
+        const aktiv = this._laufend();
+        const gehalten = this._gehalten;
+        if (!aktiv || !gehalten || gehalten.beendet || this._verbindet) {
+            this.state.fehler = _t("Verbinden geht erst, wenn die Rückfrage angenommen ist.");
+            return false;
+        }
+        const verbinden = { aktiv, gehalten };
+        this._verbindet = verbinden;
+        try {
+            await gehalten.sitzung.refer(aktiv.sitzung);
+        } catch (fehler) {
+            if (this._verbindet !== verbinden) {
+                return true; // die Anlage hat beide Leitungen schon beendet
+            }
+            this._verbindet = null;
+            this.state.fehler = fehlertext(fehler);
+            return false;
+        }
+        if (this._verbindet === verbinden) {
+            this._verbindet = null;
+            this._verbindenAbschliessen(verbinden);
+        }
+        return true;
+    }
+
+    /** Beendet nach dem Verbinden beide Leitungen; die gehaltene zuerst (nichts zurückholen). */
+    _verbindenAbschliessen({ aktiv, gehalten }) {
+        for (const kontext of [gehalten, aktiv]) {
+            if (kontext.beendet) {
+                continue;
+            }
+            try {
+                Promise.resolve(kontext.sitzung.bye()).catch(() => {});
+            } catch {
+                // Sitzung war schon beendet
+            }
+        }
+        this._beenden(gehalten, "bye");
+        this._beenden(aktiv, "bye");
+    }
+
+    /** Übergibt die aktive Leitung direkt (ohne Rückfrage) per REFER an ``nummer``. */
+    uebergeben(nummer) {
+        return this.weiterleiten(nummer);
     }
 
     async weiterleiten(nummer) {

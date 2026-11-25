@@ -6,13 +6,17 @@ import { useBus, useService } from "@web/core/utils/hooks";
 import { AktionsLeiste, ORT_SOFTPHONE, useAktionAusfuehren } from "../aktionen/aktions_leiste";
 
 import { MAX_NOTIZ } from "../dienste/telefon_dienst";
+import { TeamListe } from "../team/team_liste";
 import { formatDauer } from "./waehlen_hilfe";
 import { Tastenfeld } from "./waehltastatur";
 
-/** Laufender oder klingelnder Anruf: Gegenüber, Dauer, Bedienung und Notiz. */
+/**
+ * Laufender oder klingelnder Anruf: Gegenüber, Dauer, Bedienung und Notiz. Mit zweiter
+ * Leitung zusätzlich die Leiste „Gehalten“ (Zurück, Verbinden) bzw. der wartende Anruf.
+ */
 export class Anrufansicht extends Component {
     static template = "wb_voip.Anrufansicht";
-    static components = { Tastenfeld, AktionsLeiste };
+    static components = { Tastenfeld, AktionsLeiste, TeamListe };
     static props = {};
 
     setup() {
@@ -25,6 +29,7 @@ export class Anrufansicht extends Component {
         this.lokal = useState({
             tastatur: false,
             weiterleiten: false,
+            team: false,
             ziel: "",
             jetzt: this.telefon.uhr.jetzt(),
             aktionen: [],
@@ -88,8 +93,26 @@ export class Anrufansicht extends Component {
         );
     }
 
+    /** Name des Kontakts, sonst die Nummer. */
+    nameVon(anruf) {
+        return anruf.partner ? anruf.partner[1] : anruf.nummer;
+    }
+
     get name() {
-        return this.anruf.partner ? this.anruf.partner[1] : this.anruf.nummer;
+        return this.nameVon(this.anruf);
+    }
+
+    get gehaltener() {
+        return this.state.gehaltener;
+    }
+
+    get klopfend() {
+        return this.state.klopfend;
+    }
+
+    /** Eine zweite Leitung ist frei: Rückfrage und Team-Auswahl möglich. */
+    get zweiteFrei() {
+        return this.laeuft && !this.gehaltener && !this.klopfend;
     }
 
     get eingehendKlingelt() {
@@ -143,11 +166,58 @@ export class Anrufansicht extends Component {
     tastaturUmschalten() {
         this.lokal.tastatur = !this.lokal.tastatur;
         this.lokal.weiterleiten = false;
+        this.lokal.team = false;
     }
 
     weiterleitenUmschalten() {
         this.lokal.weiterleiten = !this.lokal.weiterleiten;
         this.lokal.tastatur = false;
+        this.lokal.team = false;
+    }
+
+    teamUmschalten() {
+        this.lokal.team = !this.lokal.team;
+        this.lokal.tastatur = false;
+        this.lokal.weiterleiten = false;
+    }
+
+    teamFertig() {
+        this.lokal.team = false;
+    }
+
+    klopfendAnnehmen() {
+        return this.telefon.annehmen();
+    }
+
+    klopfendAblehnen() {
+        return this.telefon.ablehnen();
+    }
+
+    zurueck() {
+        return this.telefon.zurueck();
+    }
+
+    async verbinden() {
+        if (!(await this.telefon.verbinden())) {
+            this._fehler(_t("Verbinden nicht möglich."));
+        }
+    }
+
+    async rueckfrage() {
+        const ziel = this.lokal.ziel.trim();
+        if (!ziel) {
+            return;
+        }
+        if (await this.telefon.rueckfrage(ziel)) {
+            this.lokal.weiterleiten = false;
+            this.lokal.ziel = "";
+        } else {
+            this._fehler(_t("Rückfrage nicht möglich."));
+        }
+    }
+
+    _fehler(standard) {
+        this.notification.add(this.state.fehler || standard, { type: "danger" });
     }
 
     dtmf(ziffer) {
@@ -170,10 +240,7 @@ export class Anrufansicht extends Component {
             this.lokal.weiterleiten = false;
             this.lokal.ziel = "";
         } else {
-            this.notification.add(
-                this.state.fehler || _t("Weiterleiten nicht möglich."),
-                { type: "danger" }
-            );
+            this._fehler(_t("Weiterleiten nicht möglich."));
         }
     }
 }

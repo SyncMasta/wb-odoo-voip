@@ -2,6 +2,34 @@
 <templates xml:space="preserve">
     <t t-name="wb_voip.Anrufansicht">
         <div class="o_wb_voip_anrufansicht p-3">
+            <div t-if="gehaltener" class="o_wb_voip_gehalten alert alert-secondary d-flex align-items-center gap-2 py-2 mb-3"
+                 role="status">
+                <i class="fa fa-pause" aria-hidden="true"/>
+                <span class="flex-grow-1 text-truncate">Gehalten: <t t-esc="nameVon(gehaltener)"/></span>
+                <button type="button" class="o_wb_voip_zurueck btn btn-sm btn-outline-secondary"
+                        title="Rückfrage beenden und zurück zum gehaltenen Gespräch"
+                        aria-label="Rückfrage beenden und zurück zum gehaltenen Gespräch"
+                        t-on-click="zurueck">Zurück</button>
+                <button type="button" class="o_wb_voip_verbinden btn btn-sm btn-primary"
+                        t-att-disabled="!laeuft"
+                        title="Gehaltenes Gespräch mit diesem verbinden"
+                        aria-label="Gehaltenes Gespräch mit diesem verbinden"
+                        t-on-click="verbinden">Verbinden</button>
+            </div>
+            <div t-if="klopfend" class="o_wb_voip_klopfend alert alert-warning py-2 mb-3" role="alert">
+                <div class="text-truncate mb-2">
+                    <i class="fa fa-phone me-1" aria-hidden="true"/>Zweiter Anruf: <t t-esc="nameVon(klopfend)"/>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="o_wb_voip_klopfend_annehmen btn btn-sm btn-success flex-grow-1"
+                            title="Annehmen und laufendes Gespräch halten"
+                            aria-label="Annehmen und laufendes Gespräch halten"
+                            t-on-click="klopfendAnnehmen">Annehmen</button>
+                    <button type="button" class="o_wb_voip_klopfend_ablehnen btn btn-sm btn-danger flex-grow-1"
+                            title="Zweiten Anruf ablehnen" aria-label="Zweiten Anruf ablehnen"
+                            t-on-click="klopfendAblehnen">Ablehnen</button>
+                </div>
+            </div>
             <div class="text-center mb-3">
                 <div class="o_wb_voip_name fs-4 fw-bold text-truncate" t-esc="name"/>
                 <div t-if="anruf.partner" class="o_wb_voip_nummer text-muted" t-esc="anruf.nummer"/>
@@ -47,6 +75,17 @@
                             title="Weiterleiten" aria-label="Weiterleiten" t-on-click="weiterleitenUmschalten">
                         <i class="fa fa-share" aria-hidden="true"/>
                     </button>
+                    <button t-if="!gehaltener and !klopfend" type="button"
+                            class="o_wb_voip_team_umschalten btn btn-outline-secondary"
+                            t-att-class="{active: lokal.team}" t-att-disabled="!laeuft"
+                            t-att-aria-pressed="lokal.team ? 'true' : 'false'"
+                            title="Team: Übergeben oder Rückfrage" aria-label="Team: Übergeben oder Rückfrage"
+                            t-on-click="teamUmschalten">
+                        <i class="fa fa-users" aria-hidden="true"/>
+                    </button>
+                </div>
+                <div t-if="lokal.team and zweiteFrei" class="o_wb_voip_team_auswahl border rounded mb-3">
+                    <TeamListe auswahl="true" onFertig.bind="teamFertig"/>
                 </div>
                 <Tastenfeld t-if="lokal.tastatur and laeuft" onTaste.bind="dtmf"/>
                 <div t-if="lokal.weiterleiten and laeuft" class="input-group mb-3">
@@ -57,6 +96,11 @@
                             title="Jetzt weiterleiten" aria-label="Jetzt weiterleiten"
                             t-on-click="weiterleiten">
                         <i class="fa fa-share" aria-hidden="true"/>
+                    </button>
+                    <button t-if="zweiteFrei" type="button" class="o_wb_voip_rueckfrage btn btn-outline-primary"
+                            title="Mit Rückfrage" aria-label="Mit Rückfrage"
+                            t-on-click="rueckfrage">
+                        <i class="fa fa-pause me-1" aria-hidden="true"/>Rückfrage
                     </button>
                 </div>
             </t>

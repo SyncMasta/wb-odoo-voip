@@ -352,7 +352,7 @@ test("Beenden meldet Server", async () => {
     expect(sitzung.hat("bye").length).toBe(1);
     expect(welt.orm.zaehle("wb_voip_beendet")).toBe(1);
     expect(welt.orm.letzter("wb_voip_beendet").args[0]).toEqual([10]);
-    expect(ereignisse).toEqual([{ anrufId: 10, protokollId: 77, eigenerTab: true }]);
+    expect(ereignisse).toEqual([{ anrufId: 10, protokollId: 77, eigenerTab: true, popup: true }]);
     expect(dienst.state.anruf).toBe(null);
     welt.aufraeumen();
 });
@@ -461,14 +461,15 @@ test("Annehmen, Stumm, Halten, DTMF, Weiterleiten", async () => {
     welt.aufraeumen();
 });
 
-test("zweiter eingehender Anruf während Gespräch: 486", async () => {
+test("zweiter eingehender Anruf, solange der erste noch klingelt: 480", async () => {
     const welt = umgebung();
     const dienst = await verbundenerDienst(welt);
     welt.fabrik.agenten[0].eingehend("0170 1");
     await welt.uhr.vorspulen(0);
     const zweite = welt.fabrik.agenten[0].eingehend("0170 2");
     await welt.uhr.vorspulen(0);
-    expect(zweite.hat("reject")).toEqual([["reject", { statusCode: 486 }]]);
+    expect(zweite.hat("reject")).toEqual([["reject", { statusCode: 480 }]]);
+    expect(dienst.state.klopfend).toBe(null);
     expect(dienst.state.anruf.nummer).toBe("0170 1");
     welt.aufraeumen();
 });
@@ -625,7 +626,7 @@ test("wb_voip_beendet klappt beim zweiten Versuch", async () => {
     await dienst.auflegen();
     await welt.uhr.vorspulen(2000);
     expect(welt.orm.zaehle("wb_voip_beendet")).toBe(2);
-    expect(ereignisse).toEqual([{ anrufId: 10, protokollId: 77, eigenerTab: true }]);
+    expect(ereignisse).toEqual([{ anrufId: 10, protokollId: 77, eigenerTab: true, popup: true }]);
     await welt.uhr.vorspulen(60_000);
     expect(welt.orm.zaehle("wb_voip_beendet")).toBe(2);
     welt.aufraeumen();

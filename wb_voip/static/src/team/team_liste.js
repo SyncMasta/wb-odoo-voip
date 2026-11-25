@@ -22,7 +22,9 @@ const PUNKT = {
 /**
  * Reiter „Team“: Status der Kollegen mit Anrufen, Heranholen und (während eines eigenen
  * Gesprächs) Übergeben. Lädt beim Öffnen, bei Bus-Meldung und alle 60 s, jeweils nur im
- * sichtbaren Tab und höchstens ein Abruf zugleich.
+ * sichtbaren Tab und höchstens ein Abruf zugleich. Mit ``auswahl`` dient die Liste in der
+ * Anrufansicht als Auswahl (nur Übergeben, Rückfrage, Konferenz); ``onFertig`` meldet eine
+ * erfolgreich ausgeführte Aktion.
  */
 export class TeamListe extends Component {
     static template = "wb_voip.TeamListe";
@@ -213,7 +215,9 @@ export class TeamListe extends Component {
 
     async _gespraech(aktion) {
         const ok = await aktion();
-        if (ok === false) {
+        if (ok !== false) {
+            this.props.onFertig?.();
+        } else {
             this.env.services.notification?.add(
                 this.telefonState.fehler || _t("Aktion konnte nicht ausgeführt werden."),
                 { type: "danger" }
