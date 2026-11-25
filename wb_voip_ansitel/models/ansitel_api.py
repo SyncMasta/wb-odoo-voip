@@ -29,6 +29,8 @@ PEER_CACHE_SEKUNDEN = 600
 CDR_SEITE = 1000
 CDR_MAX_SEITEN = 50
 CDR_FORMAT = '%Y-%m-%d %H:%M:%S'
+# Nur diese Kanaltechniken sind Geräte (Telefone); andere (IAX2, DAHDI …) nennen kein Gerät
+GERAETE_TECHNIK = ('PJSIP', 'SIP')
 # Gerät eines ``Local/…``-Kanals: über eine Weiterleitung nach außen (kein Peer-Name, enthält ':')
 WEITERLEITUNG = ':weiterleitung'
 # Per worker process. Every key carries a hash of the encrypted token and the
@@ -44,6 +46,10 @@ class AnsitelFehler(UserError):
 
 class AntwortFormFehler(Exception):
     """The PBX answered with an unexpected shape (internal, becomes ``AnsitelFehler``)."""
+
+
+class AnsitelZuVieleAnrufe(AnsitelFehler):
+    """``getcdr`` needs more than ``CDR_MAX_SEITEN`` pages for the window (caller may shrink it)."""
 
 
 class AnsitelNichtErreichbar(AnsitelFehler):
@@ -337,24 +343,27 @@ class WbVoipAnsitel(models.AbstractModel):
                 if not isinstance(roh, dict):
                     raise AntwortFormFehler('getcdr')
                 zeile = dict(roh)
-                # Ortszeit -> UTC; in der doppelten Stunde im Herbst gilt das erste Vorkommen
+                # Ortszeit -> UTC; in der doppelten Stunde im Herbst gilt das erste Vorkommen,
+                # das zweite steht in ``zeit_utc_alt`` (für die Zuordnung zu Softphone-Anrufen)
                 ortszeit = datetime.strptime(str(zeile['calldate']), CDR_FORMAT).replace(tzinfo=zone)
                 zeile['zeit_utc'] = ortszeit.astimezone(utc).replace(tzinfo=None)
+                alt = ortszeit.replace(fold=1).astimezone(utc).replace(tzinfo=None)
+                zeile['zeit_utc_alt'] = alt if alt != zeile['zeit_utc'] else None
                 zeilen.append(zeile)
             linepos += CDR_SEITE
             # Ohne ``resultcount`` weiterblättern, solange volle Seiten kommen
             if len(daten) < CDR_SEITE or (gesamt is not None and linepos >= int(gesamt)):
                 break
         else:
-            _logger.warning("[wb_voip_ansitel] getcdr: mehr als %s Seiten", CDR_MAX_SEITEN)
-            raise AnsitelFehler(self.env._("Ansitel liefert zu viele Anrufe auf einmal."))
+            raise AnsitelZuVieleAnrufe(self.env._("Ansitel liefert zu viele Anrufe auf einmal."))
         _logger.debug("[wb_voip_ansitel] getcdr: %s Zeilen", len(zeilen))
         return zeilen
 
     def _kanal_geraet(self, kanal):
         """Return the device (peer name) of a channel: ``PJSIP/Tel51-000000a1`` -> ``Tel51``.
 
-        ``Local/...`` gives ``WEITERLEITUNG``; empty gives ``None``.
+        ``Local/...`` gives ``WEITERLEITUNG``; other techniques than ``GERAETE_TECHNIK`` (e.g.
+        ``IAX2``, ``DAHDI``) and empty channels give ``None``.
         """
         kanal = str(kanal or '').strip()
         if not kanal:
@@ -362,5 +371,7 @@ class WbVoipAnsitel(models.AbstractModel):
         technik, _trenner, rest = kanal.partition('/')
         if technik == 'Local':
             return WEITERLEITUNG
+        if technik not in GERAETE_TECHNIK:
+            return None
         name = rest.rsplit('-', 1)[0] if '-' in rest else rest
         return name.strip() or None

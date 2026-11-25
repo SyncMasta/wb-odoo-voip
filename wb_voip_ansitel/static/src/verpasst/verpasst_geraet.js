@@ -21,17 +21,24 @@ patch(Verpasstliste.prototype, {
     },
 
     hinweis(zeile) {
-        if (zeile.art === "anderswo" && zeile.geraet) {
-            return zeile.geraet_dauer_sek
-                ? _t("↪ angenommen auf %s (%s)", zeile.geraet, formatDauer(zeile.geraet_dauer_sek))
-                : _t("↪ angenommen auf %s", zeile.geraet);
+        if (zeile.art !== "anderswo") {
+            return super.hinweis(zeile);
         }
+        // Kollege zuerst: er hat angenommen, sein Gerät (falls bekannt) steht dahinter
         const kollege = zeile.kollege;
-        if (zeile.art === "anderswo" && kollege && kollege.geraet) {
+        if (kollege) {
+            if (!kollege.geraet) {
+                return super.hinweis(zeile);
+            }
             const name = kollege.name || _t("Kollege");
             return kollege.dauer_sek
                 ? _t("↪ angenommen von %s · %s (%s)", name, kollege.geraet, formatDauer(kollege.dauer_sek))
                 : _t("↪ angenommen von %s · %s", name, kollege.geraet);
+        }
+        if (zeile.geraet) {
+            return zeile.geraet_dauer_sek
+                ? _t("↪ angenommen auf %s (%s)", zeile.geraet, formatDauer(zeile.geraet_dauer_sek))
+                : _t("↪ angenommen auf %s", zeile.geraet);
         }
         return super.hinweis(zeile);
     },

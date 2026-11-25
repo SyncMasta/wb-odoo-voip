@@ -28,13 +28,19 @@ def lokal(zeit, zone=BERLIN):
     return zeit.replace(tzinfo=UTC).astimezone(zone).strftime('%Y-%m-%d %H:%M:%S')
 
 
+# Rufnummern nur aus dem Bereich, den die Bundesnetzagentur für fiktive Nutzung (Film, Funk,
+# Fernsehen, Beispiele) bereitstellt: Berlin 030 23125 000 bis 030 23125 999.
 def nummer(i):
-    """Fictitious national number of customer ``i``."""
-    return '0170555%04d' % i
+    """Fictitious national number of customer ``i`` (030 23125 000-999, Bundesnetzagentur)."""
+    return '03023125%03d' % (i % 1000)
 
 
 def e164(i):
-    return '+49170555%04d' % i
+    return '+493023125%03d' % (i % 1000)
+
+
+# Weiterleitungsziel, ebenfalls aus dem fiktiven Bereich
+ZIEL = '03023125999'
 
 
 def cdr(lid, zeit, dst, kanal, disp, src, billsec=0, direction='incoming', duration=None,
@@ -109,6 +115,15 @@ class TestCdrLesen(AnsitelCase):
         zeilen = self.api._cdr_lesen(self.anlage, datetime(2026, 7, 1, 9), datetime(2026, 7, 1, 11))
         self.assertEqual(zeilen[0]['zeit_utc'], datetime(2026, 7, 1, 10, 0, 0))
 
+    def test_rueckstellstunde(self):
+        # 25.10.2026, 02:30 Ortszeit gibt es zweimal (Sommerzeit endet um 03:00)
+        self._post(antwort({'status': 200, 'data': [self._zeile(1, '2026-10-25 02:30:10'),
+                                                    self._zeile(2, '2026-10-25 04:00:00')]}))
+        zeilen = self.api._cdr_lesen(self.anlage, datetime(2026, 10, 25, 0), datetime(2026, 10, 25, 3))
+        self.assertEqual(zeilen[0]['zeit_utc'], datetime(2026, 10, 25, 0, 30, 10))
+        self.assertEqual(zeilen[0]['zeit_utc_alt'], datetime(2026, 10, 25, 1, 30, 10))
+        self.assertIsNone(zeilen[1]['zeit_utc_alt'])
+
     def test_zeitzone_einstellbar(self):
         self.anlage.ansitel_tz = 'UTC'
         post = self._post(antwort({'status': 200, 'data': [self._zeile(1, '2026-11-21 11:14:35')]}))
@@ -161,8 +176,9 @@ class TestCdrLesen(AnsitelCase):
 
     def test_kanal_geraet(self):
         for kanal, soll in [('PJSIP/Tel51-000000a1', 'Tel51'), ('SIP/Tel52-0001', 'Tel52'),
-                            ('Local/0170@default-000a;1', ansitel_api.WEITERLEITUNG),
+                            ('Local/03023125999@default-000a;1', ansitel_api.WEITERLEITUNG),
                             ('PJSIP/amt-test-0000', 'amt-test'), ('PJSIP/ohnenummer', 'ohnenummer'),
+                            ('IAX2/Tel53-0001', None), ('DAHDI/1-1', None), ('PJSIP', None),
                             ('', None), (None, None), ('  ', None)]:
             self.assertEqual(self.api._kanal_geraet(kanal), soll, kanal)
 
@@ -295,6 +311,63 @@ class TestAbgleichFenster(AbgleichCase):
         aufruf = self.fake.getcdr()[0]
         self.assertEqual(aufruf['datetimefrom'], lokal(stand - timedelta(hours=4)))
         self.assertEqual(anlage.ansitel_cdr_ab, JETZT - timedelta(minutes=30))
+
+    def test_erster_lauf_scheitert_ohne_untergrenze(self):
+        self.fake.fehler_code = 500
+        with mute_logger('odoo.addons.wb_voip_ansitel.models.ansitel_api', LOGGER_ANLAGE):
+            self.lauf([])
+        anlage = self.anlage.sudo()
+        self.assertFalse(anlage.ansitel_cdr_ab)
+        self.assertFalse(anlage.ansitel_cdr_stand)
+        self.fake.fehler_code = None
+        self.zeit_setzen(JETZT + timedelta(hours=2))
+        self.lauf()
+        self.assertEqual(anlage.ansitel_cdr_ab, JETZT + timedelta(hours=2) - timedelta(minutes=30))
+
+    def test_zu_viele_anrufe_fenster_halbiert(self):
+        def post(_s, _url, json=None, **_kw):
+            von = datetime.strptime(json['datetimefrom'], '%Y-%m-%d %H:%M:%S')
+            bis = datetime.strptime(json['datetimeto'], '%Y-%m-%d %H:%M:%S')
+            self.fake.aufrufe.append(dict(json))
+            if bis - von > timedelta(minutes=15):
+                return antwort({'status': 200, 'data': VOLL})  # immer volle Seiten
+            return antwort({'status': 200, 'data': []})
+
+        VOLL = [cdr('V', BASIS, '10', 'PJSIP/TelA-1', 'NO ANSWER', nummer(1))] * 1000
+        self._post(side_effect=post)
+        self.lauf()
+        # 29 min -> 14,5 min: gelesen, Stand = Ende des kleineren Fensters
+        von = JETZT - timedelta(minutes=30)
+        bis = von + (JETZT - timedelta(seconds=60) - von) / 2
+        self.assertEqual(self.anlage.sudo().ansitel_cdr_stand, bis)
+        self.assertEqual(self.fake.aufrufe[-1]['datetimeto'], lokal(bis))
+
+    def test_zu_viele_anrufe_auch_klein(self):
+        VOLL = [cdr('V', BASIS, '10', 'PJSIP/TelA-1', 'NO ANSWER', nummer(1))] * 1000
+        self._post(side_effect=lambda *_a, **_kw: antwort({'status': 200, 'data': VOLL}))
+        with self.assertLogs(LOGGER_ANLAGE, level='ERROR') as logs:
+            self.lauf()
+        self.assertEqual(len([z for z in logs.output if 'ERROR' in z]), 1)
+        # aufgegeben bei 10 min, der Stand geht trotzdem weiter
+        von = JETZT - timedelta(minutes=30)
+        self.assertEqual(self.anlage.sudo().ansitel_cdr_stand, von + timedelta(minutes=10))
+        self.assertFalse(self.von_gruppe('V'))
+
+    def test_sql_nur_erlaubte_felder(self):
+        with self.assertRaises(ValueError):
+            self.anlage.sudo()._wb_voip_ansitel_sql_setzen('name', 'x')
+
+    def test_rueckstellstunde_findet_softphone_anruf(self):
+        # Zweites Vorkommen von 02:30 Ortszeit = 01:30 UTC (Winterzeit)
+        jetzt = datetime(2026, 10, 25, 1, 50, 0)
+        self.zeit_setzen(jetzt)
+        beginn = datetime(2026, 10, 25, 1, 30, 10)
+        anruf = self.softphone(self.user_a, 26, beginn)
+        self.lauf([dict(cdr('D1', beginn, '10', 'PJSIP/TelA-000030', 'NO ANSWER', nummer(26)),
+                        calldate='2026-10-25 02:30:10')])
+        self.assertEqual(self.von_gruppe('D1', self.user_a), anruf)
+        self.assertEqual(anruf.zustand, 'verpasst')
+        self.assertEqual(self.Anruf.sudo().search_count([('nummer_e164', '=', e164(26))]), 1)
 
     def test_hoechstens_sechs_stunden(self):
         self.env.cr.execute(
@@ -490,10 +563,27 @@ class TestAbgleichRegeln(AbgleichCase):
 
     def test_eigenes_softphone_klingelt_wird_beendet(self):
         anruf = self.softphone(self.user_a, 6, BASIS)
+        # 12 s Klingeln, 60 s Gespräch: Annahme = calldate + (duration − billsec)
         self.lauf([cdr('L6', BASIS, '10', 'PJSIP/TelA-000007', 'ANSWERED', nummer(6), billsec=60)])
-        self.assertEqual((anruf.zustand, anruf.annahme, anruf.dauer_sek), ('beendet', BASIS, 60))
-        self.assertEqual(anruf.ende, BASIS + timedelta(seconds=60))
+        annahme = BASIS + timedelta(seconds=12)
+        self.assertEqual((anruf.zustand, anruf.annahme, anruf.dauer_sek), ('beendet', annahme, 60))
+        self.assertEqual(anruf.ende, annahme + timedelta(seconds=60))
         self.assertFalse(anruf.rueckruf_aktivitaet_id)
+        self.assertEqual((anruf.protokoll_id.ergebnis, anruf.protokoll_id.dauer_sek), ('erreicht', 60))
+
+    def test_eigenes_softphone_verpasst_wird_beendet(self):
+        anruf = self.verpasst(self.user_a, 28, BASIS)
+        aktivitaet, protokoll = anruf.rueckruf_aktivitaet_id, anruf.protokoll_id
+        self.assertEqual(protokoll.ergebnis, 'nicht_erreicht')
+        self.lauf([cdr('L28', BASIS, '10', 'PJSIP/TelA-000020', 'ANSWERED', nummer(28), billsec=45,
+                       duration=50)])
+        self.assertEqual((anruf.zustand, anruf.annahme, anruf.dauer_sek),
+                         ('beendet', BASIS + timedelta(seconds=5), 45))
+        # Verpasst-Folgen über den Kern zurückgenommen, neues Protokoll „erreicht“
+        self.assertFalse(aktivitaet.exists())
+        self.assertFalse(protokoll.exists())
+        self.assertEqual((anruf.protokoll_id.ergebnis, anruf.protokoll_id.dauer_sek), ('erreicht', 45))
+        self.assertEqual(self.Anruf.with_user(self.user_a).wb_voip_verpasst_liste(), [])
 
     def test_laeuft_nie_angefasst(self):
         anruf = self.softphone(self.user_a, 7, BASIS)
@@ -517,9 +607,12 @@ class TestAbgleichRegeln(AbgleichCase):
         self.assertFalse(anruf_a.rueckruf_aktivitaet_id)
         info = anruf_a.with_user(self.user_a)._wb_voip_angenommen_info()
         self.assertEqual((info['name'], info['geraet'], info['dauer_sek']), (self.user_b.name, 'Tisch B', 90))
-        # A: Zeile mit Kollege, aber ohne „Bemerkung“ (die schreibt B)
+        # A: Zeile nennt den Kollegen mit Gerät, nicht das Gerät allein; keine „Bemerkung“ (die schreibt B)
         zeile = self.Anruf.with_user(self.user_a).wb_voip_verpasst_liste()[0]
-        self.assertEqual((zeile['kollege']['geraet'], zeile['bemerkung_moeglich']), ('Tisch B', False))
+        self.assertEqual(zeile['kollege'], {'name': self.user_b.name, 'dauer_sek': 90, 'notiz': '',
+                                            'geraet': 'Tisch B'})
+        self.assertEqual((zeile['geraet'], zeile['geraet_dauer_sek'], zeile['bemerkung_moeglich']),
+                         (False, False, False))
         zeile_b = self.Anruf.with_user(self.user_b).wb_voip_verpasst_liste()[0]
         self.assertTrue(zeile_b['bemerkung_moeglich'])
 
@@ -529,9 +622,15 @@ class TestAbgleichRegeln(AbgleichCase):
         self.lauf([cdr('L9', BASIS, '10', 'PJSIP/TelA-00000b', 'NO ANSWER', nummer(9)),
                    cdr('L9', BASIS, '20', 'PJSIP/TelB-00000c', 'ANSWERED', nummer(9), billsec=30)])
         anruf_b = self.von_gruppe('L9', self.user_b)
-        self.assertEqual((anruf_b.zustand, anruf_b.annahme, anruf_b.dauer_sek), ('beendet', BASIS, 30))
+        self.assertEqual((anruf_b.zustand, anruf_b.annahme, anruf_b.dauer_sek),
+                         ('beendet', BASIS + timedelta(seconds=12), 30))
+        self.assertEqual(anruf_b.protokoll_id.ergebnis, 'erreicht')
         self.assertEqual((anruf_a.zustand, anruf_a.angenommen_anruf_id, anruf_a.wb_voip_geraet),
                          ('anderswo', anruf_b, 'TelB'))
+        # A sieht den Kollegen (ohne Gerät: sein Softphone), nicht „angenommen auf TelB“
+        zeile = self.Anruf.with_user(self.user_a).wb_voip_verpasst_liste()[0]
+        self.assertEqual(zeile['kollege'], {'name': self.user_b.name, 'dauer_sek': 30, 'notiz': ''})
+        self.assertFalse(zeile['geraet'])
 
     def test_kollege_hat_im_odoo_softphone_angenommen(self):
         anruf_a = self.softphone(self.user_a, 10, BASIS)
@@ -548,16 +647,20 @@ class TestAbgleichRegeln(AbgleichCase):
         self.assertEqual(len(self.von_gruppe('L10')), 2)
 
     def test_gemeinsames_geraet_ohne_besitzer(self):
+        alt = self.verpasst(self.user_b, 11, BASIS - timedelta(minutes=30))
         anruf = self.verpasst(self.user_a, 11, BASIS)
         self.lauf([cdr('L11', BASIS, '10', 'PJSIP/TelA-00000f', 'NO ANSWER', nummer(11)),
                    cdr('L11', BASIS, '30', 'PJSIP/Empfang-000010', 'ANSWERED', nummer(11), billsec=50)])
         self.assertEqual((anruf.zustand, anruf.wb_voip_geraet, anruf.dauer_sek), ('anderswo', 'Empfang', 50))
         self.assertFalse(anruf.angenommen_anruf_id)
+        # kein Besitzer: neutraler Text ohne Benutzernamen
+        self.assertTrue(alt.erledigt)
+        self.assertEqual(alt.erledigt_text, 'Angenommen auf Empfang')
         self.assertFalse(self.von_gruppe('L11', self.user_b))
 
     def test_weiterleitung(self):
-        self.lauf([cdr('L12', BASIS, '10', 'Local/01719990000@default-0001;1', 'NO ANSWER', nummer(12)),
-                   cdr('L12', BASIS, '01719990000', f'PJSIP/{TRUNK}-000001', 'ANSWERED', nummer(12),
+        self.lauf([cdr('L12', BASIS, '10', 'Local/03023125999@default-0001;1', 'NO ANSWER', nummer(12)),
+                   cdr('L12', BASIS, ZIEL, f'PJSIP/{TRUNK}-000001', 'ANSWERED', nummer(12),
                        billsec=30, direction='outgoing')])
         anruf = self.von_gruppe('L12', self.user_a)
         self.assertEqual((len(anruf), anruf.zustand, anruf.wb_voip_geraet, anruf.dauer_sek),
@@ -566,15 +669,45 @@ class TestAbgleichRegeln(AbgleichCase):
         self.assertFalse(anruf.protokoll_id)
         self.assertEqual(anruf.ende, BASIS + timedelta(seconds=42))
 
+    def test_weiterleitung_erledigt_neutral(self):
+        alt = self.verpasst(self.user_b, 29, BASIS - timedelta(minutes=30))
+        self.lauf([cdr('L29', BASIS, '10', 'Local/03023125999@default-0009;1', 'NO ANSWER', nummer(29)),
+                   cdr('L29', BASIS, ZIEL, f'PJSIP/{TRUNK}-000009', 'ANSWERED', nummer(29),
+                       billsec=30, direction='outgoing')])
+        self.assertEqual(alt.erledigt_text, 'Angenommen auf Weiterleitung')
+
+    def test_rueckruf_erledigt_dann_anderswo_oeffnet_wieder(self):
+        anruf = self.verpasst(self.user_a, 27, BASIS)
+        # Rückruf erreicht: Eintrag erledigt, Protokoll gemerkt
+        Anruf = self.Anruf.with_user(self.user_a)
+        daten = Anruf.wb_voip_beginnen('ausgehend', e164(27), 'rueckruf-27', False, False)
+        rueckruf = Anruf.browse(daten['id'])
+        rueckruf.wb_voip_angenommen()
+        rueckruf.wb_voip_beendet(False, False)
+        protokoll = rueckruf.sudo().protokoll_id
+        self.assertTrue(anruf.erledigt)
+        self.assertEqual(anruf.erledigt_durch_protokoll_id, protokoll)
+        # Abgleich: in Wahrheit am Tischtelefon angenommen
+        self.lauf([cdr('L27', BASIS, '10', 'PJSIP/TischA-00001b', 'ANSWERED', nummer(27), billsec=20)])
+        self.assertEqual((anruf.zustand, anruf.erledigt), ('anderswo', True))
+        aktivitaeten = self.aktivitaeten(27)
+        # Rückruf-Ergebnis geändert: Eintrag wieder offen, ohne neue Rückruf-Aktivität
+        protokoll.with_user(self.user_a).ergebnis = 'mailbox'
+        self.assertFalse(anruf.erledigt)
+        self.assertFalse(anruf.rueckruf_aktivitaet_id)
+        self.assertEqual(self.aktivitaeten(27), aktivitaeten)
+        zeile = Anruf.wb_voip_verpasst_liste()[0]
+        self.assertEqual((zeile['anruf_id'], zeile['art'], zeile['geraet']), (anruf.id, 'anderswo', 'Tisch A'))
+
     def test_weiterleitung_eingehend_auf_amt(self):
         self.lauf([cdr('L13', BASIS, '10', f'PJSIP/{TRUNK}-000002', 'NO ANSWER', nummer(13)),
-                   cdr('L13', BASIS, '0171', f'PJSIP/{TRUNK}-000003', 'ANSWERED', nummer(13),
+                   cdr('L13', BASIS, ZIEL, f'PJSIP/{TRUNK}-000003', 'ANSWERED', nummer(13),
                        billsec=15, direction='outgoing')])
         self.assertEqual(self.von_gruppe('L13', self.user_a).wb_voip_geraet, 'Weiterleitung')
 
     def test_weiterleitung_ohne_gespraech_nicht_angenommen(self):
-        self.lauf([cdr('L14', BASIS, '10', 'Local/0171@default-0003;1', 'NO ANSWER', nummer(14)),
-                   cdr('L14', BASIS, '0171', f'PJSIP/{TRUNK}-000004', 'ANSWERED', nummer(14),
+        self.lauf([cdr('L14', BASIS, '10', 'Local/03023125999@default-0003;1', 'NO ANSWER', nummer(14)),
+                   cdr('L14', BASIS, ZIEL, f'PJSIP/{TRUNK}-000004', 'ANSWERED', nummer(14),
                        billsec=0, direction='outgoing')])
         self.assertEqual(self.von_gruppe('L14', self.user_a).zustand, 'verpasst')
 
@@ -600,7 +733,7 @@ class TestAbgleichRegeln(AbgleichCase):
     def test_amtsleitung_ist_kein_geraet(self):
         # Ausgehender Zweig auf einem unbekannten Gerät = Amtsleitung; ein Dial darauf ist keine Annahme
         self.lauf([cdr('L18', BASIS, '10', f'PJSIP/{TRUNK}-000005', 'ANSWERED', nummer(18), billsec=0),
-                   cdr('L18', BASIS, '0171', f'PJSIP/{TRUNK}-000006', 'NO ANSWER', nummer(18),
+                   cdr('L18', BASIS, ZIEL, f'PJSIP/{TRUNK}-000006', 'NO ANSWER', nummer(18),
                        direction='outgoing')])
         self.assertEqual(self.von_gruppe('L18', self.user_a).zustand, 'verpasst')
 
@@ -644,8 +777,8 @@ class TestAbgleichRegeln(AbgleichCase):
             cdr('L24', BASIS + timedelta(minutes=2), '10', 'PJSIP/TelA-000018', 'NO ANSWER', nummer(24)),
             cdr('L25', BASIS + timedelta(minutes=3), '10', 'PJSIP/TelA-000019', 'NO ANSWER', nummer(25)),
             cdr('L25', BASIS + timedelta(minutes=3), '20', 'PJSIP/TischB-00001a', 'ANSWERED', nummer(25), billsec=70),
-            cdr('L26', BASIS + timedelta(minutes=4), '10', 'Local/0171@default-0006;1', 'NO ANSWER', nummer(26)),
-            cdr('L26', BASIS + timedelta(minutes=4), '0171', f'PJSIP/{TRUNK}-000007', 'ANSWERED', nummer(26),
+            cdr('L26', BASIS + timedelta(minutes=4), '10', 'Local/03023125999@default-0006;1', 'NO ANSWER', nummer(26)),
+            cdr('L26', BASIS + timedelta(minutes=4), ZIEL, f'PJSIP/{TRUNK}-000007', 'ANSWERED', nummer(26),
                 billsec=10, direction='outgoing'),
         ]
         self.lauf(zeilen)
@@ -740,6 +873,25 @@ class TestBemerkung(AbgleichCase):
         anruf.wb_voip_bemerkung_speichern('Nachtrag')
         self.assertIn('Eigene Zusammenfassung', protokoll.beschreibung)
         self.assertIn('Nachtrag', protokoll.beschreibung)
+
+    def test_mehrzeilig_und_von_hand_formatiert(self):
+        anruf = self._anderswo(10)
+        anruf.wb_voip_bemerkung_speichern('Zeile 1\nZeile 2')
+        protokoll = anruf.sudo().protokoll_id
+        anruf.wb_voip_bemerkung_speichern('Zeile 3\nZeile 4')
+        # unverändert erkannt (Hash), also ersetzt statt angehängt
+        self.assertIn('Zeile 3', protokoll.beschreibung)
+        self.assertIn('Zeile 4', protokoll.beschreibung)
+        self.assertNotIn('Zeile 1', protokoll.beschreibung)
+        self.assertEqual(protokoll.beschreibung.count('Angenommen auf Tisch A.'), 1)
+        protokoll.with_user(self.user_a).write({'beschreibung': '<p><b>Wichtig</b></p>'})
+        anruf.wb_voip_bemerkung_speichern('Nachtrag\nzweite Zeile')
+        self.assertIn('<b>Wichtig</b>', protokoll.beschreibung)
+        self.assertIn('Nachtrag', protokoll.beschreibung)
+        self.assertIn('zweite Zeile', protokoll.beschreibung)
+        # Hash nur Server: Benutzer kann ihn nicht setzen
+        with self.assertRaises(UserError):
+            anruf.write({'wb_voip_bemerkung_hash': 'x'})
 
     def test_geloeschtes_protokoll_wird_neu_angelegt(self):
         anruf = self._anderswo(3)

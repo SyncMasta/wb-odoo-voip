@@ -1,5 +1,8 @@
+import hashlib
 import logging
 from datetime import timedelta
+
+from markupsafe import Markup
 
 from odoo import api, fields, models
 from odoo.exceptions import UserError
@@ -41,6 +44,12 @@ def zweig_ende(zweig):
     return zweig['zeit_utc'] + timedelta(seconds=_ganzzahl(zweig.get('duration')))
 
 
+def _annahmezeit(zweig):
+    """Answer time of a leg (UTC): start plus ringing time (``duration`` − ``billsec``)."""
+    klingeln = max(_ganzzahl(zweig.get('duration')) - _ganzzahl(zweig.get('billsec')), 0)
+    return zweig['zeit_utc'] + timedelta(seconds=klingeln)
+
+
 class WbVoipAnruf(models.Model):
     _inherit = 'wb.voip.anruf'
 
@@ -53,6 +62,8 @@ class WbVoipAnruf(models.Model):
         help="„Anrufliste der Anlage“: Odoo hat den Anruf nicht gesehen (z. B. geschlossen), "
              "der Abgleich hat ihn angelegt.")
     wb_voip_geraet = fields.Char(string='Angenommen auf (Gerät)', copy=False, readonly=True)
+    # Hash der zuletzt erzeugten Protokollbeschreibung: weicht sie ab, hat jemand sie von Hand geändert
+    wb_voip_bemerkung_hash = fields.Char(copy=False, readonly=True)
 
     _wb_voip_cdr_linkedid_je_benutzer = models.Constraint(
         'unique(user_id, wb_voip_cdr_linkedid)',
@@ -61,7 +72,13 @@ class WbVoipAnruf(models.Model):
     @api.model
     def _wb_voip_nur_server(self):
         return super()._wb_voip_nur_server() + (
-            'wb_voip_cdr_linkedid', 'wb_voip_herkunft', 'wb_voip_geraet')
+            'wb_voip_cdr_linkedid', 'wb_voip_herkunft', 'wb_voip_geraet', 'wb_voip_bemerkung_hash')
+
+    @api.model
+    def _wb_voip_wieder_oeffnen_zustaende(self):
+        # Ein per Rückruf erledigter Eintrag, den der Abgleich später „anderswo“ gesetzt hat,
+        # öffnet sich bei geändertem Rückruf-Ergebnis wieder (ohne neue Rückruf-Aktivität)
+        return tuple(super()._wb_voip_wieder_oeffnen_zustaende()) + ('anderswo',)
 
     # --- Erweiterungen der Verpasst-Liste ---
 
@@ -92,11 +109,11 @@ class WbVoipAnruf(models.Model):
     def _wb_voip_verpasst_zeile(self):
         zeile = super()._wb_voip_verpasst_zeile()
         neuester = self[0].sudo()
-        mit_geraet = neuester._wb_voip_mit_geraet()
+        # Gerät nur ohne Kollegen: sonst nennt ``kollege`` Name und Gerät
         moeglich = neuester._wb_voip_bemerkung_moeglich()
         zeile.update({
-            'geraet': neuester.wb_voip_geraet if mit_geraet else False,
-            'geraet_dauer_sek': neuester.dauer_sek if mit_geraet else False,
+            'geraet': neuester.wb_voip_geraet if moeglich else False,
+            'geraet_dauer_sek': neuester.dauer_sek if moeglich else False,
             'bemerkung_moeglich': moeglich,
             'bemerkung': (neuester.notiz or False)
             if moeglich and neuester._wb_voip_eigenes_protokoll() else False,
@@ -127,6 +144,15 @@ class WbVoipAnruf(models.Model):
         text = self.env._("Angenommen auf %s.", anruf.wb_voip_geraet)
         return f"{text}\n{anruf.notiz}" if anruf.notiz else text
 
+    @staticmethod
+    def _wb_voip_beschreibung_hash(beschreibung):
+        return hashlib.sha256(str(beschreibung or '').encode()).hexdigest()
+
+    def _wb_voip_bemerkung_merken(self, protokoll):
+        """Remember the hash of the description just generated (as stored, after sanitising)."""
+        protokoll.invalidate_recordset(['beschreibung'])
+        self.sudo().wb_voip_bemerkung_hash = self._wb_voip_beschreibung_hash(protokoll.beschreibung)
+
     @nur_voip_benutzer
     def wb_voip_bemerkung_speichern(self, text):
         """Save a remark on the caller's own call answered on a device (call list of the PBX).
@@ -148,23 +174,26 @@ class WbVoipAnruf(models.Model):
             anruf.protokoll_id = False
         if not text and not protokoll:
             return False
-        vorher = anruf._wb_voip_bemerkung_text()
         anruf.notiz = text or False
         if protokoll:
-            beschreibung = html2plaintext(protokoll.beschreibung or '').strip()
-            if beschreibung in ('', vorher.strip()):
-                neu = anruf._wb_voip_bemerkung_text()
+            aktuell = protokoll.beschreibung or ''
+            unveraendert = not html2plaintext(aktuell).strip() \
+                or self._wb_voip_beschreibung_hash(aktuell) == anruf.wb_voip_bemerkung_hash
+            werte = {}
+            if unveraendert:
+                werte['beschreibung'] = plaintext2html(anruf._wb_voip_bemerkung_text())
             elif text:
-                neu = f"{beschreibung}\n{text}"  # von Hand geändert: anhängen
-            else:
-                neu = beschreibung
-            werte = {'beschreibung': plaintext2html(neu)}
+                # von Hand geändert: anhängen, das Vorhandene bleibt wie es ist
+                werte['beschreibung'] = Markup(aktuell) + plaintext2html(text)
             if protokoll.ergebnis != 'erreicht':
                 werte['ergebnis'] = 'erreicht'
-            # als Besitzer (Verfolgung nennt ihn), sudo nach der Prüfung oben
-            protokoll.with_user(anruf.user_id).sudo().write(werte)
+            if werte:
+                # als Besitzer (Verfolgung nennt ihn), sudo nach der Prüfung oben
+                protokoll.with_user(anruf.user_id).sudo().write(werte)
+            if unveraendert:
+                anruf._wb_voip_bemerkung_merken(protokoll)
         else:
-            anruf._wb_voip_protokollieren()
+            anruf._wb_voip_bemerkung_merken(anruf._wb_voip_protokollieren())
         # Auch die Kollegen, die auf diesen Anruf zeigen (deren Notiz), neu laden lassen
         (anruf | anruf.search([('angenommen_anruf_id', '=', anruf.id)]))._wb_voip_verpasst_melden()
         return True
@@ -186,6 +215,8 @@ class WbVoipAnruf(models.Model):
         zweige = sorted(zweige, key=lambda z: (z['zeit_utc'], _ganzzahl(z.get('sequence'))))
         lid = str(zweige[0].get('linkedid') or '').strip()[:MAX_LINKEDID]
         zeit = zweige[0]['zeit_utc']
+        # Rückstellstunde im Herbst: die Ortszeit gibt es zweimal, beide Zeiten probieren
+        zeiten = [zeit, zweige[0]['zeit_utc_alt']] if zweige[0].get('zeit_utc_alt') else [zeit]
         ende = max(zweig_ende(z) for z in zweige)
         # eingehende Zweige zuerst, sonst in der Reihenfolge der Anlage (stabil sortiert)
         zweige = sorted(zweige, key=lambda z: z.get('direction') != 'incoming')
@@ -205,7 +236,7 @@ class WbVoipAnruf(models.Model):
             ('id', 'in', besitzer_der_geraete.ids),
         ], order='id').filtered(lambda u: u.has_group('wb_voip.group_wb_voip_user'))
 
-        geraet, dauer = self._wb_voip_cdr_annahme(anlage, zweige)
+        geraet, dauer, annahme = self._wb_voip_cdr_annahme(anlage, zweige)
         besitzer, geraet_name = Users, False
         if geraet == WEITERLEITUNG:
             geraet_name = self.env._("Weiterleitung")
@@ -221,7 +252,7 @@ class WbVoipAnruf(models.Model):
         anrufe = {}
         geaendert = self.sudo().browse()
         for user in (beteiligte & besitzer) + (beteiligte - besitzer):
-            anruf = self._wb_voip_cdr_finden(anlage, user, lid, zeit, src)
+            anruf = self._wb_voip_cdr_finden(anlage, user, lid, zeiten, src)
             if anruf.zustand == 'laeuft':
                 continue  # läuft noch im Softphone: nie anfassen
             neu = not anruf
@@ -232,7 +263,7 @@ class WbVoipAnruf(models.Model):
             anrufe[user] = anruf
             kollegen_anruf = anrufe.get(besitzer) if besitzer and besitzer != user else None
             if anruf._wb_voip_cdr_ergebnis(user, geraet, geraet_name, dauer, kollegen_anruf,
-                                           zeit, ende) or neu:
+                                           annahme, ende) or neu:
                 geaendert |= anruf
         geaendert._wb_voip_verpasst_melden()
         # Angenommen (wo auch immer): offene Verpasst-Einträge der Nummer bei allen Benutzern
@@ -243,12 +274,16 @@ class WbVoipAnruf(models.Model):
             annehmer = anrufe.get(besitzer) if besitzer else None
             erreicht = annehmer or geaendert[0]
             if erreicht.nummer_e164:
-                erreicht._wb_voip_nummer_erreicht(bis=ende)
+                # ohne Besitzer (gemeinsames Gerät, Weiterleitung) neutral: kein Benutzername
+                text = None if annehmer else self.env._("Angenommen auf %s", geraet_name)
+                erreicht._wb_voip_nummer_erreicht(bis=ende, text=text)
         return bool(geaendert)
 
     @api.model
     def _wb_voip_cdr_annahme(self, anlage, zweige):
-        """Return ``(device, talk seconds)`` of the answer; device ``WEITERLEITUNG`` or ``None``.
+        """Return ``(device, talk seconds, answer time)``; device ``WEITERLEITUNG`` or ``None``.
+
+        Answer time (UTC) = ``calldate`` + (``duration`` − ``billsec``) of the answering leg.
 
         ``zweige``: incoming legs first.
 
@@ -279,7 +314,7 @@ class WbVoipAnruf(models.Model):
             geraet = geraet_von(zweig)
             if geraet and geraet != WEITERLEITUNG and geraet not in amt \
                     and zweig.get('disposition') == 'ANSWERED' and zweig.get('lastapp') == 'Dial':
-                return geraet, _ganzzahl(zweig.get('billsec'))
+                return geraet, _ganzzahl(zweig.get('billsec')), _annahmezeit(zweig)
         umgeleitet = any(
             geraet_von(z) == WEITERLEITUNG
             or (z.get('direction') == 'incoming' and geraet_von(z) in amt)
@@ -289,8 +324,8 @@ class WbVoipAnruf(models.Model):
                 if zweig.get('direction') != 'incoming' and geraet_von(zweig) in amt \
                         and zweig.get('disposition') == 'ANSWERED' \
                         and _ganzzahl(zweig.get('billsec')) > 0:
-                    return WEITERLEITUNG, _ganzzahl(zweig.get('billsec'))
-        return None, 0
+                    return WEITERLEITUNG, _ganzzahl(zweig.get('billsec')), _annahmezeit(zweig)
+        return None, 0, None
 
     @api.model
     def _wb_voip_cdr_nummer(self, anlage, src):
@@ -300,9 +335,10 @@ class WbVoipAnruf(models.Model):
         return src, e164(src, anlage.sudo().country_id.code or 'DE') or False
 
     @api.model
-    def _wb_voip_cdr_finden(self, anlage, user, lid, zeit, src):
+    def _wb_voip_cdr_finden(self, anlage, user, lid, zeiten, src):
         """Return (sudo) the user's call of this group: by ``linkedid``, else an incoming call
-        without ``linkedid`` started within ``GLEICHZEITIG_SEKUNDEN`` with the same number
+        without ``linkedid`` started within ``GLEICHZEITIG_SEKUNDEN`` of one of ``zeiten`` (UTC
+        candidates of the start, two in the repeated autumn hour) with the same number
         (suppressed: only calls without number), nearest first."""
         Anruf = self.sudo()
         anruf = Anruf.search([('user_id', '=', user.id), ('wb_voip_cdr_linkedid', '=', lid)], limit=1)
@@ -313,7 +349,7 @@ class WbVoipAnruf(models.Model):
         domain = [
             ('user_id', '=', user.id), ('richtung', '=', 'eingehend'),
             ('wb_voip_cdr_linkedid', '=', False),
-            ('beginn', '>=', zeit - fenster), ('beginn', '<=', zeit + fenster),
+            ('beginn', '>=', min(zeiten) - fenster), ('beginn', '<=', max(zeiten) + fenster),
         ]
         if nummer_e164:
             domain.append(('nummer_e164', '=', nummer_e164))
@@ -322,7 +358,12 @@ class WbVoipAnruf(models.Model):
         else:
             domain.append(('nummer_e164', '=', False))
         kandidaten = Anruf.search(domain, limit=50)
-        return min(kandidaten, default=Anruf.browse(), key=lambda a: (abs(a.beginn - zeit), a.id))
+
+        def abstand(anruf):
+            return min(abs(anruf.beginn - zeit) for zeit in zeiten)
+
+        kandidaten = kandidaten.filtered(lambda a: abstand(a) <= fenster)
+        return min(kandidaten, default=Anruf.browse(), key=lambda a: (abstand(a), a.id))
 
     @api.model
     def _wb_voip_cdr_anlegen(self, anlage, user, lid, zeit, src):
@@ -347,13 +388,14 @@ class WbVoipAnruf(models.Model):
             'wb_voip_cdr_linkedid': lid,
         })
 
-    def _wb_voip_cdr_ergebnis(self, user, geraet, geraet_name, dauer, kollegen_anruf, zeit, ende):
+    def _wb_voip_cdr_ergebnis(self, user, geraet, geraet_name, dauer, kollegen_anruf, annahme, ende):
         """Apply the result of the call list to this call; True if something changed.
 
         * Not answered anywhere: a ringing (or new) call becomes ``verpasst`` with log and
           callback activity (Phase-4 logic), anything else stays.
         * Answered with the user's own softphone account: a provisional ``klingelt``/``verpasst``
-          becomes ``beendet``; answered calls stay as they are.
+          becomes ``beendet`` (answer time and duration from the list) with the log "reached"
+          (core path, after the missed follow-up was undone); answered calls stay as they are.
         * Answered elsewhere (own other device, colleague, shared device, forwarding):
           ``anderswo`` with device and duration, linked to the colleague's call if any; the
           activity and an untouched log "not reached" of a missed call are removed.
@@ -378,9 +420,8 @@ class WbVoipAnruf(models.Model):
             if anruf.zustand == 'anderswo':
                 return False
             werte = {
-                'zustand': 'beendet', 'annahme': anruf.annahme or zeit,
-                'ende': anruf.ende or zeit + timedelta(seconds=dauer),
-                'dauer_sek': dauer,
+                'zustand': 'beendet', 'annahme': annahme,
+                'ende': annahme + timedelta(seconds=dauer), 'dauer_sek': dauer,
             }
         else:
             werte = {'zustand': 'anderswo', 'dauer_sek': dauer}
@@ -405,4 +446,6 @@ class WbVoipAnruf(models.Model):
         anruf.write(werte)
         if war_vorlaeufig:
             anruf._wb_voip_verpasst_aufraeumen(aktivitaet, protokoll)
+        if anruf.zustand == 'beendet':
+            anruf._wb_voip_protokollieren()
         return True

@@ -11,7 +11,7 @@ from odoo.addons.wb_voip.tools import geheimnis
 from odoo.addons.wb_voip.tools.rechte import nur_voip_manager
 
 from ..tools.adresse import url_ist_https
-from .ansitel_api import AnsitelFehler
+from .ansitel_api import AnsitelFehler, AnsitelZuVieleAnrufe
 from .wb_voip_anruf import MAX_LINKEDID, zweig_ende
 
 _logger = logging.getLogger(__name__)
@@ -25,6 +25,10 @@ CDR_UEBERLAPPUNG = timedelta(hours=4)
 CDR_ERSTES_FENSTER = timedelta(minutes=30)
 # Höchstens so viel je Lauf; nach längerem Ausfall holen die folgenden Läufe Stück für Stück nach
 CDR_MAX_FENSTER = timedelta(hours=6)
+# Liefert die Anlage für ein Fenster zu viele Seiten, wird es halbiert, aber nicht unter diese Länge
+CDR_MIN_FENSTER = timedelta(minutes=10)
+# Felder, die _wb_voip_ansitel_sql_setzen schreiben darf
+CDR_SQL_FELDER = ('ansitel_cdr_stand', 'ansitel_cdr_ab')
 # Fehler, nach denen Odoo den ganzen Lauf wiederholt: nie verschlucken
 WIEDERHOLBAR = (errors.SerializationFailure, errors.DeadlockDetected, errors.LockNotAvailable,
                 ConcurrencyError)
@@ -211,6 +215,9 @@ class WbVoipAnlage(models.Model):
         Window: from = max(state − 4 h, first start), to = min(now − 60 s, from + 6 h); without
         state the last 30 minutes, remembered as lower bound. Only groups with an incoming leg
         whose last leg ended by ``to``. A PBX error leaves the state; the next run catches up.
+        The lower bound is stored only after the first successful read. Too many legs for the
+        window: it is halved (down to ``CDR_MIN_FENSTER``); if even that is too much, the window
+        is skipped with an error in the log and the state advances.
         """
         Anruf = self.env['wb.voip.anruf'].sudo()
         for anlage in self.sudo():
@@ -224,18 +231,19 @@ class WbVoipAnlage(models.Model):
                     von = max(von, anlage.ansitel_cdr_ab)
             else:
                 von = jetzt - CDR_ERSTES_FENSTER
-                if not anlage.ansitel_cdr_ab:
-                    anlage._wb_voip_ansitel_sql_setzen('ansitel_cdr_ab', von)
             bis = min(jetzt - CDR_RUHE, von + CDR_MAX_FENSTER)
             if bis <= von:
                 continue
             try:
-                zeilen = self.env['wb.voip.ansitel']._cdr_lesen(anlage, von, bis)
+                zeilen, bis = anlage._wb_voip_ansitel_lesen(von, bis)
             except AnsitelFehler as fehler:
                 # feste Meldung ohne Token, URL und Rufnummern
                 _logger.warning("[wb_voip_ansitel] Abgleich: Anlage %s nicht gelesen: %s",
                                 anlage.id, fehler)
                 continue
+            if not anlage.ansitel_cdr_stand and not anlage.ansitel_cdr_ab:
+                # erst nach dem ersten erfolgreichen Lesen: Beginn des Abgleichs merken
+                anlage._wb_voip_ansitel_sql_setzen('ansitel_cdr_ab', von)
             gruppen = {}
             for zeile in zeilen:
                 lid = str(zeile.get('linkedid') or '').strip()[:MAX_LINKEDID]
@@ -262,10 +270,30 @@ class WbVoipAnlage(models.Model):
                         "[wb_voip_ansitel] Abgleich: Anlage %s, %s Anrufe, %s geändert, %s Fehler",
                         anlage.id, len(gruppen), geaendert, fehler_anzahl)
 
+    def _wb_voip_ansitel_lesen(self, von, bis):
+        """Return ``(legs, to)`` of the window, halved while the PBX has too many legs.
+
+        Below ``CDR_MIN_FENSTER`` the window is given up: no legs, ``to`` of the smallest window
+        (the state advances), one error in the log.
+        """
+        self.ensure_one()
+        Ansitel = self.env['wb.voip.ansitel']
+        while True:
+            try:
+                return Ansitel._cdr_lesen(self, von, bis), bis
+            except AnsitelZuVieleAnrufe:
+                if bis - von <= CDR_MIN_FENSTER:
+                    _logger.error("[wb_voip_ansitel] Abgleich: Anlage %s liefert auch für %s Minuten "
+                                  "zu viele Anrufe, Fenster übersprungen", self.id,
+                                  int((bis - von).total_seconds() // 60))
+                    return [], bis
+                bis = max(von + (bis - von) / 2, von + CDR_MIN_FENSTER)
+
     def _wb_voip_ansitel_sql_setzen(self, feld, wert):
         """Write state or start by SQL: ``write`` would change ``write_date`` and with it the key
         of the peer cache, which would then expire on every run."""
-        assert feld in ('ansitel_cdr_stand', 'ansitel_cdr_ab')
+        if feld not in CDR_SQL_FELDER:
+            raise ValueError(feld)
         self.ensure_one()
         self.env.cr.execute(f'UPDATE wb_voip_anlage SET {feld} = %s WHERE id = %s', [wert, self.id])
         self.invalidate_recordset([feld])
