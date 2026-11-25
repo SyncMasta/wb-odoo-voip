@@ -794,12 +794,13 @@ class WbVoipAnruf(models.Model):
             anruf.protokoll_id = False
             protokoll.unlink()
 
-    def _wb_voip_nummer_erreicht(self, protokoll=None, bis=None):
+    def _wb_voip_nummer_erreicht(self, protokoll=None, bis=None, text=None):
         """The number of this call was reached: close the open missed entries of all users.
 
         Entries: state ``verpasst``, not done, same E.164 number, same company, started before
         this call (with ``bis``: started at the latest at ``bis``, e.g. the end of a call that
-        a late synchronisation with the PBX found). Text "Zurückgerufen von <name>" (outgoing) or "Angenommen von <name>"; with
+        a late synchronisation with the PBX found). ``text`` replaces the closing text (e.g. when
+        no user answered, only a device). Text "Zurückgerufen von <name>" (outgoing) or "Angenommen von <name>"; with
         ``protokoll`` (callback log) the entry remembers it. Active callback activities that no
         entry left open uses are marked done with this text. ``anderswo`` entries stay.
         """
@@ -818,10 +819,9 @@ class WbVoipAnruf(models.Model):
         if not offen:
             return offen
         name = anruf.user_id.name
-        if anruf.richtung == 'ausgehend':
-            text = self.env._("Zurückgerufen von %s", name)
-        else:
-            text = self.env._("Angenommen von %s", name)
+        if not text:
+            text = (self.env._("Zurückgerufen von %s", name) if anruf.richtung == 'ausgehend'
+                    else self.env._("Angenommen von %s", name))
         werte = {'erledigt': True, 'erledigt_am': fields.Datetime.now(), 'erledigt_text': text}
         # Verknüpfung stets neu setzen, damit ein früheres Protokoll den Eintrag nicht mehr berührt
         werte['erledigt_durch_protokoll_id'] = protokoll.id if protokoll else False
@@ -855,19 +855,31 @@ class WbVoipAnruf(models.Model):
     def _wb_voip_wieder_oeffnen(self):
         """Reopen done missed entries (the result of the callback log changed).
 
-        Each entry is open again (no text, no date, unseen) and its owner gets a callback activity
-        again (``_wb_voip_rueckruf_aktivitaet``: an active one is reused, an archived one never).
-        The link to the log stays, so the entries close again when the result returns to reached.
+        Each entry in a state of ``_wb_voip_wieder_oeffnen_zustaende`` is open again (no text, no
+        date, unseen). A ``verpasst`` entry's owner gets a callback activity again
+        (``_wb_voip_rueckruf_aktivitaet``: an active one is reused, an archived one never); other
+        states get none. The link to the log stays, so the entries close again when the result
+        returns to reached.
         """
-        eintraege = self.sudo().filtered(lambda a: a.zustand == 'verpasst' and a.erledigt)
+        zustaende = self._wb_voip_wieder_oeffnen_zustaende()
+        eintraege = self.sudo().filtered(lambda a: a.zustand in zustaende and a.erledigt)
         if not eintraege:
             return eintraege
         eintraege.write({'erledigt': False, 'erledigt_am': False, 'erledigt_text': False,
                          'gesehen': False})
-        for eintrag in eintraege:
+        for eintrag in eintraege.filtered(lambda a: a.zustand == 'verpasst'):
             eintrag._wb_voip_rueckruf_aktivitaet()
         eintraege._wb_voip_verpasst_melden()
         return eintraege
+
+    @api.model
+    def _wb_voip_wieder_oeffnen_zustaende(self):
+        """Extension point: states of done entries that a changed callback result reopens.
+
+        Default ``('verpasst',)``; e.g. an entry that a later synchronisation turned into
+        ``anderswo`` can be added (it gets no new callback activity).
+        """
+        return ('verpasst',)
 
     def _wb_voip_durch_aktivitaet_erledigt(self, text):
         """Close open missed entries because their callback activity was marked done."""

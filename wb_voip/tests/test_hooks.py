@@ -515,3 +515,48 @@ class TestHooks(WbVoipCase):
         anruf = self._verpasst()
         self.assertEqual(anruf.protokoll_id.ergebnis, 'mailbox')
         self.assertEqual(anruf.protokoll_id.anruf_id, anruf)
+
+    def test_nummer_erreicht_text(self):
+        verpasst = self._verpasst()
+        annahme, _daten = self._beginnen()
+        annahme.sudo().beginn = fields.Datetime.now() + timedelta(seconds=30)
+        annahme.sudo()._wb_voip_nummer_erreicht(text='Angenommen auf Empfang')
+        self.assertEqual(verpasst.erledigt_text, 'Angenommen auf Empfang')
+        self.assertFalse(verpasst.rueckruf_aktivitaet_id.active)
+
+    def _rueckruf_erledigt(self):
+        """Missed entry closed by an outgoing callback (log 'reached')."""
+        verpasst = self._verpasst()
+        rueckruf, _daten = self._beginnen(richtung='ausgehend')
+        rueckruf.sudo().beginn = fields.Datetime.now() + timedelta(seconds=30)
+        rueckruf.wb_voip_angenommen()
+        rueckruf.wb_voip_beendet(False, False)
+        self.assertTrue(verpasst.erledigt)
+        self.assertEqual(verpasst.erledigt_durch_protokoll_id, rueckruf.sudo().protokoll_id)
+        return verpasst, rueckruf.sudo().protokoll_id
+
+    def test_wieder_oeffnen_standard_nur_verpasst(self):
+        from odoo.addons.wb_voip.models.wb_voip_anruf import WbVoipAnruf
+        # Standard des Kerns (Erweiterungen wie wb_voip_ansitel können mehr Zustände ergänzen)
+        self.assertEqual(WbVoipAnruf._wb_voip_wieder_oeffnen_zustaende(self.Anruf), ('verpasst',))
+        self._ueberschreiben('wb.voip.anruf', '_wb_voip_wieder_oeffnen_zustaende',
+                             lambda self: ('verpasst',))
+        verpasst, protokoll = self._rueckruf_erledigt()
+        verpasst.zustand = 'anderswo'
+        protokoll.with_user(self.user_a).ergebnis = 'mailbox'
+        self.assertTrue(verpasst.erledigt)
+
+    def test_wieder_oeffnen_zustaende_hook(self):
+        self._ueberschreiben('wb.voip.anruf', '_wb_voip_wieder_oeffnen_zustaende',
+                             lambda self: ('verpasst', 'anderswo'))
+        verpasst, protokoll = self._rueckruf_erledigt()
+        verpasst.write({'zustand': 'anderswo', 'rueckruf_aktivitaet_id': False})
+        vorher = self.env['mail.activity'].sudo().with_context(active_test=False).search_count(
+            [('activity_type_id', '=', self.typ.id)])
+        protokoll.with_user(self.user_a).ergebnis = 'mailbox'
+        self.assertFalse(verpasst.erledigt)
+        self.assertFalse(verpasst.erledigt_text)
+        # kein neuer Rückruf für „anderswo“
+        self.assertFalse(verpasst.rueckruf_aktivitaet_id)
+        self.assertEqual(self.env['mail.activity'].sudo().with_context(active_test=False).search_count(
+            [('activity_type_id', '=', self.typ.id)]), vorher)
