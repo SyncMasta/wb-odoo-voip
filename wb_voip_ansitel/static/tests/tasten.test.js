@@ -335,14 +335,14 @@ test("Leiste im Softphone zeigt die Tasten mit Zustand, ARIA und Namen", async (
     expect(".o_wb_voip_taste[data-id='3'] i").toHaveClass("fa-circle-o");
 });
 
-test("Graue Taste: gestrichelt, aria-pressed mixed, Hinweistext sichtbar und im Titel", async () => {
+test("Graue Taste: gestrichelt, aria-pressed false mit aria-describedby, Hinweistext sichtbar und im Titel", async () => {
     const hinweis = "AB braucht persönlichen Ansitel-Token oder Freigabe – bitte Administrator fragen.";
     vorbereiten({ antworten: { wb_voip_tasten_zustand: zustand({ fehler: hinweis }) } });
     await mountWithCleanup(WbVoipTastenleiste, { props: { lage: "softphone" } });
     await animationFrame();
     const grau = queryOne(".o_wb_voip_taste[data-id='3']");
     expect(grau).toHaveClass("o_wb_voip_taste_unbekannt");
-    expect(grau).toHaveAttribute("aria-pressed", "mixed");
+    expect(grau).toHaveAttribute("aria-pressed", "false");
     expect(grau.title).toInclude(hinweis);
     expect(".o_wb_voip_tasten_fehler").toHaveText(hinweis);
     expect(grau.getAttribute("aria-describedby")).toBe(

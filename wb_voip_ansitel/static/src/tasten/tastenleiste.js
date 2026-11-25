@@ -70,8 +70,10 @@ export class WbVoipTastenleiste extends Component {
         return this.state.schaltet ? "true" : undefined;
     }
 
+    /** Unbekannter Zustand gilt als nicht gedrückt (kein „mixed“: nur für Dreifach-Kästchen gedacht);
+     *  der Hinweis steht per ``aria-describedby`` und im Titel. */
     gedrueckt(taste) {
-        return taste.aktiv === null ? "mixed" : taste.aktiv ? "true" : "false";
+        return taste.aktiv === true ? "true" : "false";
     }
 
     /** ``aria-describedby`` nur für graue Tasten und nur, wenn der Hinweis als Text sichtbar ist. */
