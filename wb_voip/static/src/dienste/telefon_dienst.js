@@ -825,13 +825,14 @@ export class TelefonDienst {
             kontext.konferenzNachAnnahme = false;
             this.konferenz().then(
                 (ok) => {
-                    if (!ok && !kontext.beendet) {
-                        this._melden(
-                            _t(
-                                "Konferenz konnte nicht aufgebaut werden: %s",
-                                this.state.fehler || _t("Unbekannter Fehler")
-                            )
+                    // läuft schon eine Konferenz, gibt es nichts zu melden
+                    if (!ok && !kontext.beendet && !this._konferenz) {
+                        // feste Meldung statt Fehlertext: „bitte erneut klicken“ passt hier nicht
+                        const text = _t(
+                            "Konferenz konnte nicht aufgebaut werden – bitte im Gespräch „Konferenz“ drücken."
                         );
+                        this.state.fehler = text;
+                        this._melden(text);
                     }
                 },
                 () => {}
@@ -1388,7 +1389,13 @@ export class TelefonDienst {
                 this._konferenz = null;
             }
             if (!gehalten.beendet) {
-                this.state.fehler = fehlertext(fehler);
+                if (this._aktiv === gehalten) {
+                    // Die aktive Leitung endete während des unhold: _beenden hat diese schon zur
+                    // aktiven gemacht (nicht gehalten), das Re-INVITE ist aber gescheitert
+                    await this._unholdWiederholen(gehalten);
+                } else {
+                    this.state.fehler = fehlertext(fehler);
+                }
             }
             schliessen();
             this._konferenzStummZurueck(konferenz);
@@ -1439,6 +1446,21 @@ export class TelefonDienst {
         gehalten.anruf.stumm = Boolean(aktiv.anruf.stumm);
         this.state.konferenz = true;
         return true;
+    }
+
+    /** Zweiter Versuch, die Leitung aus dem Halten zu holen; scheitert er, gilt sie als gehalten. */
+    async _unholdWiederholen(kontext) {
+        try {
+            await kontext.sitzung.unhold();
+            if (!kontext.beendet) {
+                kontext.anruf.gehalten = false;
+            }
+        } catch (fehler) {
+            if (!kontext.beendet) {
+                kontext.anruf.gehalten = true;
+                this.state.fehler = fehlertext(fehler);
+            }
+        }
     }
 
     /**
@@ -1515,7 +1537,11 @@ export class TelefonDienst {
         this.state.konferenz = false;
         if (konferenz.handle) {
             const stumm = Boolean(konferenz.aktiv.anruf.stumm);
-            konferenzAbbauen(konferenz.handle, { stumm }).catch(() => {});
+            // Ein Klick auf Stumm während des Abbaus trifft noch die gemischte Spur; danach
+            // gilt der aktuelle Stand wieder für das Mikrofon jeder laufenden Leitung
+            konferenzAbbauen(konferenz.handle, { stumm })
+                .catch(() => {})
+                .then(() => this._konferenzStummZurueck(konferenz));
         }
     }
 

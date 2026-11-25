@@ -260,7 +260,9 @@ test("Review Focus 4: Kunde legt in der Konferenz auf – Kollege läuft mit Mik
     // Bedienung wirkt auf die verbleibende Leitung
     welt.dienst.stumm(true);
     welt.dienst.dtmf("5");
-    expect(zweite.hat("mute")).toEqual([["mute", true]]);
+    // nach dem Abbau wurde der Stumm-Stand einmal neu gesetzt (aus), dann stumm
+    expect(zweite.hat("mute").at(-1)).toEqual(["mute", true]);
+    expect(zweite.medien.sender.track.enabled).toBe(false);
     expect(zweite.hat("dtmf")).toEqual([["dtmf", "5"]]);
     welt.dienst.stop();
 });
@@ -607,5 +609,112 @@ test("Konferenz mit Kollegen: Mischung scheitert nach der Annahme – Hinweis, R
     expect(welt.meldungen[0]).toMatch(/Konferenz/);
     expect(welt.dienst.state.anruf.nummer).toBe("102");
     expect(welt.dienst.state.anruf.zustand).toBe("laeuft");
+    welt.dienst.stop();
+});
+
+// --- Abschluss Phase 4b: Stumm beim Abbau, Meldungen, Halten nach gescheitertem unhold -------
+
+test("Konferenz-Abbau: Stumm-Klick während des Abbaus – verbleibende Leitung bleibt stumm", async () => {
+    const welt = await verbunden();
+    const { erste, zweite } = await inKonferenz(welt);
+    // replaceTrack der verbleibenden Leitung hängt, bis es freigegeben wird
+    const sender = erste.medien.sender;
+    const echt = sender.replaceTrack.bind(sender);
+    let freigeben;
+    const tor = new Promise((resolve) => (freigeben = resolve));
+    sender.replaceTrack = async (spur) => {
+        await tor;
+        return echt(spur);
+    };
+    zweite.gegenstelleLegtAuf("bye");
+    await welt.uhr.vorspulen(0);
+    // Abbau läuft noch: der Klick trifft die Einzelleitung (und die gemischte Spur)
+    welt.dienst.stumm(true);
+    expect(welt.dienst.state.anruf.stumm).toBe(true);
+    freigeben();
+    await welt.uhr.vorspulen(0);
+    await welt.uhr.vorspulen(0);
+    expect(sender.track.name).toBe(`mik-spur-${nr(erste)}`);
+    expect(sender.track.enabled).toBe(false);
+    expect(welt.dienst.state.anruf.stumm).toBe(true);
+    welt.dienst.stop();
+});
+
+/** AudioContext, der nach resume() angehalten bleibt (Autoplay-Regeln). */
+class HaengenderKontext extends FakeAudioContext {
+    resume() {
+        return Promise.resolve();
+    }
+}
+
+test("Konferenz mit Kollegen: angehaltener Ton – Meldung verweist auf den Knopf im Gespräch", async () => {
+    const welt = await verbunden();
+    welt.dienst._audioKontext = () => new HaengenderKontext();
+    await welt.dienst.waehlen("0170 1111");
+    welt.agent.invites.at(-1).gegenstelleNimmtAn();
+    await welt.uhr.vorspulen(0);
+    expect(await welt.dienst.konferenz("102")).toBe(true);
+    await welt.uhr.vorspulen(0);
+    welt.agent.invites.at(-1).gegenstelleNimmtAn();
+    await welt.uhr.vorspulen(0);
+    expect(welt.meldungen).toEqual([
+        "Konferenz konnte nicht aufgebaut werden – bitte im Gespräch „Konferenz“ drücken.",
+    ]);
+    expect(welt.dienst.state.fehler).toBe(welt.meldungen[0]);
+    expect(welt.dienst.state.fehler).not.toMatch(/erneut klicken/);
+    welt.dienst.stop();
+});
+
+test("Konferenz mit Kollegen: früher Abbruch im Dienst – feste Meldung statt Unbekannter Fehler", async () => {
+    const welt = await verbunden();
+    await welt.dienst.waehlen("0170 1111");
+    welt.agent.invites.at(-1).gegenstelleNimmtAn();
+    await welt.uhr.vorspulen(0);
+    expect(await welt.dienst.konferenz("102")).toBe(true);
+    await welt.uhr.vorspulen(0);
+    welt.dienst.state.status = "getrennt"; // Telefon gerade nicht verbunden
+    welt.agent.invites.at(-1).gegenstelleNimmtAn();
+    await welt.uhr.vorspulen(0);
+    expect(welt.meldungen.length).toBe(1);
+    expect(welt.meldungen[0]).toMatch(/bitte im Gespräch „Konferenz“ drücken/);
+    expect(welt.meldungen[0]).not.toMatch(/Unbekannter Fehler/);
+    expect(welt.dienst.state.fehler).toBe(welt.meldungen[0]);
+    welt.dienst.stop();
+});
+
+test("Konferenz: unhold scheitert, während die aktive Leitung endet – Leitung gilt nicht als gehalten", async () => {
+    const welt = await verbunden();
+    const { erste, zweite } = await zweiLeitungen(welt);
+    const unhold = unholdSteuern(erste);
+    const ergebnis = welt.dienst.konferenz();
+    zweite.gegenstelleLegtAuf("bye");
+    await welt.uhr.vorspulen(0);
+    // der Wiederholungsversuch gelingt
+    erste.unhold = () => {
+        erste.aufrufe.push(["unhold"]);
+        return Promise.resolve();
+    };
+    unhold.reject(new Error("Re-INVITE abgelehnt"));
+    expect(await ergebnis).toBe(false);
+    await welt.uhr.vorspulen(0);
+    expect(erste.hat("unhold").length).toBe(2);
+    expect(welt.dienst.state.anruf.nummer).toBe("0170 1111");
+    expect(welt.dienst.state.anruf.gehalten).toBe(false);
+    welt.dienst.stop();
+});
+
+test("Konferenz: unhold scheitert zweimal – Leitung gilt als gehalten, Fehler sichtbar", async () => {
+    const welt = await verbunden();
+    const { erste, zweite } = await zweiLeitungen(welt);
+    const unhold = unholdSteuern(erste);
+    const ergebnis = welt.dienst.konferenz();
+    zweite.gegenstelleLegtAuf("bye");
+    await welt.uhr.vorspulen(0);
+    erste.unhold = () => Promise.reject(new Error("noch immer abgelehnt"));
+    unhold.reject(new Error("Re-INVITE abgelehnt"));
+    expect(await ergebnis).toBe(false);
+    await welt.uhr.vorspulen(0);
+    expect(welt.dienst.state.anruf.gehalten).toBe(true);
+    expect(welt.dienst.state.fehler).toMatch(/noch immer abgelehnt/);
     welt.dienst.stop();
 });
