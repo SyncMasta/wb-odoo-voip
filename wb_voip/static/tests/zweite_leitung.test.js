@@ -16,6 +16,7 @@ import {
     FakeKanalNetz,
     FakeKlaenge,
     FakeOrm,
+    FakeSitzung,
     FakeSperren,
     FakeUhr,
     lizenzFehler,
@@ -771,5 +772,19 @@ test("Abgewiesene Anrufe (480): je Call-ID einmal, höchstens 10 je Minute gemel
     welt.agent.eingehend("0170 5000");
     await welt.uhr.vorspulen(0);
     expect(welt.orm.zaehle("wb_voip_beginnen")).toBe(vorher + 11);
+    welt.dienst.stop();
+});
+
+test("Abgewiesene Anrufe ohne Call-ID: jeder gemeldet (nur die Minutengrenze gilt)", async () => {
+    const welt = await verbunden();
+    await mitRueckfrage(welt);
+    const vorher = welt.orm.zaehle("wb_voip_beginnen");
+    for (const nummer of ["0170 1", "0170 2"]) {
+        const sitzung = new FakeSitzung({ remoteNummer: nummer });
+        sitzung.callId = "";
+        welt.agent.emit("invitation", sitzung);
+    }
+    await welt.uhr.vorspulen(0);
+    expect(welt.orm.zaehle("wb_voip_beginnen")).toBe(vorher + 2);
     welt.dienst.stop();
 });

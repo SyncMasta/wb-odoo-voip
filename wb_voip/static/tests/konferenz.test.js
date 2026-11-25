@@ -141,6 +141,7 @@ async function verbunden() {
         protokoll_id: 100 + args[0][0],
     });
     const kontexte = [];
+    const meldungen = [];
     const dienst = new TelefonDienst({
         orm,
         sperren: new FakeSperren(),
@@ -149,6 +150,7 @@ async function verbunden() {
         tabId: "tab-konferenz",
         agentFabrik: fabrik.fabrik,
         klaenge: new FakeKlaenge(),
+        meldung: (text) => meldungen.push(text),
         audioKontext: () => {
             const ctx = new FakeAudioContext();
             kontexte.push(ctx);
@@ -164,7 +166,7 @@ async function verbunden() {
         }
     });
     dienst.bus.addEventListener("protokoll-oeffnen", ({ detail }) => popups.push(detail.anrufId));
-    return { dienst, uhr, fabrik, orm, agent: fabrik.letzterAgent, kontexte, popups };
+    return { dienst, uhr, fabrik, orm, agent: fabrik.letzterAgent, kontexte, popups, meldungen };
 }
 
 /** Kunde (aktiv, ausgehend) plus angenommene Rückfrage an 102. */
@@ -471,5 +473,139 @@ test("Anrufansicht: Konferenz-Knopf, Leiste mit beiden, Stumm und Konferenz been
     expect(erste.hat("bye").length).toBe(1);
     expect(zweite.hat("bye").length).toBe(1);
     expect(".o_wb_voip_anrufansicht").toHaveCount(0);
+    welt.dienst.stop();
+});
+
+// --- Fix-Runde 1: Stumm bleibt stumm, Aufbau robuster ------------------------------------------
+
+test("Mischung: vorher stumm, Aufbau scheitert – Mikrofon-Spur bleibt aus", async () => {
+    const p = seiten();
+    const mikA = p.a.sender.track;
+    mikA.enabled = false;
+    p.b.sender.fehler = new Error("InvalidStateError");
+    await expect(konferenzAufbauen({ ...p, stumm: () => true })).rejects.toThrow("InvalidStateError");
+    expect(p.a.sender.track).toBe(mikA);
+    expect(mikA.enabled).toBe(false);
+});
+
+test("Mischung: Abbau übernimmt den aktuellen Stumm-Zustand des Handles", async () => {
+    const p = seiten();
+    const handle = await konferenzAufbauen(p);
+    handle.stumm(true);
+    await konferenzAbbauen(handle);
+    expect(p.a.sender.track.name).toBe("mik A");
+    expect(p.a.sender.track.enabled).toBe(false);
+    expect(p.b.sender.track.enabled).toBe(false);
+});
+
+test("Mischung: angehaltener AudioContext – Fehler und Rücknahme", async () => {
+    const p = seiten();
+    const mikA = p.a.sender.track;
+    p.ctx.resume = () => Promise.resolve(); // bleibt „suspended“
+    await expect(konferenzAufbauen(p)).rejects.toThrow(/Ton für die Konferenz nicht verfügbar/);
+    expect(p.a.sender.track).toBe(mikA);
+    expect(p.a.sender.ersetzungen.length).toBe(0);
+    expect(p.ctx.geschlossen).toBe(true);
+});
+
+test("Mischung: fehlender Ton einer Leitung schließt den Kontext", async () => {
+    const ctx = new FakeAudioContext();
+    await expect(
+        konferenzAufbauen({ ctx, mikrofon: null, a: seiten().a, b: seiten().b })
+    ).rejects.toThrow();
+    expect(ctx.geschlossen).toBe(true);
+});
+
+/** Ersetzt ``unhold`` der Sitzung durch ein von außen steuerbares Versprechen. */
+function unholdSteuern(sitzung) {
+    const steuerung = {};
+    sitzung.unhold = () => {
+        sitzung.aufrufe.push(["unhold"]);
+        return new Promise((resolve, reject) => Object.assign(steuerung, { resolve, reject }));
+    };
+    return steuerung;
+}
+
+test("Konferenz: vorher stumm, Aufbau scheitert – Mikrofon bleibt aus, zweite Leitung wieder gehalten", async () => {
+    const welt = await verbunden();
+    const { erste, zweite } = await zweiLeitungen(welt);
+    welt.dienst.stumm(true);
+    const mikZweite = zweite.medien.sender.track;
+    expect(mikZweite.enabled).toBe(false);
+    erste.medien.sender.fehler = new Error("InvalidStateError");
+    expect(await welt.dienst.konferenz()).toBe(false);
+    await welt.uhr.vorspulen(0);
+    expect(zweite.medien.sender.track).toBe(mikZweite);
+    expect(mikZweite.enabled).toBe(false);
+    expect(erste.medien.sender.track.enabled).toBe(true);
+    expect(welt.dienst.state.anruf.stumm).toBe(true);
+    expect(welt.dienst.state.konferenz).toBe(false);
+    expect(welt.dienst.state.gehaltener.gehalten).toBe(true);
+    expect(welt.kontexte[0].geschlossen).toBe(true);
+    welt.dienst.stop();
+});
+
+test("Konferenz: Stumm während des Aufbaus – Mikrofon wird nie gesendet", async () => {
+    const welt = await verbunden();
+    const { erste, zweite } = await zweiLeitungen(welt);
+    const unhold = unholdSteuern(erste);
+    const ergebnis = welt.dienst.konferenz();
+    // Kontext entsteht noch im Klick (Autoplay-Regeln)
+    expect(welt.kontexte.length).toBe(1);
+    welt.dienst.stumm(true);
+    expect(erste.hat("mute")).toEqual([["mute", true]]);
+    expect(zweite.hat("mute")).toEqual([["mute", true]]);
+    expect(erste.medien.sender.track.enabled).toBe(false);
+    expect(zweite.medien.sender.track.enabled).toBe(false);
+    unhold.resolve();
+    expect(await ergebnis).toBe(true);
+    const ctx = welt.kontexte[0];
+    expect(hoertAn(ctx, erste.medien.sender)).toEqual([`empfang-${nr(zweite)}`]);
+    expect(hoertAn(ctx, zweite.medien.sender)).toEqual([`empfang-${nr(erste)}`]);
+    expect(welt.dienst.state.anruf.stumm).toBe(true);
+    expect(welt.dienst.state.gehaltener.stumm).toBe(true);
+    // die gemischten Spuren selbst bleiben an (sonst hörten sich A und B nicht)
+    expect(erste.medien.sender.track.enabled).toBe(true);
+    erste.gegenstelleLegtAuf("bye");
+    await welt.uhr.vorspulen(0);
+    expect(zweite.medien.sender.track.name).toBe(`mik-spur-${nr(zweite)}`);
+    expect(zweite.medien.sender.track.enabled).toBe(false);
+    welt.dienst.stop();
+});
+
+test("Konferenz: aktive Leitung endet während des Aufbaus – kein zweites unhold", async () => {
+    const welt = await verbunden();
+    const { erste, zweite } = await zweiLeitungen(welt);
+    const unhold = unholdSteuern(erste);
+    const ergebnis = welt.dienst.konferenz();
+    zweite.gegenstelleLegtAuf("bye");
+    await welt.uhr.vorspulen(0);
+    unhold.resolve();
+    expect(await ergebnis).toBe(false);
+    await welt.uhr.vorspulen(0);
+    expect(erste.hat("unhold").length).toBe(1);
+    expect(welt.dienst.state.anruf.nummer).toBe("0170 1111");
+    expect(welt.dienst.state.anruf.gehalten).toBe(false);
+    expect(welt.dienst.state.konferenz).toBe(false);
+    expect(welt.kontexte[0].geschlossen).toBe(true);
+    welt.dienst.stop();
+});
+
+test("Konferenz mit Kollegen: Mischung scheitert nach der Annahme – Hinweis, Rückfrage läuft", async () => {
+    const welt = await verbunden();
+    await welt.dienst.waehlen("0170 1111");
+    welt.agent.invites.at(-1).gegenstelleNimmtAn();
+    await welt.uhr.vorspulen(0);
+    expect(await welt.dienst.konferenz("102")).toBe(true);
+    await welt.uhr.vorspulen(0);
+    const zweite = welt.agent.invites.at(-1);
+    zweite.medien = null; // kein Ton an der Leitung
+    zweite.gegenstelleNimmtAn();
+    await welt.uhr.vorspulen(0);
+    expect(welt.dienst.state.konferenz).toBe(false);
+    expect(welt.meldungen.length).toBe(1);
+    expect(welt.meldungen[0]).toMatch(/Konferenz/);
+    expect(welt.dienst.state.anruf.nummer).toBe("102");
+    expect(welt.dienst.state.anruf.zustand).toBe("laeuft");
     welt.dienst.stop();
 });

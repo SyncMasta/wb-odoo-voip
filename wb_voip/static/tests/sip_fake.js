@@ -277,6 +277,7 @@ export class FakeAudioContext {
     constructor() {
         this.knoten = [];
         this.geschlossen = false;
+        this.state = "suspended"; // wie ein neuer Kontext vor resume()
         this.destination = new FakeKnoten("lautsprecher");
     }
     _neu(knoten) {
@@ -296,10 +297,14 @@ export class FakeAudioContext {
         );
     }
     resume() {
+        if (!this.geschlossen) {
+            this.state = "running";
+        }
         return Promise.resolve();
     }
     close() {
         this.geschlossen = true;
+        this.state = "closed";
         return Promise.resolve();
     }
     /**
@@ -378,6 +383,10 @@ export class FakeSitzung extends Sender {
     }
     mute(an) {
         this._merke("mute", an);
+        // wie SipJsSitzung: schaltet die gerade gesendete Spur
+        if (this.medien?.sender?.track) {
+            this.medien.sender.track.enabled = !an;
+        }
     }
     dtmf(ziffer) {
         this._merke("dtmf", ziffer);

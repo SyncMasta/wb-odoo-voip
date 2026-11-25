@@ -93,6 +93,7 @@ export class TelefonDienst {
      *                                           „pageshow“ aus dem bfcache neu starten
      * @param {() => BroadcastChannel} [deps.kanalFabrik] neuer Kanal für den Neustart
      * @param {() => AudioContext} [deps.audioKontext] neuer AudioContext für die Konferenz
+     * @param {(text: string) => void} [deps.meldung] Hinweis an den Benutzer (Benachrichtigung)
      */
     constructor({
         orm,
@@ -105,6 +106,7 @@ export class TelefonDienst {
         fenster = null,
         kanalFabrik = null,
         audioKontext = null,
+        meldung = null,
     }) {
         this.orm = orm;
         this.sperren = sperren;
@@ -116,6 +118,7 @@ export class TelefonDienst {
         this.klaenge = klaenge;
         this._audioKontext =
             audioKontext || (() => new (window.AudioContext || window.webkitAudioContext)());
+        this._meldung = meldung;
         this.bus = new EventBus();
         /**
          * status: aus | verbinde | verbunden | getrennt | anderer_tab | ohne_lizenz
@@ -664,8 +667,9 @@ export class TelefonDienst {
      * Anruf zwei Server-Aufrufe).
      */
     _abgewiesenMelden(sitzung, kennung) {
+        // ohne Call-ID keine Doppelprüfung (sonst fielen alle zusammen); die Minutengrenze gilt
         const callId = String(sitzung.callId || "");
-        if (this._abgewiesenIds.has(callId)) {
+        if (callId && this._abgewiesenIds.has(callId)) {
             return;
         }
         const jetzt = this.uhr.jetzt();
@@ -676,7 +680,9 @@ export class TelefonDienst {
             return;
         }
         this._abgewiesenZeiten.push(jetzt);
-        this._abgewiesenIds.add(callId);
+        if (callId) {
+            this._abgewiesenIds.add(callId);
+        }
         if (this._abgewiesenIds.size > ABGEWIESEN_MERKEN) {
             this._abgewiesenIds.delete(this._abgewiesenIds.values().next().value);
         }
@@ -817,7 +823,19 @@ export class TelefonDienst {
         if (kontext.konferenzNachAnnahme && this._aktiv === kontext && this._gehalten) {
             // Konferenz mit einem Kollegen (Team): mischen, sobald er abnimmt
             kontext.konferenzNachAnnahme = false;
-            this.konferenz().catch(() => {});
+            this.konferenz().then(
+                (ok) => {
+                    if (!ok && !kontext.beendet) {
+                        this._melden(
+                            _t(
+                                "Konferenz konnte nicht aufgebaut werden: %s",
+                                this.state.fehler || _t("Unbekannter Fehler")
+                            )
+                        );
+                    }
+                },
+                () => {}
+            );
         }
         // Lebenszeichen je Leitung, auch für die gehaltene
         this._lebenszeichenStoppen(kontext);
@@ -889,7 +907,10 @@ export class TelefonDienst {
             } else if (this._gehalten) {
                 // Review Focus 3: Rückfrage endet (Kollege legt auf, besetzt, nicht erreicht);
                 // aus der Konferenz ist die andere Leitung schon aus dem Halten geholt
-                this._fortsetzen({ unhold: !inKonferenz || this._gehalten.anruf.gehalten });
+                this._fortsetzen({
+                    unhold:
+                        !inKonferenz || (this._gehalten.anruf.gehalten && !konferenz.unholdLaeuft),
+                });
             } else if (this._klopfend) {
                 // der wartende Anruf klingelt jetzt als einziger weiter
                 const wartend = this._klopfend;
@@ -1130,10 +1151,20 @@ export class TelefonDienst {
     stumm(an) {
         const konferenz = this._konferenz;
         if (konferenz) {
-            // nur das Mikrofon in der Mischung; die gemischte Spur bleibt an
-            konferenz.handle?.stumm(Boolean(an));
             konferenz.aktiv.anruf.stumm = Boolean(an);
             konferenz.gehalten.anruf.stumm = Boolean(an);
+            if (konferenz.handle) {
+                // nur das Mikrofon in der Mischung; die gemischte Spur bleibt an
+                konferenz.handle.stumm(Boolean(an));
+            } else {
+                // Aufbau läuft noch: beide Leitungen direkt stumm schalten, damit das Mikrofon
+                // währenddessen nicht gesendet wird (die Mischung liest den Stand am Ende)
+                for (const kontext of [konferenz.aktiv, konferenz.gehalten]) {
+                    if (!kontext.beendet) {
+                        kontext.sitzung.mute(Boolean(an));
+                    }
+                }
+            }
             return;
         }
         const kontext = this._laufend();
@@ -1326,34 +1357,65 @@ export class TelefonDienst {
             this.state.fehler = _t("Konferenz nicht möglich: Ton einer Leitung fehlt.");
             return false;
         }
-        const konferenz = { aktiv, gehalten, handle: null };
+        // AudioContext noch im Klick anlegen und starten (Autoplay-Regeln der Browser);
+        // konferenzAufbauen prüft danach, dass er wirklich läuft
+        let ctx = null;
+        if (!simuliert) {
+            try {
+                ctx = this._audioKontext();
+                Promise.resolve(ctx.resume?.()).catch(() => {});
+            } catch (fehler) {
+                Promise.resolve(ctx?.close?.()).catch(() => {});
+                this.state.fehler = fehlertext(fehler);
+                return false;
+            }
+        }
+        const schliessen = () => Promise.resolve(ctx?.close?.()).catch(() => {});
+        const konferenz = { aktiv, gehalten, handle: null, unholdLaeuft: false };
         this._konferenz = konferenz;
         this.state.fehler = null;
         try {
             if (gehalten.anruf.gehalten) {
+                // endet die aktive Leitung währenddessen, holt _beenden nicht noch einmal zurück
+                konferenz.unholdLaeuft = true;
                 await gehalten.sitzung.unhold();
             }
-            gehalten.anruf.gehalten = false;
+            if (!gehalten.beendet) {
+                gehalten.anruf.gehalten = false;
+            }
         } catch (fehler) {
             if (this._konferenz === konferenz) {
                 this._konferenz = null;
+            }
+            if (!gehalten.beendet) {
                 this.state.fehler = fehlertext(fehler);
             }
+            schliessen();
+            this._konferenzStummZurueck(konferenz);
             return false;
+        } finally {
+            konferenz.unholdLaeuft = false;
         }
         if (this._konferenz !== konferenz) {
-            return false; // eine Leitung ist inzwischen beendet
+            // eine Leitung ist inzwischen beendet
+            schliessen();
+            this._konferenzStummZurueck(konferenz);
+            return false;
         }
-        const stumm = Boolean(aktiv.anruf.stumm);
         if (!simuliert) {
+            // Mikrofon-Quelle ist der lokale Strom der aktiven Leitung. Die eigene Aufnahme der
+            // zweiten Leitung bleibt offen (nicht gestoppt): Sie ist die Spur, die ihr Sender nach
+            // dem Abbau wieder sendet. Gestoppt hätte sie nach der Konferenz kein Mikrofon mehr,
+            // und ein neues getUserMedia mitten im Gespräch könnte nachfragen oder scheitern.
             let handle;
             try {
                 handle = await konferenzAufbauen({
-                    ctx: this._audioKontext(),
+                    ctx,
                     mikrofon: medienA.mikrofon,
                     a: { empfang: medienA.empfang, sender: medienA.sender },
                     b: { empfang: medienB.empfang, sender: medienB.sender },
-                    stumm,
+                    // aktueller Stand, auch wenn während des Aufbaus umgeschaltet
+                    stumm: () => Boolean(aktiv.anruf.stumm),
                 });
             } catch (fehler) {
                 if (this._konferenz === konferenz) {
@@ -1361,11 +1423,13 @@ export class TelefonDienst {
                     this.state.fehler = fehlertext(fehler);
                     this._konferenzZurueckHalten(gehalten);
                 }
+                this._konferenzStummZurueck(konferenz);
                 return false;
             }
             if (this._konferenz !== konferenz) {
                 // eine Leitung endete während des Aufbaus
-                konferenzAbbauen(handle, { stumm }).catch(() => {});
+                await konferenzAbbauen(handle, { stumm: Boolean(aktiv.anruf.stumm) });
+                this._konferenzStummZurueck(konferenz);
                 return false;
             }
             konferenz.handle = handle;
@@ -1375,6 +1439,32 @@ export class TelefonDienst {
         gehalten.anruf.stumm = Boolean(aktiv.anruf.stumm);
         this.state.konferenz = true;
         return true;
+    }
+
+    /**
+     * Nach einem gescheiterten Aufbau: jede noch laufende Leitung sendet ihr Mikrofon wieder
+     * genau so, wie ihr Stumm-Zustand es anzeigt.
+     */
+    _konferenzStummZurueck(konferenz) {
+        for (const kontext of [konferenz.aktiv, konferenz.gehalten]) {
+            if (kontext.beendet) {
+                continue;
+            }
+            try {
+                kontext.sitzung.mute(Boolean(kontext.anruf.stumm));
+            } catch {
+                // Sitzung ohne Ton
+            }
+        }
+    }
+
+    /** Hinweis an den Benutzer (Benachrichtigung), z. B. wenn die Team-Konferenz scheitert. */
+    _melden(text) {
+        try {
+            this._meldung?.(text);
+        } catch {
+            // ohne Benachrichtigungsdienst
+        }
     }
 
     /** Aufbau gescheitert: die zweite Leitung wieder halten (best effort). */
@@ -1458,8 +1548,8 @@ function neueTabId() {
 }
 
 export const telefonDienst = {
-    dependencies: ["orm"],
-    start(env, { orm }) {
+    dependencies: ["orm", "notification"],
+    start(env, { orm, notification }) {
         const unterstuetzt = Boolean(navigator.locks && window.BroadcastChannel);
         const dienst = new TelefonDienst({
             orm,
@@ -1472,6 +1562,7 @@ export const telefonDienst = {
             }),
             klaenge: new Klaenge(),
             fenster: window,
+            meldung: (text) => notification.add(text, { type: "danger" }),
         });
         // Nur für eingerichtete VoIP-Benutzer (ir.http.session_info: wb_voip_aktiv)
         if (session.wb_voip_aktiv) {

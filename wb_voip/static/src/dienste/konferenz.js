@@ -11,6 +11,17 @@
 // Reine Funktionen ohne Zugriff auf Dienst oder SIP: Aufbau und Abbau bekommen alles
 // übergeben und lassen sich mit einem Fake-AudioContext testen.
 
+import { _t } from "@web/core/l10n/translation";
+
+/** Kontext schließen, ohne Fehler weiterzugeben. */
+async function kontextSchliessen(ctx) {
+    try {
+        await ctx?.close?.();
+    } catch {
+        // schon geschlossen
+    }
+}
+
 /** Audiospur eines MediaStreamDestination-Knotens. */
 function zielSpur(ziel) {
     const spuren = ziel.stream?.getAudioTracks?.() || [];
@@ -28,29 +39,44 @@ function zielSpur(ziel) {
  * @param {MediaStream} p.mikrofon  eigenes Mikrofon
  * @param {{empfang: MediaStream, sender: RTCRtpSender}} p.a  Leitung A
  * @param {{empfang: MediaStream, sender: RTCRtpSender}} p.b  Leitung B
- * @param {boolean} [p.stumm]  Mikrofon von Anfang an stumm
- * @returns {Promise<object>} handle for ``konferenzAbbauen`` with ``stumm(an)``
+ * @param {boolean|(() => boolean)} [p.stumm]  Stumm-Zustand (Wert oder Abfrage); die
+ *        Abfrage wird erst am Ende des Aufbaus gelesen, ein Umschalten währenddessen zählt
+ * @returns {Promise<object>} handle for ``konferenzAbbauen`` with ``stumm(an)`` and
+ *          ``istStumm()``
  */
 export async function konferenzAufbauen({ ctx, mikrofon, a, b, stumm = false }) {
     if (!ctx || !mikrofon || !a?.empfang || !a?.sender || !b?.empfang || !b?.sender) {
+        await kontextSchliessen(ctx);
         throw new Error("Konferenz: Ton einer Leitung fehlt.");
     }
+    const istStumm = typeof stumm === "function" ? stumm : () => Boolean(stumm);
     const handle = {
         ctx,
         knoten: [],
         ziele: [],
         seiten: [],
         mikVerstaerkung: null,
+        _stumm: Boolean(istStumm()),
+        /** Mikrofon in beiden Richtungen stumm; die gemischten Spuren selbst bleiben an. */
         stumm(an) {
+            handle._stumm = Boolean(an);
             if (handle.mikVerstaerkung) {
                 handle.mikVerstaerkung.gain.value = an ? 0 : 1;
             }
+            for (const ziel of handle.ziele) {
+                for (const spur of ziel.stream?.getAudioTracks?.() || []) {
+                    spur.enabled = true;
+                }
+            }
+        },
+        istStumm() {
+            return handle._stumm;
         },
     };
     try {
         const mik = ctx.createMediaStreamSource(mikrofon);
         const verstaerkung = ctx.createGain();
-        verstaerkung.gain.value = stumm ? 0 : 1;
+        verstaerkung.gain.value = handle._stumm ? 0 : 1;
         mik.connect(verstaerkung);
         handle.mikVerstaerkung = verstaerkung;
         const vonA = ctx.createMediaStreamSource(a.empfang);
@@ -63,8 +89,12 @@ export async function konferenzAufbauen({ ctx, mikrofon, a, b, stumm = false }) 
         verstaerkung.connect(zuB);
         vonB.connect(zuA);
         vonA.connect(zuB);
-        // Ein neu angelegter Kontext kann angehalten sein (Autoplay-Regeln)
+        // Ein neu angelegter Kontext kann angehalten sein (Autoplay-Regeln); angehalten
+        // verarbeitet er nichts, beide Seiten hörten dann nur Stille
         await Promise.resolve(ctx.resume?.()).catch(() => {});
+        if (ctx.state !== "running") {
+            throw new Error(_t("Ton für die Konferenz nicht verfügbar – bitte erneut klicken."));
+        }
         for (const [seite, ziel] of [
             [a, zuA],
             [b, zuB],
@@ -74,15 +104,17 @@ export async function konferenzAufbauen({ ctx, mikrofon, a, b, stumm = false }) 
             await seite.sender.replaceTrack(zielSpur(ziel));
             handle.seiten.at(-1).ersetzt = true;
         }
-        // Stumm regelt ab jetzt die Verstärkung; eine vorher abgeschaltete Mikrofon-Spur
-        // (Stumm vor der Konferenz) muss für die Mischung wieder Ton liefern
+        // Stumm regelt ab jetzt die Verstärkung (aktueller Stand, auch wenn während des Aufbaus
+        // umgeschaltet); erst danach liefert eine vorher abgeschaltete Mikrofon-Spur wieder Ton
+        handle.stumm(istStumm());
         for (const { original } of handle.seiten) {
             if (original) {
                 original.enabled = true;
             }
         }
     } catch (fehler) {
-        await konferenzAbbauen(handle);
+        // Stumm-Zustand aus der Abfrage: ein stummes Mikrofon bleibt aus
+        await konferenzAbbauen(handle, { stumm: Boolean(istStumm()) });
         throw fehler;
     }
     return handle;
@@ -95,10 +127,14 @@ export async function konferenzAufbauen({ ctx, mikrofon, a, b, stumm = false }) 
  *
  * @param {object} handle Ergebnis von ``konferenzAufbauen``
  * @param {{stumm?: boolean}} [optionen] stumm: Mikrofon-Spur bleibt danach stumm
+ *        (Standard: aktueller Zustand des Handles)
  */
-export async function konferenzAbbauen(handle, { stumm = false } = {}) {
+export async function konferenzAbbauen(handle, { stumm } = {}) {
     if (!handle || handle.abgebaut) {
         return;
+    }
+    if (stumm === undefined) {
+        stumm = Boolean(handle.istStumm?.());
     }
     handle.abgebaut = true;
     await Promise.all(
@@ -128,9 +164,5 @@ export async function konferenzAbbauen(handle, { stumm = false } = {}) {
             spur.stop?.();
         }
     }
-    try {
-        await handle.ctx.close?.();
-    } catch {
-        // schon geschlossen
-    }
+    await kontextSchliessen(handle.ctx);
 }
