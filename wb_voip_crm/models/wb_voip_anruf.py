@@ -19,6 +19,18 @@ class WbVoipAnruf(models.Model):
         'crm.lead', string='Vorgang', compute='_compute_lead_id', store=True, readonly=True,
         copy=False, index='btree_not_null', ondelete='set null')
 
+    wb_voip_lead_lesbar_id = fields.Many2one(
+        'crm.lead', string='Vorgang', compute='_compute_wb_voip_lead_lesbar_id')
+
+    @api.depends_context('uid')
+    @api.depends('lead_id')
+    def _compute_wb_voip_lead_lesbar_id(self):
+        """Show the lead only if the current user may read it (display names bypass rules)."""
+        lesbar = self.sudo().lead_id.with_user(self.env.user)._filtered_access('read')
+        for anruf in self:
+            anruf.wb_voip_lead_lesbar_id = anruf.sudo().lead_id if anruf.sudo().lead_id in lesbar \
+                else False
+
     @api.depends('res_model', 'res_id')
     def _compute_lead_id(self):
         """Derive the lead from ``res_model``/``res_id`` (only if it still exists)."""
@@ -40,6 +52,8 @@ class WbVoipAnruf(models.Model):
         vorschlag = super()._wb_voip_zuordnung(partner, ziel)
         if vorschlag is not None or not partner:
             return vorschlag
+        if ziel is not None and ziel._name == LEAD_MODELL:
+            return None  # übergebener Vorgang hat Vorrang, keine Suche nötig
         Lead = self.env[LEAD_MODELL]
         if not Lead.has_access('read'):
             return None
@@ -66,7 +80,10 @@ class WbVoipAnruf(models.Model):
         if lead_id is False:
             if anruf.res_model != LEAD_MODELL:
                 return True
-            werte = {'res_model': False, 'res_id': False}
+            # zurück auf den Kontakt des Anrufs, falls vorhanden
+            partner = anruf.partner_id
+            werte = {'res_model': 'res.partner' if partner else False,
+                     'res_id': partner.id if partner else False}
         else:
             if type(lead_id) is not int or lead_id <= 0:
                 raise UserError(self.env._("Ungültige Angabe: %s.", self.env._("Vorgang")))

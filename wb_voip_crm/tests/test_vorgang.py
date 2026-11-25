@@ -84,10 +84,60 @@ class TestVorgang(WbVoipCrmCase):
         protokoll = self._protokoll(anruf)
         protokoll.sudo().write({'res_model': 'crm.lead', 'res_id': self.lead.id})
         anruf.with_user(self.vertrieb_eigene).wb_voip_vorgang_setzen(False)
+        # ohne Kontakt am Anruf bleibt nichts übrig
         self.assertFalse(anruf.res_model)
         self.assertFalse(anruf.res_id)
         self.assertFalse(anruf.lead_id)
         self.assertFalse(protokoll.res_id)
+
+    def test_loesen_faellt_auf_kontakt_zurueck(self):
+        anruf = self._anruf(res_model='crm.lead', res_id=self.lead.id,
+                            partner_id=self.kontakt.id)
+        protokoll = self._protokoll(anruf)
+        protokoll.sudo().write({'res_model': 'crm.lead', 'res_id': self.lead.id})
+        anruf.with_user(self.vertrieb_eigene).wb_voip_vorgang_setzen(False)
+        self.assertEqual((anruf.res_model, anruf.res_id), ('res.partner', self.kontakt.id))
+        self.assertEqual((protokoll.res_model, protokoll.res_id),
+                         ('res.partner', self.kontakt.id))
+        self.assertFalse(anruf.lead_id)
+
+    def test_zuordnung_ohne_suche_bei_uebergebenem_vorgang(self):
+        anruf_modell = self.Anruf.with_user(self.vertrieb_eigene)
+        self.assertIsNone(anruf_modell._wb_voip_zuordnung(
+            self.kontakt.with_user(self.vertrieb_eigene), self.lead.with_user(self.vertrieb_eigene)))
+
+    # --- Vorgangsname nur mit Leserecht ---
+
+    def _name_per_web_read(self, anruf, benutzer):
+        spez = {'wb_voip_lead_lesbar_id': {'fields': {'display_name': {}}}}
+        return anruf.with_user(benutzer).web_read(spez)[0]['wb_voip_lead_lesbar_id']
+
+    def test_vorgangsname_nur_mit_leserecht(self):
+        self.lead.name = 'Streng geheimer Vorgang'
+        anruf = self._anruf(res_model='crm.lead', res_id=self.lead.id)
+        self.assertEqual(self._name_per_web_read(anruf, self.vertrieb_eigene)['display_name'],
+                         'Streng geheimer Vorgang')
+        # Vorgang wird einem anderen Verantwortlichen übergeben (Regel „eigene“)
+        self.lead.user_id = self.vertrieb_alle
+        self.env.invalidate_all()
+        self.assertFalse(self._name_per_web_read(anruf, self.vertrieb_eigene))
+
+    def test_vorgangsname_manager_mit_eigenen_rechten(self):
+        self.lead.name = 'Streng geheimer Vorgang'
+        manager = self.env['res.users'].with_context(no_reset_password=True).create({
+            'name': 'VoIP Manager CRM', 'login': 'wb_voip_crm_mgr',
+            'group_ids': [(6, 0, [self.env.ref('wb_voip.group_wb_voip_manager').id,
+                                  self.env.ref('sales_team.group_sale_salesman').id])]})
+        anruf = self._anruf(res_model='crm.lead', res_id=self.lead.id)
+        self.assertEqual(len(self.Anruf.with_user(manager).search([('id', '=', anruf.id)])), 1)
+        self.assertFalse(self._name_per_web_read(anruf, manager))
+        ohne_crm = self.Anruf.with_user(self.user_manager).browse(anruf.id)
+        self.assertFalse(self._name_per_web_read(ohne_crm, self.user_manager))
+
+    def test_ansicht_zeigt_nur_lesbares_feld(self):
+        ansicht = self.Anruf.with_user(self.vertrieb_eigene).get_view(view_type='form')
+        self.assertIn('wb_voip_lead_lesbar_id', ansicht['arch'])
+        self.assertNotIn('"lead_id"', ansicht['arch'])
 
     def test_loesen_laesst_anderes_ziel_stehen(self):
         anruf = self._anruf(res_model='res.partner', res_id=self.kontakt.id)
