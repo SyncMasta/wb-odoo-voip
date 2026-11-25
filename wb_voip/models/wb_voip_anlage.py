@@ -1,7 +1,7 @@
 import re
 
 from odoo import api, fields, models
-from odoo.exceptions import ValidationError
+from odoo.exceptions import AccessError, ValidationError
 
 # ICE-Server: nur STUN (RFC 7064), ohne Leerzeichen, begrenzt in Anzahl und Länge.
 # TURN braucht Benutzername und Passwort (sonst wirft RTCPeerConnection), kommt später.
@@ -10,6 +10,8 @@ ICE_MAX_ZEILEN = 10
 ICE_MAX_LAENGE = 255
 # Heranholen: Wahlpräfix der Anlage, nur Ziffern, * und # (kein Wählstring mit Steuerzeichen)
 HERANHOLEN_MUSTER = re.compile(r'[0-9*#]{1,8}')
+# Felder, an denen der Browser sich anmeldet: nur die Systemverwaltung ändert sie
+VERBINDUNGSFELDER = frozenset({'ws_url', 'sip_domain', 'ice_server_urls'})
 
 
 class WbVoipAnlage(models.Model):
@@ -43,13 +45,33 @@ class WbVoipAnlage(models.Model):
         help="Wahlpräfix der Anlage, um einen klingelnden Anruf eines Kollegen heranzuholen, "
              "z. B. **. Höchstens 8 Zeichen aus 0-9, * und #. Leer = Heranholen aus.")
 
+    verbindung_gesperrt = fields.Boolean(
+        string='Verbindungsdaten gesperrt', compute='_compute_verbindung_gesperrt')
+
+    @api.depends_context('uid')
+    def _compute_verbindung_gesperrt(self):
+        gesperrt = not self.env.user._is_system()
+        for anlage in self:
+            anlage.verbindung_gesperrt = gesperrt
+
+    def _verbindung_pruefen(self, vals):
+        """Raise ``AccessError`` if a user without system right changes connection data.
+
+        Browsers register the SIP account at ``ws_url``; a rogue address would receive the
+        credentials of every user. Internal code running as superuser stays allowed.
+        """
+        if VERBINDUNGSFELDER & set(vals) and not (self.env.su or self.env.user._is_system()):
+            raise AccessError(self.env._("Verbindungsdaten der Anlage darf nur die Systemverwaltung ändern."))
+
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
+            self._verbindung_pruefen(vals)
             self._ws_url_bereinigen(vals)
         return super().create(vals_list)
 
     def write(self, vals):
+        self._verbindung_pruefen(vals)
         self._ws_url_bereinigen(vals)
         return super().write(vals)
 

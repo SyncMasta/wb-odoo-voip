@@ -27,12 +27,13 @@
                             <field name="country_id"/>
                         </group>
                         <group>
-                            <field name="sip_domain"/>
-                            <field name="ws_url"/>
+                            <field name="verbindung_gesperrt" invisible="1"/>
+                            <field name="sip_domain" readonly="verbindung_gesperrt"/>
+                            <field name="ws_url" readonly="verbindung_gesperrt"/>
                         </group>
                     </group>
                     <group string="Netzwerk">
-                        <field name="ice_server_urls" placeholder="leer = kein STUN/TURN"/>
+                        <field name="ice_server_urls" readonly="verbindung_gesperrt" placeholder="leer = kein STUN/TURN"/>
                     </group>
                     <group string="Team">
                         <field name="heranholen_praefix" placeholder="z. B. ** (leer = Heranholen aus)"/>

@@ -28,6 +28,14 @@ Einrichtung
    ``wb_voip.aufbewahrung_monate``, Standard 12, ``0`` = nie löschen. Ein täglicher Lauf entfernt beendete
    Anrufe, die älter sind; die Protokolle bleiben erhalten.
 
+Verbindungsdaten der Anlage
+---------------------------
+
+WebSocket-URL, SIP-Domain und ICE-Server einer Anlage dürfen nur Systemadministratoren ändern (Prüfung in
+``create``/``write``, im Formular für andere schreibgeschützt). Benutzer von WB VoIP lesen sie weiter, der
+Browser braucht sie zur Anmeldung. VoIP-Administratoren ohne Systemrecht können sie nicht auf einen fremden
+Server umbiegen.
+
 Protokoll-Popup
 ---------------
 
