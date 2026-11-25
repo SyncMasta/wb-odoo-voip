@@ -226,8 +226,11 @@ class WbVoipAnruf(models.Model):
             self = self.with_context(
                 serverfelder.kontext_ohne_defaults(self.env, self._WB_VOIP_NUR_SERVER))
         anrufe = super().create(vals_list)
-        # Neuer Anruf, der gleich klingelt oder läuft: Team-Status ändert sich
-        anrufe.sudo().filtered(lambda a: a.zustand in OFFENE_ZUSTAENDE).user_id._wb_voip_team_melden()
+        # Neuer Anruf, der gleich klingelt oder läuft: nur melden, wenn sich der Status ändert
+        besitzer = anrufe.sudo().filtered(lambda a: a.zustand in OFFENE_ZUSTAENDE).user_id
+        vorher = besitzer._wb_voip_team_status(ausser=anrufe)
+        nachher = besitzer._wb_voip_team_status()
+        besitzer.filtered(lambda u: vorher[u.id] != nachher[u.id])._wb_voip_team_melden()
         return anrufe
 
     def write(self, vals):
@@ -235,10 +238,12 @@ class WbVoipAnruf(models.Model):
             serverfelder.pruefen(self.env, vals, self._WB_VOIP_NUR_SERVER)
         if 'zustand' not in vals:
             return super().write(vals)
-        # Team-Status: nur Anrufe, deren Zustand sich wirklich ändert, melden (je Besitzer einmal)
-        geaendert = self.sudo().filtered(lambda a: a.zustand != vals['zustand'])
+        # Team-Status: nur Besitzer melden, deren abgeleiteter Status sich wirklich ändert
+        besitzer = self.sudo().filtered(lambda a: a.zustand != vals['zustand']).user_id
+        vorher = besitzer._wb_voip_team_status()
         ergebnis = super().write(vals)
-        geaendert.user_id._wb_voip_team_melden()
+        nachher = besitzer._wb_voip_team_status()
+        besitzer.filtered(lambda u: vorher[u.id] != nachher[u.id])._wb_voip_team_melden()
         return ergebnis
 
     # --- Hilfen ---

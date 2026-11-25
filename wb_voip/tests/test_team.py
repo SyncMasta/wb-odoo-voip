@@ -174,11 +174,14 @@ class TestTeam(WbVoipCase):
         self.assertEqual(kollege['status'], 'klingelt')
         self.assertFalse(kollege['seit'])
 
-    def test_status_ausgehender_ruf_ist_nicht_klingelt(self):
+    def test_status_ausgehender_ruf_ist_telefoniert(self):
         with freeze_time(START):
             self._melden(self.user_b)
             self._anruf(self.user_b, 'ausgehend')
-            self.assertEqual(self._kollege(self.user_a, self.user_b)['status'], 'frei')
+            kollege = self._kollege(self.user_a, self.user_b)
+        self.assertEqual(kollege['status'], 'telefoniert')
+        self.assertNotEqual(kollege['status'], 'klingelt')
+        self.assertFalse(kollege['seit'])
 
     def test_status_telefoniert_mit_seit(self):
         with freeze_time(START):
@@ -258,12 +261,66 @@ class TestTeam(WbVoipCase):
     def test_bus_ein_sendevorgang_je_empfaenger(self):
         """Cron closing several calls of one owner sends once per team member."""
         with freeze_time(START):
+            self._melden(self.user_b)
             self._anruf(self.user_b)
             self._anruf(self.user_b)
             anrufe = self.env['wb.voip.anruf'].sudo().search([('user_id', '=', self.user_b.id)])
             self.bus.clear()
             anrufe.write({'zustand': 'fehlgeschlagen'})
             self.assertEqual(len(self._team_meldungen(self.user_a)), 1)
+
+    def test_bus_je_besitzer_auch_an_andere_besitzer(self):
+        with freeze_time(START):
+            self._melden(self.user_a)
+            self._melden(self.user_b)
+            anrufe = self._anruf(self.user_a) | self._anruf(self.user_b)
+            self.bus.clear()
+            anrufe.sudo().write({'zustand': 'fehlgeschlagen'})
+            # A hört von B und B von A, keiner von sich selbst
+            self.assertEqual(len(self._team_meldungen(self.user_a)), 1)
+            self.assertEqual(len(self._team_meldungen(self.user_b)), 1)
+
+    def test_bus_nicht_bei_unveraendertem_status(self):
+        with freeze_time(START):
+            # abgemeldeter Besitzer: Status bleibt abgemeldet
+            anruf = self._anruf(self.user_b)
+            anruf.wb_voip_angenommen()
+            self.assertFalse(self._team_meldungen())
+            # angemeldet, zweite Leitung: telefoniert bleibt telefoniert
+            self._melden(self.user_b)
+            zweiter = self._anruf(self.user_b, 'ausgehend')
+            self.bus.clear()
+            zweiter.wb_voip_angenommen()
+            self.assertFalse(self._team_meldungen())
+
+    def test_abmelden_loescht_lebenszeichen(self):
+        with freeze_time(START):
+            self._melden(self.user_b)
+            self.assertTrue(self.user_b.sudo().wb_voip_lebenszeichen)
+            self._melden(self.user_b, registriert=False)
+            self.assertFalse(self.user_b.sudo().wb_voip_lebenszeichen)
+            self.assertFalse(self.user_b.sudo().wb_voip_registriert)
+
+    # --- Gleiche Anlage ---
+
+    def test_team_nur_eigene_anlage(self):
+        anlage2 = self.env['wb.voip.anlage'].create({
+            'name': 'Zweitanlage', 'ws_url': 'wss://zwei.test/ws', 'sip_domain': 'zwei.test'})
+        gruppen = [self.env.ref('base.group_user').id,
+                   self.env.ref('wb_voip.group_wb_voip_user').id]
+        user_g = self.env['res.users'].with_context(no_reset_password=True).create({
+            'name': 'Andere Anlage G', 'login': 'wb_voip_tg', 'email': 'tg@example.com',
+            'group_ids': [(6, 0, gruppen)],
+            'wb_voip_anlage_id': anlage2.id, 'wb_voip_sip_benutzer': '300'})
+        with freeze_time(START):
+            self._melden(user_g)
+            self.assertIsNone(self._kollege(self.user_a, user_g))
+            self.assertIsNone(self._kollege(user_g, self.user_a))
+            self._melden(self.user_b)
+            self.bus.clear()
+            self._melden(self.user_b, registriert=False)
+            self.assertFalse(self._team_meldungen(user_g))
+            self.assertTrue(self._team_meldungen(self.user_a))
 
     # --- Präfix (Review Focus 5) ---
 

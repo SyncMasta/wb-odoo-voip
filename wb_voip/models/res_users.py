@@ -237,23 +237,24 @@ class ResUsers(models.Model):
     def _wb_voip_team_mitglieder(self, firmen):
         """Return (sudo) the team members visible to a user of ``firmen``, without ``self``.
 
-        Active internal users with the VoIP group, a PBX and an SIP user that share at least
-        one of ``firmen`` (a company recordset). Sorted by name, at most ``TEAM_HOECHSTENS``.
+        Active internal users with the VoIP group, the same PBX as ``self`` and an SIP user that
+        share at least one of ``firmen`` (a company recordset). Sorted by name, at most ``TEAM_HOECHSTENS``.
         """
         gruppe = self.env.ref('wb_voip.group_wb_voip_user')
         kandidaten = self.sudo().search([
             ('id', 'not in', self.ids), ('active', '=', True), ('share', '=', False),
-            ('all_group_ids', 'in', gruppe.ids), ('wb_voip_anlage_id', '!=', False),
+            ('all_group_ids', 'in', gruppe.ids), ('wb_voip_anlage_id', '=', self.sudo().wb_voip_anlage_id.id or -1),
             ('wb_voip_sip_benutzer', '!=', False), ('company_ids', 'in', firmen.ids),
         ], order='name, id', limit=TEAM_HOECHSTENS)
         return kandidaten.filtered(lambda u: u.wb_voip_sip_benutzer)
 
-    def _wb_voip_team_status(self):
+    def _wb_voip_team_status(self, ausser=None):
         """Return ``{user_id: (status, seit)}`` for these users (read with sudo).
 
         ``abgemeldet``: no sign of life within ``LEBENSZEICHEN_GUELTIG`` seconds or not
         registered (whatever calls are open); else ``klingelt`` (own incoming call ringing),
-        ``telefoniert`` (call running, ``seit`` = earliest answer) or ``frei``.
+        ``telefoniert`` (call running or an outgoing call ringing, ``seit`` = earliest answer,
+        empty while ringing) or ``frei``. ``ausser``: calls to ignore (state before their creation).
         """
         jetzt = fields.Datetime.now()
         grenze = jetzt - timedelta(seconds=LEBENSZEICHEN_GUELTIG)
@@ -262,6 +263,8 @@ class ResUsers(models.Model):
             and u.wb_voip_lebenszeichen >= grenze)
         anrufe = self.env['wb.voip.anruf'].sudo().search([
             ('user_id', 'in', angemeldet.ids), ('zustand', 'in', ('klingelt', 'laeuft'))])
+        if ausser:
+            anrufe -= ausser.sudo()
         ergebnis = {}
         for benutzer in self:
             if benutzer not in angemeldet:
@@ -271,9 +274,8 @@ class ResUsers(models.Model):
             if eigene.filtered(lambda a: a.zustand == 'klingelt' and a.richtung == 'eingehend'):
                 ergebnis[benutzer.id] = ('klingelt', False)
                 continue
-            laufend = eigene.filtered(lambda a: a.zustand == 'laeuft')
-            if laufend:
-                zeiten = [a.annahme for a in laufend if a.annahme]
+            if eigene:  # laufend oder ausgehend klingelnd
+                zeiten = [a.annahme for a in eigene if a.zustand == 'laeuft' and a.annahme]
                 seit = fields.Datetime.to_string(min(zeiten)) if zeiten else False
                 ergebnis[benutzer.id] = ('telefoniert', seit)
             else:
@@ -281,12 +283,13 @@ class ResUsers(models.Model):
         return ergebnis
 
     def _wb_voip_team_melden(self):
-        """Tell the team of these users that a status changed (empty payload, once per member)."""
-        empfaenger = self.browse()
-        for benutzer in self.sudo():
-            empfaenger |= benutzer._wb_voip_team_mitglieder(benutzer.company_ids)
-        for benutzer in empfaenger - self.sudo():
-            benutzer._bus_send('wb_voip/team', {})
+        """Tell the team of each of these users that a status changed (empty payload).
+
+        Per owner: the members of his team except himself, so owners hear of each other.
+        """
+        for besitzer in self.sudo():
+            for mitglied in besitzer._wb_voip_team_mitglieder(besitzer.company_ids):
+                mitglied._bus_send('wb_voip/team', {})
 
     @api.model
     @nur_voip_benutzer
@@ -299,7 +302,8 @@ class ResUsers(models.Model):
             raise UserError(self.env._("Ungültige Angabe: %s.", self.env._("Angemeldet")))
         benutzer = self.env.user.sudo()
         vorher = benutzer._wb_voip_team_status()[benutzer.id][0]
-        benutzer.write({'wb_voip_lebenszeichen': fields.Datetime.now(),
+        # Abmelden löscht das Lebenszeichen (Datensparsamkeit)
+        benutzer.write({'wb_voip_lebenszeichen': fields.Datetime.now() if registriert else False,
                         'wb_voip_registriert': registriert})
         if benutzer._wb_voip_team_status()[benutzer.id][0] != vorher:
             benutzer._wb_voip_team_melden()
