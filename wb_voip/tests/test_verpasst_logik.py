@@ -1,3 +1,5 @@
+import importlib.util
+import os
 from datetime import timedelta
 from unittest.mock import patch
 
@@ -459,3 +461,98 @@ class TestVerpasstLogik(WbVoipCase):
         self.assertTrue(alt.erledigt)
         self.assertEqual(alt.erledigt_text, 'Zurückgerufen von VoIP Benutzer B')
         self.assertEqual(alt.erledigt_durch_protokoll_id, protokoll)
+
+    # --- Nachbesserung: echte Annahme nach „anderswo“, später gemeldetes „verpasst“ ---
+
+    def _kollege_nimmt_an(self, zeit):
+        a = self._anruf(self.user_a)
+        b = self._anruf(self.user_b)
+        zeit.tick(timedelta(seconds=1))
+        b.wb_voip_angenommen()
+        self.assertEqual(a.sudo().zustand, 'anderswo')
+        self.assertTrue(a.sudo().ende)
+        return a, b
+
+    def test_echte_annahme_nach_anderswo(self):
+        # gleiche Absendernummer (Zentrale), zwei verschiedene Anrufe: A nimmt wirklich an
+        with freeze_time(START) as zeit:
+            a, b = self._kollege_nimmt_an(zeit)
+            zeit.tick(timedelta(seconds=2))
+            daten = a.wb_voip_angenommen()
+            self.assertEqual(daten['zustand'], 'laeuft')
+            a_sudo = a.sudo()
+            self.assertTrue(a_sudo.annahme)
+            self.assertFalse(a_sudo.angenommen_anruf_id)
+            self.assertFalse(a_sudo.ende)
+            self.assertEqual(b.sudo().zustand, 'laeuft')
+            zeit.tick(timedelta(seconds=30))
+            daten = a.wb_voip_beendet(False, False)
+        self.assertEqual(daten['zustand'], 'beendet')
+        self.assertEqual(daten['dauer_sek'], 30)
+        protokoll = self.env['wb.voip.protokoll'].sudo().browse(daten['protokoll_id'])
+        self.assertEqual(protokoll.ergebnis, 'erreicht')
+
+    def test_beendet_angenommen_nach_anderswo(self):
+        with freeze_time(START) as zeit:
+            a, _b = self._kollege_nimmt_an(zeit)
+            zeit.tick(timedelta(seconds=5))
+            daten = a.wb_voip_beendet(False, False, angenommen=True)
+        a_sudo = a.sudo()
+        self.assertEqual(daten['zustand'], 'beendet')
+        self.assertTrue(a_sudo.annahme)
+        self.assertFalse(a_sudo.angenommen_anruf_id)
+        protokoll = self.env['wb.voip.protokoll'].sudo().browse(daten['protokoll_id'])
+        self.assertEqual(protokoll.ergebnis, 'erreicht')
+
+    def test_anderswo_ohne_angenommen_bleibt_final(self):
+        with freeze_time(START) as zeit:
+            a, b = self._kollege_nimmt_an(zeit)
+            daten = a.wb_voip_beendet(False, '487')
+        self.assertEqual(daten['zustand'], 'anderswo')
+        self.assertEqual(a.sudo().angenommen_anruf_id, b.sudo())
+        self.assertFalse(daten['protokoll_id'])
+
+    def _verpasst_nach_kollegen_annahme(self, b_beenden):
+        with freeze_time(START) as zeit:
+            a = self._anruf(self.user_a)
+            b = self._anruf(self.user_b)
+            zeit.tick(timedelta(seconds=1))
+            b.wb_voip_angenommen()
+            if b_beenden:
+                zeit.tick(timedelta(seconds=5))
+                b.wb_voip_beendet(False, False)
+            # A's Client meldet erst jetzt ein schlichtes 487 (ohne Grund „anderswo“)
+            a.sudo().write({'zustand': 'klingelt', 'angenommen_anruf_id': False, 'ende': False})
+            daten = a.wb_voip_beendet(False, '487')
+        a_sudo = a.sudo()
+        self.assertEqual(daten['zustand'], 'anderswo')
+        self.assertEqual(a_sudo.angenommen_anruf_id, b.sudo())
+        self.assertFalse(a_sudo.rueckruf_aktivitaet_id)
+        self.assertFalse(self._aktivitaeten(self.user_a))
+        self.assertFalse(a_sudo.protokoll_id)
+        self.assertFalse(self.env['wb.voip.protokoll'].sudo().search([('anruf_id', '=', a.id)]))
+
+    def test_verpasst_nach_kollegen_annahme_laeuft(self):
+        self._verpasst_nach_kollegen_annahme(b_beenden=False)
+
+    def test_verpasst_nach_kollegen_annahme_beendet(self):
+        self._verpasst_nach_kollegen_annahme(b_beenden=True)
+
+    # --- Migration 19.0.4.0.0 ---
+
+    def test_migration_firma_aus_benutzer(self):
+        a = self._anruf(self.user_a)
+        c = self._anruf(self.user_c)
+        self.env.cr.execute("UPDATE wb_voip_anruf SET company_id = %s WHERE id = %s",
+                            [self.firma2.id, a.id])
+        self.env.cr.execute("UPDATE wb_voip_anruf SET company_id = NULL WHERE id = %s", [c.id])
+        self.env.invalidate_all()
+        pfad = os.path.join(os.path.dirname(__file__), '..', 'migrations', '19.0.4.0.0',
+                            'post-migration.py')
+        spec = importlib.util.spec_from_file_location('wb_voip_mig_19_0_4_0_0', pfad)
+        modul = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(modul)
+        modul.migrate(self.env.cr, '19.0.3.0.1')
+        self.env.invalidate_all()
+        self.assertEqual(a.sudo().company_id, self.user_a.company_id)
+        self.assertEqual(c.sudo().company_id, self.firma2)

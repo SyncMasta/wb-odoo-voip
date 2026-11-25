@@ -361,11 +361,19 @@ class WbVoipAnruf(models.Model):
 
     @nur_voip_benutzer
     def wb_voip_angenommen(self):
-        """Mark the call as answered (state ``laeuft``)."""
+        """Mark the call as answered (state ``laeuft``).
+
+        Also a call set to ``anderswo`` by a colleague's answer counts as answered when the
+        caller really answers it (``annahme`` still empty): e.g. a switchboard sending one
+        number for two different calls. Its link and end are cleared.
+        """
         anruf = self._wb_voip_eigener()
-        if anruf.zustand in ('neu', 'klingelt'):
+        if anruf.zustand in ('neu', 'klingelt') or anruf._wb_voip_anderswo_offen():
             jetzt = fields.Datetime.now()
-            anruf.write({'zustand': 'laeuft', 'annahme': jetzt, 'zuletzt_gesehen': jetzt})
+            werte = {'zustand': 'laeuft', 'annahme': jetzt, 'zuletzt_gesehen': jetzt}
+            if anruf.zustand == 'anderswo':
+                werte.update({'angenommen_anruf_id': False, 'ende': False})
+            anruf.write(werte)
             if anruf.richtung == 'eingehend':
                 anruf._wb_voip_nach_annahme()
         return anruf.with_user(self.env.user)._wb_voip_client_daten()
@@ -378,7 +386,9 @@ class WbVoipAnruf(models.Model):
         * ``angenommen`` True but ``annahme`` empty  -> ``annahme`` now, ``beendet``
           (the client saw the answer, ``wb_voip_angenommen`` lost the race)
         * not answered, outgoing, ``603``/``480``/``487`` -> ``abgelehnt``
-        * not answered, incoming, ``487``/``480``     -> ``verpasst`` (log: not reached)
+        * not answered, incoming, ``487``/``480``     -> ``verpasst`` (log: not reached), but
+          ``anderswo`` if a colleague already answered the same call
+        * ``anderswo`` without ``annahme`` and ``angenommen`` True -> answered here, ``beendet``
         * not answered, incoming, ``anderswo``       -> ``anderswo`` (answered on another
           device; no log entry)
         * not answered, ``603`` -> ``abgelehnt``; ``486`` or ``600`` -> ``besetzt``
@@ -393,11 +403,13 @@ class WbVoipAnruf(models.Model):
             raise UserError(self.env._("Ungültige Angabe: %s.", self.env._("Angenommen")))
         anruf = self._wb_voip_eigener()
         uebergang = neu_angenommen = False
-        if anruf.zustand in OFFENE_ZUSTAENDE or anruf.zustand == 'neu':
+        # ``anderswo`` ohne Annahme, aber der Client hat angenommen: wie wb_voip_angenommen
+        if anruf.zustand in OFFENE_ZUSTAENDE or anruf.zustand == 'neu' \
+                or (angenommen and anruf._wb_voip_anderswo_offen()):
             uebergang = True
             jetzt = fields.Datetime.now()
             if angenommen and not anruf.annahme:
-                anruf.write({'annahme': jetzt})
+                anruf.write({'annahme': jetzt, 'angenommen_anruf_id': False})
                 neu_angenommen = True
             werte = {'ende': jetzt, 'zuletzt_gesehen': jetzt}
             if anruf.annahme:
@@ -407,6 +419,9 @@ class WbVoipAnruf(models.Model):
                 zuordnung = (SIP_GRUND_ZUSTAND_EINGEHEND if anruf.richtung == 'eingehend'
                              else SIP_GRUND_ZUSTAND)
                 werte['zustand'] = zuordnung.get(sip_grund or '', 'fehlgeschlagen')
+                # schlichtes 487, obwohl ein Kollege schon angenommen hat: nicht verpasst
+                if werte['zustand'] == 'verpasst' and anruf._wb_voip_angenommen_von():
+                    werte['zustand'] = 'anderswo'
             if notiz:
                 werte['notiz'] = notiz
             anruf.write(werte)
@@ -430,13 +445,24 @@ class WbVoipAnruf(models.Model):
             anruf._wb_voip_rueckruf_aktivitaet()
             anruf._wb_voip_verpasst_melden()
         elif anruf.zustand == 'anderswo':
-            angenommen = anruf._wb_voip_gleichzeitige(('laeuft', 'beendet')).filtered(
-                'annahme').sorted(lambda a: (a.annahme, a.id))[:1]
+            angenommen = anruf._wb_voip_angenommen_von()
             if angenommen:
                 anruf.angenommen_anruf_id = angenommen
             anruf._wb_voip_verpasst_melden()
         elif neu_angenommen and anruf.richtung == 'eingehend':
             anruf._wb_voip_nach_annahme()
+
+    def _wb_voip_anderswo_offen(self):
+        """Return True for an ``anderswo`` call that was never answered on this device."""
+        self.ensure_one()
+        anruf = self.sudo()
+        return anruf.zustand == 'anderswo' and not anruf.annahme
+
+    def _wb_voip_angenommen_von(self):
+        """Return (sudo) the earliest answered simultaneous call of a colleague, if any."""
+        self.ensure_one()
+        return self._wb_voip_gleichzeitige(('laeuft', 'beendet')).filtered(
+            'annahme').sorted(lambda a: (a.annahme, a.id))[:1]
 
     def _wb_voip_gleichzeitige(self, zustaende):
         """Return (sudo) the calls of other users that belong to the same incoming call.
