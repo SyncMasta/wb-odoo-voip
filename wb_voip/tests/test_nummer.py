@@ -1,5 +1,8 @@
+from unittest.mock import patch
+
 from odoo.tests import tagged
 
+from odoo.addons.wb_voip.tools import nummer as nummer_modul
 from odoo.addons.wb_voip.tools.nummer import e164
 
 from .common import WbVoipCase
@@ -23,6 +26,13 @@ class TestNummer(WbVoipCase):
         self.assertIs(e164('abc'), False)
         self.assertIs(e164(''), False)
         self.assertIs(e164('100'), False)
+
+    def test_ohne_phonenumbers_keine_nummer(self):
+        """Without phonenumbers, Odoo returns the raw input: fail closed instead."""
+        self.assertEqual(e164('0170 1234567'), '+491701234567')
+        with patch.object(nummer_modul, 'phonenumbers', None):
+            self.assertIs(e164('0170 1234567'), False)
+            self.assertIs(e164('+49 170 1234567'), False)
 
     def test_kontakt_eindeutig(self):
         kontakt = self.env['res.partner'].create({

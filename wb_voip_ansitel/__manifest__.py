@@ -1,6 +1,6 @@
 {
     'name': 'WB VoIP Ansitel',
-    'version': '19.0.1.1.2',
+    'version': '19.0.1.1.3',
     'category': 'Productivity/VoIP',
     'summary': 'Schnelltasten und Anrufabgleich für Ansitel-Telefonanlagen',
     'description': """
@@ -16,6 +16,7 @@ Abgleich mit der Anrufliste der Anlage (verpasste und anderswo angenommene Anruf
     'website': 'https://www.wissen-beratung.de',
     'license': 'OPL-1',
     'depends': ['wb_voip'],
+    'external_dependencies': {'python': ['phonenumbers']},
     'data': [
         'security/ir.model.access.csv',
         'data/tasten_data.xml',

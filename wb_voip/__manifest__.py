@@ -1,6 +1,6 @@
 {
     'name': 'WB VoIP',
-    'version': '19.0.4.5.2',
+    'version': '19.0.4.5.3',
     'category': 'Productivity/VoIP',
     'summary': 'Softphone, Anrufprotokoll und Telefonanlagen-Anbindung für Odoo',
     'description': """
@@ -13,6 +13,7 @@ Softphone im Browser, Anrufprotokoll und Anbindung an SIP-Telefonanlagen.
     'website': 'https://www.wissen-beratung.de',
     'license': 'OPL-1',
     'depends': ['mail', 'phone_validation', 'bus', 'web', 'wb_license_client'],
+    'external_dependencies': {'python': ['phonenumbers']},
     'excludes': ['voip'],
     'data': [
         'security/wb_voip_security.xml',
