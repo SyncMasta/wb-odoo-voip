@@ -318,6 +318,9 @@ class TestVerpasstRueckruf(WbVoipCase):
         from odoo.addons.wb_voip import _wb_voip_uninstall
 
         anruf_typ = self.env.ref('mail.mail_activity_data_call')
+        # Other callback activities may already exist in the database: count only our own.
+        vorher = self.env['mail.activity'].with_context(active_test=False).search_count(
+            [('activity_type_id', '=', self.typ.id)])
         aktiv = self.kontakt.activity_schedule(
             act_type_xmlid='wb_voip.wb_voip_activity_type_rueckruf', user_id=self.user_a.id)
         archiviert = self.kontakt.activity_schedule(
@@ -327,11 +330,13 @@ class TestVerpasstRueckruf(WbVoipCase):
             act_type_xmlid='mail.mail_activity_data_todo', user_id=self.user_a.id)
         with self.assertLogs('odoo.addons.wb_voip', 'INFO') as log:
             _wb_voip_uninstall(self.env)
-        self.assertTrue(any('[wb_voip]' in z and '2 Rückruf' in z for z in log.output), log.output)
+        erwartet = f'{vorher + 2} Rückruf'
+        self.assertTrue(any('[wb_voip]' in z and erwartet in z for z in log.output), log.output)
         self.env.invalidate_all()
         for akt in (aktiv, archiviert):
             self.assertEqual(akt.activity_type_id, anruf_typ)
         self.assertEqual(fremd.activity_type_id, self.env.ref('mail.mail_activity_data_todo'))
         self.assertFalse(self.env['mail.activity'].with_context(active_test=False).search_count(
             [('activity_type_id', '=', self.typ.id)]))
+        self.assertEqual((aktiv | archiviert).mapped('activity_type_id'), anruf_typ)
 
