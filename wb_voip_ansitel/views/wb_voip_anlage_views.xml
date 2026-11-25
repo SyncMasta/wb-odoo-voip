@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="wb_voip_anlage_view_form_ansitel" model="ir.ui.view">
+        <field name="name">wb.voip.anlage.form.ansitel</field>
+        <field name="model">wb.voip.anlage</field>
+        <field name="inherit_id" ref="wb_voip.wb_voip_anlage_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='heranholen_praefix']/ancestor::group" position="after">
+                <group string="Ansitel-Schnittstelle">
+                    <field name="ansitel_aktiv"/>
+                    <field name="ansitel_api_url" invisible="not ansitel_aktiv"
+                           placeholder="https://anlage.example/awi/api/rest"/>
+                    <field name="ansitel_token_gesetzt" invisible="1"/>
+                    <field name="ansitel_token" password="True" invisible="not ansitel_aktiv"
+                           groups="base.group_system" placeholder="Neuen Token eingeben"/>
+                    <div colspan="2" class="text-muted"
+                         invisible="not ansitel_aktiv or not ansitel_token_gesetzt">
+                        Token gespeichert – zum Ändern neu eingeben
+                    </div>
+                    <field name="ansitel_tz" invisible="not ansitel_aktiv"/>
+                    <div colspan="2" invisible="not ansitel_aktiv or not id">
+                        <button name="action_ansitel_testen" type="object" class="btn-secondary"
+                                string="Verbindung testen" groups="wb_voip.group_wb_voip_manager"/>
+                    </div>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>
