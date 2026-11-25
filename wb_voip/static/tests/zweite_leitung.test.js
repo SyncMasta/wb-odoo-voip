@@ -443,6 +443,10 @@ test("Anrufansicht: Team-Übersicht ausgeschaltet – kein Team-Knopf, freie Num
     welt.dienst.state.teamAktiv = false;
     await animationFrame();
     expect(".o_wb_voip_team_umschalten").toHaveCount(0);
+    // fehlt die Angabe, gilt aus (wie im Dienst)
+    welt.dienst.state.teamAktiv = undefined;
+    await animationFrame();
+    expect(".o_wb_voip_team_umschalten").toHaveCount(0);
     expect(".o_wb_voip_weiterleiten_umschalten").toHaveCount(1);
     await click(".o_wb_voip_weiterleiten_umschalten");
     await animationFrame();

@@ -229,6 +229,8 @@ Team
 
 Die Team-Übersicht ist **standardmäßig ausgeschaltet**. Einschalten je Firma unter Einstellungen › WB VoIP:
 „Team-Übersicht anzeigen“ und, getrennt davon, „Gesprächsdauer im Team anzeigen“ (ebenfalls Standard aus).
+Maßgeblich ist die Firma, in der die Person gerade arbeitet (aktive Firma in der Firmenauswahl). Beim Ausschalten
+löscht Odoo die gespeicherten Lebenszeichen aller Benutzer dieser Firma.
 Ausgeschaltet zeigt der Reiter „Team“ nur „Die Team-Übersicht ist ausgeschaltet.“, der Telefon-Tab meldet keine
 Lebenszeichen (ein vorhandenes wird gelöscht) und in der Gesprächsansicht gibt es statt der Team-Auswahl nur die
 freie Nummer.

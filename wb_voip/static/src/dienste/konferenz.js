@@ -37,8 +37,10 @@ function zielSpur(ziel) {
  * @param {object} p
  * @param {AudioContext} p.ctx
  * @param {MediaStream} p.mikrofon  eigenes Mikrofon
- * @param {{empfang: MediaStream, sender: RTCRtpSender}} p.a  Leitung A
- * @param {{empfang: MediaStream, sender: RTCRtpSender}} p.b  Leitung B
+ * @param {{empfang: MediaStream, sender: RTCRtpSender, zurueck?: () => void}} p.a  Leitung A;
+ *        ``zurueck`` schaltet beim Abbau die Mikrofon-Spur der Leitung nach ihrem Zustand
+ *        (Stumm, Halten) wieder ein, z. B. über ``sitzung.mute()``
+ * @param {{empfang: MediaStream, sender: RTCRtpSender, zurueck?: () => void}} p.b  Leitung B
  * @param {boolean|(() => boolean)} [p.stumm]  Stumm-Zustand (Wert oder Abfrage); die
  *        Abfrage wird erst am Ende des Aufbaus gelesen, ein Umschalten währenddessen zählt
  * @returns {Promise<object>} handle for ``konferenzAbbauen`` with ``stumm(an)`` and
@@ -57,7 +59,10 @@ export async function konferenzAufbauen({ ctx, mikrofon, a, b, stumm = false }) 
         seiten: [],
         mikVerstaerkung: null,
         _stumm: Boolean(istStumm()),
-        /** Mikrofon in beiden Richtungen stumm; die gemischten Spuren selbst bleiben an. */
+        /**
+         * Mikrofon in beiden Richtungen stumm; die gemischten Spuren selbst bleiben an. Sie liegen
+         * nur während der laufenden Konferenz an den Sendern, in der keine Leitung gehalten ist.
+         */
         stumm(an) {
             handle._stumm = Boolean(an);
             if (handle.mikVerstaerkung) {
@@ -100,12 +105,18 @@ export async function konferenzAufbauen({ ctx, mikrofon, a, b, stumm = false }) 
             [b, zuB],
         ]) {
             const original = seite.sender.track;
-            handle.seiten.push({ sender: seite.sender, original, ersetzt: false });
+            handle.seiten.push({
+                sender: seite.sender,
+                original,
+                ersetzt: false,
+                zurueck: typeof seite.zurueck === "function" ? seite.zurueck : null,
+            });
             await seite.sender.replaceTrack(zielSpur(ziel));
             handle.seiten.at(-1).ersetzt = true;
         }
         // Stumm regelt ab jetzt die Verstärkung (aktueller Stand, auch wenn während des Aufbaus
-        // umgeschaltet); erst danach liefert eine vorher abgeschaltete Mikrofon-Spur wieder Ton
+        // umgeschaltet); erst danach liefert eine vorher abgeschaltete Mikrofon-Spur wieder Ton.
+        // Die Originale liegen jetzt an keinem Sender (ersetzt), sie speisen nur die Mischung.
         handle.stumm(istStumm());
         for (const { original } of handle.seiten) {
             if (original) {
@@ -125,9 +136,13 @@ export async function konferenzAufbauen({ ctx, mikrofon, a, b, stumm = false }) 
  * (``replaceTrack``), alle Knoten werden getrennt, der Kontext geschlossen. Fehler einer
  * schon beendeten Leitung werden ignoriert.
  *
+ * Die Mikrofon-Spur geht ausgeschaltet zurück an den Sender; eingeschaltet wird sie erst danach
+ * über ``zurueck`` der Leitung (Mikrofon-Klasse: nie bei gehaltener Leitung). So bekommt eine
+ * Leitung, die während des Abbaus gehalten wird, nie Mikrofon.
+ *
  * @param {object} handle Ergebnis von ``konferenzAufbauen``
- * @param {{stumm?: boolean}} [optionen] stumm: Mikrofon-Spur bleibt danach stumm
- *        (Standard: aktueller Zustand des Handles)
+ * @param {{stumm?: boolean}} [optionen] stumm: nur für Leitungen ohne ``zurueck`` – Spur
+ *        bleibt danach stumm (Standard: aktueller Zustand des Handles)
  */
 export async function konferenzAbbauen(handle, { stumm } = {}) {
     if (!handle || handle.abgebaut) {
@@ -138,17 +153,25 @@ export async function konferenzAbbauen(handle, { stumm } = {}) {
     }
     handle.abgebaut = true;
     await Promise.all(
-        handle.seiten.map(async ({ sender, original, ersetzt }) => {
+        handle.seiten.map(async ({ sender, original, ersetzt, zurueck }) => {
             if (original) {
+                original.enabled = false;
+            }
+            if (ersetzt) {
+                try {
+                    await sender.replaceTrack(original || null);
+                } catch {
+                    // Leitung ist schon beendet
+                }
+            }
+            if (zurueck) {
+                try {
+                    zurueck();
+                } catch {
+                    // Leitung ohne Ton
+                }
+            } else if (original) {
                 original.enabled = !stumm;
-            }
-            if (!ersetzt) {
-                return;
-            }
-            try {
-                await sender.replaceTrack(original || null);
-            } catch {
-                // Leitung ist schon beendet
             }
         })
     );

@@ -736,3 +736,50 @@ test("Konferenz: unhold scheitert zweimal – Leitung gilt als gehalten, Fehler 
     expect(welt.dienst.state.fehler).toMatch(/noch immer abgelehnt/);
     welt.dienst.stop();
 });
+
+test("Konferenz-Abbau: Halten während des Abbaus – Mikrofon-Spur der gehaltenen Leitung nie an", async () => {
+    const welt = await verbunden();
+    const { erste, zweite } = await zweiLeitungen(welt);
+    const mik = erste.medien.sender.track;
+    expect(await welt.dienst.konferenz()).toBe(true);
+    await welt.uhr.vorspulen(0);
+    // jede Zuweisung an die Mikrofon-Spur mitschreiben, solange die Leitung gehalten ist
+    let wert = mik.enabled;
+    let anWaehrendGehalten = false;
+    Object.defineProperty(mik, "enabled", {
+        get: () => wert,
+        set: (neu) => {
+            wert = neu;
+            if (neu && erste.mikrofon.gehalten) {
+                anWaehrendGehalten = true;
+            }
+        },
+    });
+    // replaceTrack der verbleibenden Leitung hängt, bis es freigegeben wird
+    const sender = erste.medien.sender;
+    const echt = sender.replaceTrack.bind(sender);
+    let freigeben;
+    const tor = new Promise((resolve) => (freigeben = resolve));
+    sender.replaceTrack = async (spur) => {
+        await tor;
+        await echt(spur);
+        // die Spur geht eingeschaltet zurück an eine gehaltene Leitung?
+        if (spur?.enabled && erste.mikrofon.gehalten) {
+            anWaehrendGehalten = true;
+        }
+    };
+    zweite.gegenstelleLegtAuf("bye");
+    await welt.uhr.vorspulen(0);
+    // Abbau läuft noch: „Halten“ auf der verbleibenden Leitung
+    await welt.dienst.halten(true);
+    expect(welt.dienst.state.anruf.gehalten).toBe(true);
+    freigeben();
+    await welt.uhr.vorspulen(0);
+    expect(sender.track).toBe(mik);
+    expect(mik.enabled).toBe(false);
+    expect(anWaehrendGehalten).toBe(false);
+    // Fortsetzen: Mikrofon wieder an
+    await welt.dienst.halten(false);
+    expect(mik.enabled).toBe(true);
+    welt.dienst.stop();
+});

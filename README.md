@@ -32,7 +32,7 @@ am richtigen Datensatz.
 - Reiter „Team“: Kollegen mit Status frei, telefoniert (optional mit Dauer), klingelt oder abgemeldet. Angezeigt
   werden aktive interne Benutzer mit VoIP-Recht, SIP-Benutzer, derselben Firma und derselben Anlage, nicht man selbst
 - Standardmäßig ausgeschaltet; je Firma unter Einstellungen › WB VoIP „Team-Übersicht anzeigen“ und „Gesprächsdauer
-  im Team anzeigen“. Vor dem Einschalten Beschäftigte informieren (§ 26 BDSG) und ggf. den Betriebsrat beteiligen
+  im Team anzeigen“; maßgeblich ist die Firma, in der die Person gerade arbeitet (aktive Firma). Vor dem Einschalten Beschäftigte informieren (§ 26 BDSG) und ggf. den Betriebsrat beteiligen
   (§ 87 Abs. 1 Nr. 6 BetrVG)
 - Datenschutz: nur Name, Nebenstelle, Status und Dauer; nie Gegennummer, Kontakt oder Notiz. Als Anwesenheit
   steht nur der Zeitpunkt des letzten Lebenszeichens des Telefon-Tabs in Odoo (nach 150 s ohne Meldung

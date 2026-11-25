@@ -480,3 +480,17 @@ class TestTeam(WbVoipCase):
         self._lizenz_fehlt()
         with self.assertRaises(UserError):
             self._abweisen(self.user_b, sip_call_id='ohne-lizenz')
+
+    def test_ausschalten_loescht_lebenszeichen_der_firma(self):
+        """Switching the overview off clears the stored signs of life of the company's users."""
+        with freeze_time(START):
+            self._melden(self.user_b)
+            # Benutzer einer anderen Firma bleibt unberührt
+            self.user_c.sudo().write({'wb_voip_lebenszeichen': START, 'wb_voip_registriert': True})
+            self.bus.clear()
+            self.env.company.write({'wb_voip_team_aktiv': False})
+        self.assertFalse(self.user_b.sudo().wb_voip_lebenszeichen)
+        self.assertFalse(self.user_b.sudo().wb_voip_registriert)
+        self.assertTrue(self.user_c.sudo().wb_voip_lebenszeichen)
+        self.assertTrue(self.user_c.sudo().wb_voip_registriert)
+        self.assertFalse(self._team_meldungen())

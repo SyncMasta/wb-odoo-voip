@@ -1425,8 +1425,17 @@ export class TelefonDienst {
                 handle = await konferenzAufbauen({
                     ctx,
                     mikrofon: medienA.mikrofon,
-                    a: { empfang: medienA.empfang, sender: medienA.sender },
-                    b: { empfang: medienB.empfang, sender: medienB.sender },
+                    // beim Abbau schaltet die Mikrofon-Klasse der Leitung die Spur wieder ein
+                    a: {
+                        empfang: medienA.empfang,
+                        sender: medienA.sender,
+                        zurueck: () => this._mikrofonZurueck(aktiv),
+                    },
+                    b: {
+                        empfang: medienB.empfang,
+                        sender: medienB.sender,
+                        zurueck: () => this._mikrofonZurueck(gehalten),
+                    },
                     // aktueller Stand, auch wenn während des Aufbaus umgeschaltet
                     stumm: () => Boolean(aktiv.anruf.stumm),
                 });
@@ -1471,18 +1480,23 @@ export class TelefonDienst {
 
     /**
      * Nach einem gescheiterten Aufbau: jede noch laufende Leitung sendet ihr Mikrofon wieder
-     * genau so, wie ihr Stumm-Zustand es anzeigt.
+     * genau so, wie ihr Stumm-Zustand es anzeigt (gehalten: nie).
      */
     _konferenzStummZurueck(konferenz) {
         for (const kontext of [konferenz.aktiv, konferenz.gehalten]) {
-            if (kontext.beendet) {
-                continue;
-            }
-            try {
-                kontext.sitzung.mute(Boolean(kontext.anruf.stumm));
-            } catch {
-                // Sitzung ohne Ton
-            }
+            this._mikrofonZurueck(kontext);
+        }
+    }
+
+    /** Mikrofon einer laufenden Leitung nach ihrem Stumm-Zustand (über die Mikrofon-Klasse). */
+    _mikrofonZurueck(kontext) {
+        if (kontext.beendet) {
+            return;
+        }
+        try {
+            kontext.sitzung.mute(Boolean(kontext.anruf.stumm));
+        } catch {
+            // Sitzung ohne Ton
         }
     }
 

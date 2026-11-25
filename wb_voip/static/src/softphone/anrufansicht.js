@@ -143,10 +143,10 @@ export class Anrufansicht extends Component {
 
     /**
      * Team-Auswahl nur bei eingeschalteter Team-Übersicht; sonst bleibt die freie Nummer
-     * (Weiterleiten/Rückfrage). Ein Dienst ohne Angabe gilt als eingeschaltet.
+     * (Weiterleiten/Rückfrage). Fehlt die Angabe, gilt aus (wie im Dienst).
      */
     get teamAktiv() {
-        return this.state.teamAktiv !== false;
+        return this.state.teamAktiv === true;
     }
 
     /** Eine zweite Leitung ist frei: Rückfrage und Team-Auswahl möglich. */
