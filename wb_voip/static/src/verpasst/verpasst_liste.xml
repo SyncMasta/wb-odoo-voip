@@ -51,10 +51,11 @@
                         <textarea class="o_wb_voip_erledigen_text form-control form-control-sm"
                                   rows="2" t-att-maxlength="maxText"
                                   placeholder="Wie erledigt?" aria-label="Wie erledigt?"
-                                  t-model="lokal.text"/>
+                                  t-model="lokal.text" t-ref="erledigenText"
+                                  t-on-keydown="erledigenTaste"/>
                         <div class="d-flex gap-2 mt-1">
                             <button type="button" class="o_wb_voip_erledigen_speichern btn btn-sm btn-primary"
-                                    title="Speichern" aria-label="Speichern"
+                                    title="Speichern" aria-label="Speichern" t-att-disabled="lokal.speichert"
                                     t-on-click="() => this.erledigenSpeichern(zeile)">Speichern</button>
                             <button type="button" class="o_wb_voip_erledigen_abbrechen btn btn-sm btn-secondary"
                                     title="Abbrechen" aria-label="Abbrechen"

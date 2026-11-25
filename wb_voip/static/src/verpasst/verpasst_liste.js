@@ -1,4 +1,12 @@
-import { Component, onMounted, onWillStart, onWillUnmount, useState } from "@odoo/owl";
+import {
+    Component,
+    onMounted,
+    onWillStart,
+    onWillUnmount,
+    useEffect,
+    useRef,
+    useState,
+} from "@odoo/owl";
 import { _t } from "@web/core/l10n/translation";
 import { deserializeDateTime, formatDateTime } from "@web/core/l10n/dates";
 import { registry } from "@web/core/registry";
@@ -35,16 +43,31 @@ export class Verpasstliste extends Component {
             fehler: false,
             geladen: false,
             erledigen: null, // Schlüssel der Zeile mit offener Eingabe
+            speichert: false, // ✓ läuft gerade: kein zweiter Aufruf
             text: "",
             notizen: {}, // Schlüssel → Notiz sichtbar
         });
-        onWillStart(() => this.laden());
+        this.erledigenText = useRef("erledigenText");
+        this._laeuft = false;
+        this._nochmal = false;
+        this._ladenOk = false;
+        useEffect(
+            (offen) => {
+                if (offen) {
+                    this.erledigenText.el?.focus();
+                }
+            },
+            () => [this.lokal.erledigen]
+        );
+        onWillStart(async () => {
+            this._ladenOk = await this.laden();
+        });
         useBus(this.verpasst.bus, "aktualisieren", () => this.aktualisieren());
         const beiSichtbarkeit = () => this.aktualisieren();
         onMounted(() => {
             document.addEventListener("visibilitychange", beiSichtbarkeit);
             // erst nach dem Einhängen: ein geänderter Zähler würde sonst den Aufbau neu starten
-            if (seite.sichtbar()) {
+            if (seite.sichtbar() && this._ladenOk) {
                 this.verpasst.gesehen();
             }
         });
@@ -56,11 +79,28 @@ export class Verpasstliste extends Component {
         if (!seite.sichtbar()) {
             return;
         }
-        await this.laden();
-        await this.verpasst.gesehen();
+        if (this._laeuft) {
+            // Läuft schon ein Durchgang: danach genau einmal erneut (kein paralleles Laden)
+            this._nochmal = true;
+            return;
+        }
+        this._laeuft = true;
+        try {
+            do {
+                this._nochmal = false;
+                // nur nach erfolgreichem Laden als gesehen markieren
+                if (await this.laden()) {
+                    await this.verpasst.gesehen();
+                }
+            } while (this._nochmal && seite.sichtbar());
+        } finally {
+            this._laeuft = false;
+        }
     }
 
+    /** Lädt die Liste; ``true`` bei Erfolg. */
     async laden() {
+        let ok = true;
         try {
             this.lokal.zeilen = await this.orm.call("wb.voip.anruf", "wb_voip_verpasst_liste", [], {
                 limit: VERPASST_LIMIT,
@@ -69,8 +109,10 @@ export class Verpasstliste extends Component {
         } catch (fehler) {
             this.lokal.fehler =
                 fehler?.data?.message || _t("Verpasste Anrufe konnten nicht geladen werden.");
+            ok = false;
         }
         this.lokal.geladen = true;
+        return ok;
     }
 
     name(zeile) {
@@ -116,7 +158,26 @@ export class Verpasstliste extends Component {
         this.lokal.text = "";
     }
 
+    erledigenTaste(ereignis) {
+        if (ereignis.key === "Escape") {
+            ereignis.stopPropagation();
+            this.erledigenAbbrechen();
+        }
+    }
+
     async erledigenSpeichern(zeile) {
+        if (this.lokal.speichert) {
+            return;
+        }
+        this.lokal.speichert = true;
+        try {
+            await this._erledigen(zeile);
+        } finally {
+            this.lokal.speichert = false;
+        }
+    }
+
+    async _erledigen(zeile) {
         const text = String(this.lokal.text || "").slice(0, MAX_ERLEDIGT_TEXT);
         let rest;
         try {

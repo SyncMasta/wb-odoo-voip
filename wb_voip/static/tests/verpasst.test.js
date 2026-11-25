@@ -1,5 +1,5 @@
 import { describe, expect, test } from "@odoo/hoot";
-import { click, edit } from "@odoo/hoot-dom";
+import { click, edit, press, queryOne } from "@odoo/hoot-dom";
 import { animationFrame } from "@odoo/hoot-mock";
 import { EventBus, reactive } from "@odoo/owl";
 import { defineMailModels } from "@mail/../tests/mail_test_helpers";
@@ -73,13 +73,20 @@ function vorbereiten({ zeilen = [ZEILE], zaehler = 2, status = "verbunden" } = {
         expect.step("zaehler");
         return zustand.zaehler;
     });
-    onRpc("wb.voip.anruf", "wb_voip_verpasst_liste", () => {
+    onRpc("wb.voip.anruf", "wb_voip_verpasst_liste", async () => {
         expect.step("liste");
+        if (zustand.listeFehler) {
+            throw new Error("Liste kaputt");
+        }
+        if (zustand.gate) {
+            await zustand.gate;
+        }
         return zustand.zeilen;
     });
     onRpc("wb.voip.anruf", "wb_voip_verpasst_gesehen", () => {
         expect.step("gesehen");
         zustand.zaehler = 0;
+        zustand.beiGesehen?.();
         return 0;
     });
     const busSenden = () =>
@@ -282,4 +289,104 @@ test("Ohne VoIP-Benutzer kein Abruf und keine Plakette", async () => {
     await animationFrame();
     expect.verifySteps([]);
     expect(".o_wb_voip_plakette").toHaveCount(0);
+});
+
+test("Doppelklick auf Speichern sendet genau einen Aufruf", async () => {
+    vorbereiten();
+    let fertig;
+    onRpc("wb.voip.anruf", "wb_voip_verpasst_erledigen", async () => {
+        expect.step("erledigen");
+        await new Promise((resolve) => (fertig = resolve));
+        return false;
+    });
+    await mountWithCleanup(Softphone);
+    await reiterOeffnen();
+    expect.verifySteps(["zaehler", "liste", "gesehen"]);
+    await click(".o_wb_voip_erledigen");
+    await animationFrame();
+    const knopf = queryOne(".o_wb_voip_erledigen_speichern");
+    knopf.click();
+    knopf.click();
+    await animationFrame();
+    expect(".o_wb_voip_erledigen_speichern").toHaveAttribute("disabled");
+    expect.verifySteps(["erledigen"]);
+    fertig();
+    await animationFrame();
+    expect(".o_wb_voip_verpasstliste .o_wb_voip_eintrag").toHaveCount(0);
+    expect.verifySteps([]);
+});
+
+test("Bus → Liste → gesehen bleibt endlich", async () => {
+    const w = vorbereiten({ zaehler: 1 });
+    await mountWithCleanup(Softphone);
+    // das erste „gesehen“ löst eine Bus-Meldung aus, das zweite ändert nichts
+    w.zustand.beiGesehen = () => {
+        w.zustand.beiGesehen = null;
+        w.busSenden();
+    };
+    await reiterOeffnen();
+    await animationFrame();
+    await animationFrame();
+    expect.verifySteps([
+        "zaehler",
+        "liste",
+        "gesehen",
+        "zaehler",
+        "liste",
+        "gesehen",
+    ]);
+});
+
+test("Nach Ladefehler wird nicht als gesehen markiert", async () => {
+    const w = vorbereiten({ zaehler: 2 });
+    w.zustand.listeFehler = true;
+    await mountWithCleanup(Softphone);
+    await reiterOeffnen();
+    expect.verifySteps(["zaehler", "liste"]);
+    expect(".o_wb_voip_verpasstliste .alert").toHaveCount(1);
+    // auch der spätere Bus-Durchgang markiert nach einem Fehler nichts
+    w.busSenden();
+    await animationFrame();
+    expect.verifySteps(["zaehler", "liste"]);
+});
+
+test("Parallele Aktualisierungen werden zu genau einem Nachlauf", async () => {
+    const w = vorbereiten({ zaehler: 0, zeilen: [] });
+    await mountWithCleanup(Softphone);
+    await reiterOeffnen();
+    expect.verifySteps(["zaehler", "liste", "gesehen"]);
+    let freigeben;
+    w.zustand.gate = new Promise((resolve) => (freigeben = resolve));
+    w.zustand.zeilen = [ZEILE];
+    w.busSenden();
+    await animationFrame();
+    // läuft bereits: Sichtbarkeitswechsel und weitere Impulse starten nichts Paralleles
+    document.dispatchEvent(new Event("visibilitychange"));
+    document.dispatchEvent(new Event("visibilitychange"));
+    await animationFrame();
+    expect.verifySteps(["zaehler", "liste"]);
+    freigeben();
+    await animationFrame();
+    await animationFrame();
+    expect.verifySteps(["gesehen", "liste", "gesehen"]);
+    expect(".o_wb_voip_verpasstliste .o_wb_voip_eintrag").toHaveCount(1);
+});
+
+test("✓ setzt den Fokus ins Textfeld, Escape bricht ab", async () => {
+    vorbereiten();
+    onRpc("wb.voip.anruf", "wb_voip_verpasst_erledigen", () => {
+        expect.step("erledigen");
+        return false;
+    });
+    await mountWithCleanup(Softphone);
+    await reiterOeffnen();
+    expect.verifySteps(["zaehler", "liste", "gesehen"]);
+    await click(".o_wb_voip_erledigen");
+    await animationFrame();
+    expect(".o_wb_voip_erledigen_text").toBeFocused();
+    await press("Escape");
+    await animationFrame();
+    expect(".o_wb_voip_erledigen_text").toHaveCount(0);
+    expect(".o_wb_voip_verpasstliste .o_wb_voip_eintrag").toHaveCount(1);
+    expect.verifySteps([]);
 });
