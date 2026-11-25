@@ -6,7 +6,7 @@ from odoo.tools import file_path
 
 MODUL = 'wb_voip'
 # Platzhalter: %s, %d, %(name)s, {name}
-PLATZHALTER = re.compile(r'%\([^)]*\)[sd]|%[sd]|\{[^{}]*\}')
+PLATZHALTER = re.compile(r'%\([^)]*\)[sd]|%[sd]|\{[A-Za-z_]\w*\}')
 
 
 def _lese_po(pfad):
