@@ -353,6 +353,48 @@ class TestAbgleichFenster(AbgleichCase):
         self.assertEqual(self.anlage.sudo().ansitel_cdr_stand, von + timedelta(minutes=10))
         self.assertFalse(self.von_gruppe('V'))
 
+    def _stand_setzen(self, stand, ab):
+        self.env.cr.execute(
+            "UPDATE wb_voip_anlage SET ansitel_cdr_stand = %s, ansitel_cdr_ab = %s WHERE id = %s",
+            [stand, ab, self.anlage.id])
+        self.anlage.invalidate_recordset()
+
+    def test_zu_viele_in_der_ueberlappung(self):
+        # Stand 5 min alt; die Überlappung (4 h davor) ist voll, ab dem Stand ist es wenig
+        stand = JETZT - timedelta(minutes=5)
+        self._stand_setzen(stand, JETZT - timedelta(days=1))
+        VOLL = [cdr('V', BASIS, '10', 'PJSIP/TelA-1', 'NO ANSWER', nummer(1))] * 1000
+
+        def post(_s, _url, json=None, **_kw):
+            self.fake.aufrufe.append(dict(json))
+            if json['datetimefrom'] < lokal(stand):
+                return antwort({'status': 200, 'data': VOLL})
+            return antwort({'status': 200, 'data': []})
+
+        self._post(side_effect=post)
+        self.lauf()
+        # zweiter Versuch ohne Überlappung, ganzes Fenster bis jetzt − 60 s
+        self.assertEqual((self.fake.aufrufe[-1]['datetimefrom'], self.fake.aufrufe[-1]['datetimeto']),
+                         (lokal(stand), lokal(JETZT - timedelta(seconds=60))))
+        self.assertEqual(self.anlage.sudo().ansitel_cdr_stand, JETZT - timedelta(seconds=60))
+
+    def test_zu_viele_stand_geht_nie_zurueck(self):
+        # Stand 2 h alt, alles voll: nie unter den alten Stand, das kleinste Fenster wird übersprungen
+        stand = JETZT - timedelta(hours=2)
+        self._stand_setzen(stand, JETZT - timedelta(days=1))
+        VOLL = [cdr('V', BASIS, '10', 'PJSIP/TelA-1', 'NO ANSWER', nummer(1))] * 1000
+        self._post(side_effect=lambda *_a, **_kw: antwort({'status': 200, 'data': VOLL}))
+        with self.assertLogs(LOGGER_ANLAGE, level='ERROR') as logs:
+            self.lauf()
+        self.assertEqual(len(logs.output), 1)
+        neu = self.anlage.sudo().ansitel_cdr_stand
+        self.assertGreater(neu, stand)
+        self.assertEqual(neu, stand + timedelta(minutes=10))
+        # nächster Lauf beginnt wieder 4 h vor dem neuen Stand, rückt aber weiter vor
+        with self.assertLogs(LOGGER_ANLAGE, level='ERROR'):
+            self.lauf()
+        self.assertEqual(self.anlage.sudo().ansitel_cdr_stand, neu + timedelta(minutes=10))
+
     def test_sql_nur_erlaubte_felder(self):
         with self.assertRaises(ValueError):
             self.anlage.sudo()._wb_voip_ansitel_sql_setzen('name', 'x')
@@ -698,6 +740,12 @@ class TestAbgleichRegeln(AbgleichCase):
         self.assertEqual(self.aktivitaeten(27), aktivitaeten)
         zeile = Anruf.wb_voip_verpasst_liste()[0]
         self.assertEqual((zeile['anruf_id'], zeile['art'], zeile['geraet']), (anruf.id, 'anderswo', 'Tisch A'))
+        # zurück auf „erreicht“: wieder erledigt, keine neue Aktivität
+        protokoll.with_user(self.user_a).ergebnis = 'erreicht'
+        self.assertTrue(anruf.erledigt)
+        self.assertEqual(anruf.erledigt_durch_protokoll_id, protokoll)
+        self.assertEqual(self.aktivitaeten(27), aktivitaeten)
+        self.assertEqual(Anruf.wb_voip_verpasst_liste(), [])
 
     def test_weiterleitung_eingehend_auf_amt(self):
         self.lauf([cdr('L13', BASIS, '10', f'PJSIP/{TRUNK}-000002', 'NO ANSWER', nummer(13)),

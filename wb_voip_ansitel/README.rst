@@ -69,8 +69,9 @@ an einem Tischtelefon, einem anderen Gerät oder über eine Weiterleitung angeno
 
 * Fenster: von = Stand − 4 Stunden (nie vor den Beginn des ersten Laufs), bis = jetzt − 60 Sekunden, höchstens
   6 Stunden je Lauf. Der erste Lauf liest die letzten 30 Minuten und merkt sich diesen Beginn erst nach erfolgreichem
-  Lesen. Liefert die Anlage mehr als 50 Seiten, wird das Fenster halbiert (bis 10 Minuten); reicht auch das nicht,
-  wird es mit einem Fehler im Log übersprungen. Stand und Beginn sind nur für die Systemverwaltung sichtbar.
+  Lesen. Liefert die Anlage mehr als 50 Seiten, entfällt zuerst die Überlappung, danach wird das Fenster ab dem Stand
+  halbiert (bis 10 Minuten); reicht auch das nicht, wird dieses Stück mit einem Fehler im Log übersprungen (diese
+  Anrufe fehlen dann). Der Stand geht nie zurück. Stand und Beginn sind nur für die Systemverwaltung sichtbar.
 * Die Zeiten der Anrufliste gelten in der Zeitzone der Anlage (Feld „Zeitzone der Anrufliste“, Standard
   Europe/Berlin). In der doppelten Stunde im Herbst werden beim Zuordnen zu Softphone-Anrufen beide Zeiten probiert.
 * Geräte sind nur ``PJSIP/…``- und ``SIP/…``-Kanäle; andere Techniken (z. B. IAX2, DAHDI) nennen kein Gerät.
@@ -103,3 +104,13 @@ Geräte (Einstellungen › Technisch › WB VoIP › Geräte): Bezeichnung, Peer
 VoIP-Administratoren lesen sie, ändern darf sie nur die Systemverwaltung (sie ordnen Geräte der Anlage Benutzern zu).
 Der Knopf „Geräte aus Anlage laden“ an der Anlage (nur Systemverwaltung) legt fehlende Geräte aus ``getpeer`` an,
 Besitzer über den SIP-Benutzer, sonst über die Nebenstelle (nur bei genau einem Treffer).
+
+Bekannte Grenzen des Abgleichs:
+
+* Hat der Benutzer das Protokoll „nicht erreicht“ eines verpassten Anrufs bearbeitet und zeigt die Anrufliste später,
+  dass er mit seinem Softphone-Konto angenommen hat, bleibt dieses Protokoll erhalten (es wird nicht durch „erreicht“
+  ersetzt).
+* Die doppelte Stunde im Herbst wird nur beim Zuordnen zu Softphone-Anrufen berücksichtigt; Beginn, Ende und Ruhe einer
+  Gruppe rechnen mit dem ersten Vorkommen.
+* Die Amtsleitung nie in die Geräte-Tabelle eintragen; eine Handy-Mailbox hinter einer Weiterleitung zählt als
+  Weiterleitung.

@@ -216,8 +216,7 @@ class WbVoipAnlage(models.Model):
         state the last 30 minutes, remembered as lower bound. Only groups with an incoming leg
         whose last leg ended by ``to``. A PBX error leaves the state; the next run catches up.
         The lower bound is stored only after the first successful read. Too many legs for the
-        window: it is halved (down to ``CDR_MIN_FENSTER``); if even that is too much, the window
-        is skipped with an error in the log and the state advances.
+        window: see ``_wb_voip_ansitel_lesen``. The state never moves backwards.
         """
         Anruf = self.env['wb.voip.anruf'].sudo()
         for anlage in self.sudo():
@@ -265,23 +264,30 @@ class WbVoipAnlage(models.Model):
                     fehler_anzahl += 1
                     _logger.warning("[wb_voip_ansitel] Abgleich: Anruf der Anlage %s nicht "
                                     "abgeglichen (%s)", anlage.id, type(fehler).__name__)
-            anlage._wb_voip_ansitel_sql_setzen('ansitel_cdr_stand', bis)
+            # nie hinter den alten Stand zurück
+            stand = anlage.ansitel_cdr_stand
+            anlage._wb_voip_ansitel_sql_setzen('ansitel_cdr_stand', max(bis, stand) if stand else bis)
             _logger.log(logging.INFO if geaendert or fehler_anzahl else logging.DEBUG,
                         "[wb_voip_ansitel] Abgleich: Anlage %s, %s Anrufe, %s geändert, %s Fehler",
                         anlage.id, len(gruppen), geaendert, fehler_anzahl)
 
     def _wb_voip_ansitel_lesen(self, von, bis):
-        """Return ``(legs, to)`` of the window, halved while the PBX has too many legs.
+        """Return ``(legs, to)`` of the window; shrink it while the PBX has too many legs.
 
-        Below ``CDR_MIN_FENSTER`` the window is given up: no legs, ``to`` of the smallest window
-        (the state advances), one error in the log.
+        First the overlap is dropped (from = state), then the window is halved from there, down
+        to ``CDR_MIN_FENSTER``. If even that overflows, the slice is given up (known loss): no
+        legs, ``to`` of the smallest window so that the state advances, one error in the log.
         """
         self.ensure_one()
         Ansitel = self.env['wb.voip.ansitel']
+        stand = self.ansitel_cdr_stand
         while True:
             try:
                 return Ansitel._cdr_lesen(self, von, bis), bis
             except AnsitelZuVieleAnrufe:
+                if stand and von < stand < bis:
+                    von = stand  # erst die Überlappung weglassen
+                    continue
                 if bis - von <= CDR_MIN_FENSTER:
                     _logger.error("[wb_voip_ansitel] Abgleich: Anlage %s liefert auch für %s Minuten "
                                   "zu viele Anrufe, Fenster übersprungen", self.id,
