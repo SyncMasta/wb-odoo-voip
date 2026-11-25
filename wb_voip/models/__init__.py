@@ -2,6 +2,7 @@
 PRODUKT_CODE = 'VOIP'
 
 from . import wb_voip_anlage  # noqa: E402
+from . import res_company  # noqa: E402
 from . import res_users  # noqa: E402
 from . import wb_voip_protokoll  # noqa: E402
 from . import wb_voip_anruf  # noqa: E402

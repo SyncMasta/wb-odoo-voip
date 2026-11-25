@@ -41,6 +41,7 @@ export class TeamListe extends Component {
         this.lokal = useState({
             kollegen: [],
             praefix: false,
+            aus: false, // Team-Übersicht für die aktive Firma ausgeschaltet
             fehler: false,
             geladen: false,
             jetzt: Date.now(),
@@ -100,7 +101,9 @@ export class TeamListe extends Component {
     async laden() {
         try {
             const daten = await this.orm.call("res.users", "wb_voip_team", []);
-            this.lokal.kollegen = Array.isArray(daten?.kollegen) ? daten.kollegen : [];
+            this.lokal.aus = daten?.aktiv === false;
+            this.lokal.kollegen =
+                !this.lokal.aus && Array.isArray(daten?.kollegen) ? daten.kollegen : [];
             this.lokal.praefix = typeof daten?.heranholen_praefix === "string"
                 ? daten.heranholen_praefix
                 : false;

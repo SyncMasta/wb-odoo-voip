@@ -141,6 +141,14 @@ export class Anrufansicht extends Component {
         return this.state.klopfend;
     }
 
+    /**
+     * Team-Auswahl nur bei eingeschalteter Team-Übersicht; sonst bleibt die freie Nummer
+     * (Weiterleiten/Rückfrage). Ein Dienst ohne Angabe gilt als eingeschaltet.
+     */
+    get teamAktiv() {
+        return this.state.teamAktiv !== false;
+    }
+
     /** Eine zweite Leitung ist frei: Rückfrage und Team-Auswahl möglich. */
     get zweiteFrei() {
         return this.laeuft && !this.gehaltener && !this.klopfend;

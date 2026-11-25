@@ -13,6 +13,14 @@
                                  help="Beendete Anrufe nach dieser Zahl von Monaten löschen (0 = nie). Anrufprotokolle bleiben erhalten.">
                             <field name="wb_voip_aufbewahrung_monate"/>
                         </setting>
+                        <setting string="Team-Übersicht anzeigen"
+                                 help="Reiter „Team“ im Softphone: Anwesenheit und Telefonstatus der Kollegen. Vor dem Einschalten die Beschäftigten informieren und ggf. den Betriebsrat beteiligen.">
+                            <field name="wb_voip_team_aktiv"/>
+                        </setting>
+                        <setting string="Gesprächsdauer im Team anzeigen" invisible="not wb_voip_team_aktiv"
+                                 help="Zeigt in der Team-Übersicht, seit wann ein Kollege telefoniert.">
+                            <field name="wb_voip_team_dauer"/>
+                        </setting>
                     </block>
                 </app>
             </xpath>

@@ -47,6 +47,8 @@ class TestTeam(WbVoipCase):
     def setUp(self):
         super().setUp()
         self._lizenz_gueltig()
+        # Standard ist aus; diese Klasse prüft die eingeschaltete Übersicht
+        self.env.company.write({'wb_voip_team_aktiv': True, 'wb_voip_team_dauer': True})
         self._zaehler = 0
         self.bus = []
         Users = type(self.env['res.users'])
@@ -124,7 +126,8 @@ class TestTeam(WbVoipCase):
         with freeze_time(START):
             self._melden(self.user_b)
             ergebnis = self._team(self.user_a)
-        self.assertEqual(set(ergebnis), {'heranholen_praefix', 'kollegen'})
+        self.assertEqual(set(ergebnis), {'aktiv', 'heranholen_praefix', 'kollegen'})
+        self.assertIs(ergebnis['aktiv'], True)
         eintrag = next(k for k in ergebnis['kollegen'] if k['user_id'] == self.user_b.id)
         self.assertEqual(set(eintrag), {'user_id', 'name', 'nebenstelle', 'status', 'seit'})
         self.assertEqual(eintrag['nebenstelle'], '101')
@@ -343,3 +346,137 @@ class TestTeam(WbVoipCase):
         self.anlage.heranholen_praefix = '**'
         self.assertEqual(self._team(self.user_a)['heranholen_praefix'], '**')
         self.assertEqual(self._team(self.user_b)['heranholen_praefix'], '**')
+
+    # --- Schalter je Firma (Betriebsrat, Art. 25 DSGVO) ---
+
+    def test_schalter_standard_aus(self):
+        firma = self.env['res.company'].create({'name': 'Neue Firma Team'})
+        self.assertIs(firma.wb_voip_team_aktiv, False)
+        self.assertIs(firma.wb_voip_team_dauer, False)
+
+    def test_aus_team_leer_mit_praefix(self):
+        self.anlage.heranholen_praefix = '**'
+        with freeze_time(START):
+            self._melden(self.user_b)
+            self.env.company.wb_voip_team_aktiv = False
+            self.assertEqual(self._team(self.user_a), {
+                'aktiv': False, 'heranholen_praefix': '**', 'kollegen': []})
+
+    def test_aus_lebenszeichen_speichert_nichts(self):
+        self.env.company.wb_voip_team_aktiv = False
+        with freeze_time(START):
+            self.assertIs(self.env['res.users'].with_user(self.user_b)
+                          .wb_voip_lebenszeichen_melden(True), True)
+        self.assertFalse(self.user_b.sudo().wb_voip_lebenszeichen)
+        self.assertFalse(self.user_b.sudo().wb_voip_registriert)
+        self.assertFalse(self._team_meldungen())
+
+    def test_aus_loescht_vorhandenes_lebenszeichen(self):
+        with freeze_time(START):
+            self._melden(self.user_b)
+            self.env.company.wb_voip_team_aktiv = False
+            self.bus.clear()
+            self._melden(self.user_b)
+        self.assertFalse(self.user_b.sudo().wb_voip_lebenszeichen)
+        self.assertFalse(self._team_meldungen())
+
+    def test_aus_kein_team_bus_bei_anrufen(self):
+        with freeze_time(START):
+            self._melden(self.user_b)
+            self.env.company.wb_voip_team_aktiv = False
+            self.bus.clear()
+            anruf = self._anruf(self.user_b)
+            anruf.wb_voip_angenommen()
+            anruf.wb_voip_beendet(False, False, True)
+        self.assertFalse(self._team_meldungen())
+
+    def test_dauer_aus_ohne_seit(self):
+        self.env.company.wb_voip_team_dauer = False
+        with freeze_time(START):
+            self._melden(self.user_b)
+            self._anruf(self.user_b).wb_voip_angenommen()
+            kollege = self._kollege(self.user_a, self.user_b)
+        self.assertEqual(kollege['status'], 'telefoniert')
+        self.assertIs(kollege['seit'], False)
+
+    def test_status_meldet_team_aktiv(self):
+        Users = self.env['res.users'].with_user(self.user_a)
+        self.assertIs(Users.wb_voip_status()['team_aktiv'], True)
+        self.env.company.wb_voip_team_aktiv = False
+        self.assertIs(Users.wb_voip_status()['team_aktiv'], False)
+
+    def test_einstellungen(self):
+        Settings = self.env['res.config.settings']
+        for feld in ('wb_voip_team_aktiv', 'wb_voip_team_dauer'):
+            self.assertEqual(Settings._fields[feld].groups, 'wb_voip.group_wb_voip_manager')
+            self.assertEqual(Settings._fields[feld].related, f'company_id.{feld}')
+        self.env.company.write({'wb_voip_team_aktiv': False, 'wb_voip_team_dauer': False})
+        Settings.create({'wb_voip_team_aktiv': True, 'wb_voip_team_dauer': True}).execute()
+        self.assertIs(self.env.company.wb_voip_team_aktiv, True)
+        self.assertIs(self.env.company.wb_voip_team_dauer, True)
+
+    def test_schalter_nur_admins_schreiben(self):
+        with self.assertRaises(AccessError):
+            self.env.company.with_user(self.user_a).write({'wb_voip_team_aktiv': False})
+
+    # --- Lebenszeichen ohne ORM-Schreiben am Benutzer ---
+
+    def test_lebenszeichen_ohne_orm_write(self):
+        Users = type(self.env['res.users'])
+        original = Users.write
+        geschrieben = []
+
+        def mitschreiben(benutzer, vals):
+            geschrieben.append(set(vals))
+            return original(benutzer, vals)
+
+        with patch.object(Users, 'write', mitschreiben), freeze_time(START):
+            self._melden(self.user_b)
+            self.assertEqual(self._kollege(self.user_a, self.user_b)['status'], 'frei')
+            self._melden(self.user_b, registriert=False)
+            self.assertEqual(self._kollege(self.user_a, self.user_b)['status'], 'abgemeldet')
+        self.assertFalse([v for v in geschrieben
+                          if v & {'wb_voip_lebenszeichen', 'wb_voip_registriert'}])
+
+    # --- Abgewiesener dritter Anruf: direkt verpasst, ohne Team-Bus ---
+
+    def _abweisen(self, user, sip_call_id='abgewiesen-1', nummer=NUMMER):
+        return self.env['wb.voip.anruf'].with_user(user).wb_voip_abgewiesen_melden(
+            nummer, sip_call_id)
+
+    def test_abgewiesen_verpasst_ohne_team_bus(self):
+        kunde = self.env['res.partner'].create({'name': 'Kunde Abgewiesen', 'phone': NUMMER})
+        with freeze_time(START):
+            self._melden(self.user_b)
+            self.bus.clear()
+            daten = self._abweisen(self.user_b)
+            self.assertEqual(self._kollege(self.user_a, self.user_b)['status'], 'frei')
+        self.assertFalse(self._team_meldungen(), 'kein kurzes „klingelt“ im Team')
+        self.assertEqual(daten['zustand'], 'verpasst')
+        anruf = self.env['wb.voip.anruf'].browse(daten['id']).sudo()
+        self.assertEqual(anruf.user_id, self.user_b)
+        self.assertEqual(anruf.richtung, 'eingehend')
+        self.assertEqual(anruf.partner_id, kunde)
+        self.assertTrue(anruf.protokoll_id, 'Protokoll wie bei verpasst')
+        self.assertTrue(anruf.rueckruf_aktivitaet_id, 'Rückruf-Aktivität wie bei verpasst')
+        self.assertTrue([m for m in self.bus if m[1] == 'wb_voip/verpasst'])
+
+    def test_abgewiesen_idempotent(self):
+        erst = self._abweisen(self.user_b)
+        noch = self._abweisen(self.user_b)
+        self.assertEqual(erst['id'], noch['id'])
+        self.assertEqual(self.env['wb.voip.anruf'].sudo().search_count([
+            ('user_id', '=', self.user_b.id), ('sip_call_id', '=', 'abgewiesen-1')]), 1)
+
+    def test_abgewiesen_prueft_eingaben(self):
+        for nummer, sip_call_id in ((False, 'x'), ('', 'x'), (123, 'x'), ('1' * 65, 'x'),
+                                    (NUMMER, False), (NUMMER, ''), (NUMMER, 'x' * 256)):
+            with self.assertRaises(UserError, msg=repr((nummer, sip_call_id))):
+                self._abweisen(self.user_b, sip_call_id=sip_call_id, nummer=nummer)
+
+    def test_abgewiesen_rechte_und_lizenz(self):
+        with self.assertRaises(AccessError):
+            self._abweisen(self.user_d)
+        self._lizenz_fehlt()
+        with self.assertRaises(UserError):
+            self._abweisen(self.user_b, sip_call_id='ohne-lizenz')

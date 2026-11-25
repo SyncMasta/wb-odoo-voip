@@ -18,6 +18,7 @@ class TestStatus(WbVoipCase):
             'meldung': 'Lizenz fehlt oder abgelaufen',
             'eingerichtet': True,
             'konfiguriert': True,
+            'team_aktiv': False,  # Standard aus
         })
 
     def test_status_mit_lizenz(self):

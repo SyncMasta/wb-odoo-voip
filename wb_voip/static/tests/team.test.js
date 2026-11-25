@@ -87,6 +87,9 @@ function vorbereiten({
         if (zustand.fehler) {
             throw new Error("kaputt");
         }
+        if (zustand.aus) {
+            return { aktiv: false, heranholen_praefix: zustand.praefix, kollegen: [] };
+        }
         return { heranholen_praefix: zustand.praefix, kollegen: zustand.kollegen };
     });
     // Zähler des Verpasst-Reiters (Softphone lädt ihn beim Start)
@@ -312,4 +315,15 @@ test("Ladefehler zeigt eine Meldung", async () => {
     await animationFrame();
     expect.verifySteps(["team"]);
     expect(".o_wb_voip_team .alert").toHaveCount(1);
+});
+
+test("Team-Übersicht ausgeschaltet: Hinweis statt Liste", async () => {
+    const w = vorbereiten();
+    w.zustand.aus = true;
+    await mountWithCleanup(TeamListe);
+    await animationFrame();
+    expect.verifySteps(["team"]);
+    expect(".o_wb_voip_team_aus").toHaveText("Die Team-Übersicht ist ausgeschaltet.");
+    expect(".o_wb_voip_team_zeile").toHaveCount(0);
+    expect(".o_wb_voip_team").not.toHaveText(/Keine Kollegen/);
 });

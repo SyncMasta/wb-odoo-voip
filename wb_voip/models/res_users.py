@@ -182,10 +182,12 @@ class ResUsers(models.Model):
         """Return the softphone state of the current user without raising.
 
         ``{'aktiv': True, 'lizenz_gueltig': bool, 'meldung': str,
-        'eingerichtet': bool, 'konfiguriert': bool}`` for WB VoIP users and
+        'eingerichtet': bool, 'konfiguriert': bool, 'team_aktiv': bool}`` for WB VoIP users and
         ``{'aktiv': False}`` for everybody else; no credentials. ``konfiguriert`` is False if the
-        server lacks the encryption key. The browser asks this before reading the SIP access, so a
-        missing license shows as such instead of as a connection error.
+        server lacks the encryption key. ``team_aktiv``: the team overview is switched on for the
+        caller's active company (only then the phone tab sends signs of life). The browser asks
+        this before reading the SIP access, so a missing license shows as such instead of as a
+        connection error.
         """
         benutzer = self.env.user
         if not ist_voip_benutzer(self.env):
@@ -209,6 +211,7 @@ class ResUsers(models.Model):
             'meldung': meldung,
             'eingerichtet': benutzer._wb_voip_eingerichtet(),
             'konfiguriert': konfiguriert,
+            'team_aktiv': self._wb_voip_team_aktiv(),
         }
 
     def _wb_voip_layout(self, ort):
@@ -233,6 +236,25 @@ class ResUsers(models.Model):
                 or Layout._wb_voip_ersatz(ort))
 
     # --- Team-Übersicht ---
+
+    @api.model
+    def _wb_voip_team_aktiv(self):
+        """Return True if the team overview is switched on for the active company."""
+        return bool(self.env.company.sudo().wb_voip_team_aktiv)
+
+    def _wb_voip_lebenszeichen_schreiben(self, zeit, registriert):
+        """Store the sign of life of this user per SQL (no ORM write on ``res.users``).
+
+        Keeps ``write_date`` and avoids row-lock conflicts with the user's own preferences;
+        the cache of both fields is invalidated afterwards. ``zeit``: datetime or None.
+        """
+        self.ensure_one()
+        felder = ['wb_voip_lebenszeichen', 'wb_voip_registriert']
+        self.flush_recordset(felder)
+        self.env.cr.execute(SQL(
+            "UPDATE res_users SET wb_voip_lebenszeichen = %s, wb_voip_registriert = %s"
+            " WHERE id = %s", zeit, bool(registriert), self.id))
+        self.invalidate_recordset(felder)
 
     def _wb_voip_team_mitglieder(self, firmen):
         """Return (sudo) the team members visible to a user of ``firmen``, without ``self``.
@@ -285,10 +307,14 @@ class ResUsers(models.Model):
     def _wb_voip_team_melden(self):
         """Tell the team of each of these users that a status changed (empty payload).
 
-        Per owner: the members of his team except himself, so owners hear of each other.
+        Per owner: the members of his team except himself, so owners hear of each other. Only
+        companies with the team overview switched on count; without any, nothing is sent.
         """
         for besitzer in self.sudo():
-            for mitglied in besitzer._wb_voip_team_mitglieder(besitzer.company_ids):
+            firmen = besitzer.company_ids.filtered('wb_voip_team_aktiv')
+            if not firmen:
+                continue
+            for mitglied in besitzer._wb_voip_team_mitglieder(firmen):
                 mitglied._bus_send('wb_voip/team', {})
 
     @api.model
@@ -297,14 +323,20 @@ class ResUsers(models.Model):
         """Record the sign of life of the caller's phone tab; tell the team if the status changes.
 
         ``registriert`` (bool): the tab is registered on the PBX. Never changes anyone else.
+        With the team overview switched off for the active company nothing is stored (an old
+        sign of life is deleted) and nothing is sent.
         """
         if type(registriert) is not bool:
             raise UserError(self.env._("Ungültige Angabe: %s.", self.env._("Angemeldet")))
         benutzer = self.env.user.sudo()
+        if not self._wb_voip_team_aktiv():
+            if benutzer.wb_voip_lebenszeichen or benutzer.wb_voip_registriert:
+                benutzer._wb_voip_lebenszeichen_schreiben(None, False)
+            return True
         vorher = benutzer._wb_voip_team_status()[benutzer.id][0]
         # Abmelden löscht das Lebenszeichen (Datensparsamkeit)
-        benutzer.write({'wb_voip_lebenszeichen': fields.Datetime.now() if registriert else False,
-                        'wb_voip_registriert': registriert})
+        benutzer._wb_voip_lebenszeichen_schreiben(
+            fields.Datetime.now() if registriert else None, registriert)
         if benutzer._wb_voip_team_status()[benutzer.id][0] != vorher:
             benutzer._wb_voip_team_melden()
         return True
@@ -314,20 +346,28 @@ class ResUsers(models.Model):
     def wb_voip_team(self):
         """Return the pickup prefix of the caller's PBX and the colleagues' status.
 
-        ``{'heranholen_praefix': str|False, 'kollegen': [{user_id, name, nebenstelle, status,
-        seit}]}``. Colleagues: see ``_wb_voip_team_mitglieder`` with the caller's active company;
-        only name, extension, status and, while on a call, the answer time (never the number).
+        ``{'aktiv': bool, 'heranholen_praefix': str|False, 'kollegen': [{user_id, name,
+        nebenstelle, status, seit}]}``. Colleagues: see ``_wb_voip_team_mitglieder`` with the
+        caller's active company; only name, extension, status and, while on a call, the answer
+        time (never the number). ``aktiv`` False (switched off for the active company): no
+        colleagues. ``seit`` is always False unless the company shows the call duration.
         """
         benutzer = self.env.user.sudo()
+        praefix = benutzer.wb_voip_anlage_id.heranholen_praefix or False
+        firma = self.env.company.sudo()
+        if not firma.wb_voip_team_aktiv:
+            return {'aktiv': False, 'heranholen_praefix': praefix, 'kollegen': []}
         mitglieder = benutzer._wb_voip_team_mitglieder(self.env.company)
         status = mitglieder._wb_voip_team_status()
+        dauer = firma.wb_voip_team_dauer
         return {
-            'heranholen_praefix': benutzer.wb_voip_anlage_id.heranholen_praefix or False,
+            'aktiv': True,
+            'heranholen_praefix': praefix,
             'kollegen': [{
                 'user_id': m.id,
                 'name': m.name,
                 'nebenstelle': m.wb_voip_sip_benutzer,
                 'status': status[m.id][0],
-                'seit': status[m.id][1],
+                'seit': status[m.id][1] if dauer else False,
             } for m in mitglieder],
         }

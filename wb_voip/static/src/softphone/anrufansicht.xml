@@ -93,7 +93,7 @@
                             title="Weiterleiten" aria-label="Weiterleiten" t-on-click="weiterleitenUmschalten">
                         <i class="fa fa-share" aria-hidden="true"/>
                     </button>
-                    <button t-if="!gehaltener and !klopfend" type="button"
+                    <button t-if="teamAktiv and !gehaltener and !klopfend" type="button"
                             class="o_wb_voip_team_umschalten btn btn-outline-secondary"
                             t-att-class="{active: lokal.team}" t-att-disabled="bedienungGesperrt"
                             t-att-aria-pressed="lokal.team ? 'true' : 'false'"
@@ -102,7 +102,7 @@
                         <i class="fa fa-users" aria-hidden="true"/>
                     </button>
                 </div>
-                <div t-if="lokal.team and zweiteFrei" class="o_wb_voip_team_auswahl border rounded mb-3">
+                <div t-if="teamAktiv and lokal.team and zweiteFrei" class="o_wb_voip_team_auswahl border rounded mb-3">
                     <TeamListe auswahl="true" onFertig.bind="teamFertig"/>
                 </div>
                 <Tastenfeld t-if="lokal.tastatur and !bedienungGesperrt" onTaste.bind="dtmf"/>
