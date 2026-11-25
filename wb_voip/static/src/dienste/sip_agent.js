@@ -15,6 +15,8 @@
 // Umsetzungen: SipJsAgent (SIP.js 0.21.2, Modus „prod“), TestAgent (simuliert, Modus „test“),
 // in den Tests FakeAgent (static/tests/sip_fake.js).
 
+import { _t } from "@web/core/l10n/translation";
+
 export class Sender {
     constructor() {
         this._wbHandler = {};
@@ -375,7 +377,7 @@ export class SipJsSitzung extends Sender {
                                 } else {
                                     ende(
                                         reject,
-                                        new Error("Verbinden: keine Bestätigung der Anlage.")
+                                        new Error(_t("Verbinden: keine Bestätigung der Anlage."))
                                     );
                                 }
                             }, VERBINDEN_NOTIFY_MS);
@@ -396,7 +398,7 @@ export class SipJsSitzung extends Sender {
                         if (code >= 200 && code < 300) {
                             ende(resolve);
                         } else if (code >= 300) {
-                            ende(reject, new Error(`Verbinden fehlgeschlagen (${code})`));
+                            ende(reject, new Error(_t("Verbinden fehlgeschlagen (%s)", code)));
                         }
                     },
                 })
@@ -442,7 +444,7 @@ export class SipJsAgent extends Sender {
                 onInvite: (invitation) => this._eingehend(invitation),
                 onDisconnect: (fehler) => {
                     if (!this._gestoppt) {
-                        this.emit("getrennt", fehler?.message || "Verbindung zur Anlage getrennt");
+                        this.emit("getrennt", fehler?.message || _t("Verbindung zur Anlage getrennt"));
                     }
                 },
             },
@@ -451,7 +453,7 @@ export class SipJsAgent extends Sender {
     _uri(benutzer) {
         const uri = this.SIP.UserAgent.makeURI(`sip:${benutzer}@${this._domain}`);
         if (!uri) {
-            throw new Error("Ungültige SIP-Adresse.");
+            throw new Error(_t("Ungültige SIP-Adresse."));
         }
         return uri;
     }
@@ -461,7 +463,7 @@ export class SipJsAgent extends Sender {
         this._registerer = new Registerer(this._ua, { expires: REGISTER_EXPIRES_S });
         await new Promise((resolve, reject) => {
             const timer = setTimeout(
-                () => reject(new Error("Anlage antwortet nicht auf REGISTER.")),
+                () => reject(new Error(_t("Anlage antwortet nicht auf REGISTER."))),
                 REGISTER_TIMEOUT_MS
             );
             const fertig = (fn) => (arg) => {
@@ -486,7 +488,7 @@ export class SipJsAgent extends Sender {
         // Registrierung geht später verloren (Auffrischung scheitert)
         this._registerer.stateChange.addListener((zustand) => {
             if (zustand === RegistererState.Unregistered && !this._gestoppt) {
-                this.emit("getrennt", "Registrierung an der Anlage verloren");
+                this.emit("getrennt", _t("Registrierung an der Anlage verloren"));
             }
         });
     }
@@ -637,10 +639,10 @@ export function erzeugeAgentFabrik({ bibliothekLaden, sipBibliothek = () => wind
         await bibliothekLaden();
         const SIP = sipBibliothek();
         if (!SIP?.UserAgent) {
-            throw new Error("SIP-Bibliothek konnte nicht geladen werden.");
+            throw new Error(_t("SIP-Bibliothek konnte nicht geladen werden."));
         }
         if (!zugang.ws_url || !zugang.sip_domain || !zugang.sip_benutzer) {
-            throw new Error("SIP-Zugang unvollständig (WebSocket, Domain oder Benutzer fehlt).");
+            throw new Error(_t("SIP-Zugang unvollständig (WebSocket, Domain oder Benutzer fehlt)."));
         }
         return new SipJsAgent(zugang, SIP, { uhr });
     };

@@ -583,6 +583,10 @@ export class LayoutDesigner extends Component {
         }
     }
 
+    get alleBenutzerText() {
+        return _t("Alle Benutzer");
+    }
+
     gruppenSetzen(ids) {
         this.entwurf.group_ids = ids.filter(Number.isInteger);
     }

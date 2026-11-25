@@ -26,7 +26,7 @@ async function kontextSchliessen(ctx) {
 function zielSpur(ziel) {
     const spuren = ziel.stream?.getAudioTracks?.() || [];
     if (!spuren.length) {
-        throw new Error("Konferenz: keine Audiospur für die Mischung.");
+        throw new Error(_t("Konferenz: keine Audiospur für die Mischung."));
     }
     return spuren[0];
 }
@@ -49,7 +49,7 @@ function zielSpur(ziel) {
 export async function konferenzAufbauen({ ctx, mikrofon, a, b, stumm = false }) {
     if (!ctx || !mikrofon || !a?.empfang || !a?.sender || !b?.empfang || !b?.sender) {
         await kontextSchliessen(ctx);
-        throw new Error("Konferenz: Ton einer Leitung fehlt.");
+        throw new Error(_t("Konferenz: Ton einer Leitung fehlt."));
     }
     const istStumm = typeof stumm === "function" ? stumm : () => Boolean(stumm);
     const handle = {

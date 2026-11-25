@@ -46,7 +46,7 @@
                          aria-labelledby="wb_voip_ds_gruppen_titel">
                         <span id="wb_voip_ds_gruppen_titel" class="form-label small mb-1 d-block">Gruppen</span>
                         <MultiRecordSelector resModel="'res.groups'" resIds="entwurf.group_ids"
-                                             update.bind="gruppenSetzen" placeholder="'Alle Benutzer'"/>
+                                             update.bind="gruppenSetzen" placeholder="alleBenutzerText"/>
                     </div>
                     <div class="o_wb_voip_ds_beispiel" role="group" aria-labelledby="wb_voip_ds_beispiel_titel">
                         <span id="wb_voip_ds_beispiel_titel" class="form-label small mb-1 d-block">Beispielkontakt</span>
