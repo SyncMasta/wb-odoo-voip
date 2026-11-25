@@ -236,11 +236,12 @@ class TestVorgang(WbVoipCrmCase):
         lead = self.lead.with_user(ohne)
         with self.assertRaises(AccessError):
             lead.wb_voip_anruf_anzahl
-        with self.assertRaises(AccessError):
-            lead.wb_voip_anruf_ids
         # Formular lädt ohne Fehler und ohne VoIP-Teile
         ansicht = lead.get_view(view_type='form')
         self.assertNotIn('wb_voip_anruf_anzahl', ansicht['arch'])
+
+    def test_totes_feld_anruf_ids_entfernt(self):
+        self.assertNotIn('wb_voip_anruf_ids', self.env['crm.lead']._fields)
 
     def test_formular_fuer_voip_benutzer(self):
         ansicht = self.lead.with_user(self.vertrieb_eigene).get_view(view_type='form')
@@ -262,7 +263,7 @@ class TestVorgang(WbVoipCrmCase):
                 'name': 'Nur CRM 2', 'login': 'wb_voip_crm_nurcrm2',
                 'group_ids': [(6, 0, [self.env.ref('base.group_user').id,
                                       self.env.ref('sales_team.group_sale_salesman_all_leads').id])]}))
-        with self.assertRaises(AccessError):
+        with self.assertRaisesRegex(AccessError, 'Nur für Benutzer von WB VoIP'):
             lead.action_wb_voip_anrufe()
 
     def test_protokolle_am_vorgang(self):
@@ -311,12 +312,12 @@ class TestVorgang(WbVoipCrmCase):
         self._anruf(res_model='crm.lead', res_id=self.lead.id)
         self._anruf(benutzer=self.vertrieb_alle, res_model='crm.lead', res_id=self.lead.id)
         eigen = self.lead.with_user(self.vertrieb_eigene)
-        self.assertEqual(len(eigen.wb_voip_anruf_ids), 1)
+        self.assertEqual(len(self.Anruf.with_user(self.vertrieb_eigene).search(
+            eigen.action_wb_voip_anrufe()['domain'])), 1)
         self.assertEqual(eigen.wb_voip_anruf_anzahl, 1)
         self.lead.user_id = manager  # Manager darf den Vorgang lesen (Regel „eigene“)
         self.env.invalidate_all()
         lead = self.lead.with_user(manager)
         self.assertEqual(lead.wb_voip_anruf_anzahl, 2)
-        self.assertEqual(len(lead.wb_voip_anruf_ids), 2)
         self.assertEqual(len(self.Anruf.with_user(manager).search(
             lead.action_wb_voip_anrufe()['domain'])), 2)

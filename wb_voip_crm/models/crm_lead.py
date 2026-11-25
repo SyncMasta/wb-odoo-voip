@@ -1,13 +1,13 @@
 from odoo import api, fields, models
 
+from odoo.addons.wb_voip.tools.rechte import nur_voip_benutzer
+
 GRUPPE = 'wb_voip.group_wb_voip_user'
 
 
 class CrmLead(models.Model):
     _inherit = 'crm.lead'
 
-    wb_voip_anruf_ids = fields.Many2many(
-        'wb.voip.anruf', string='Anrufe', compute='_compute_wb_voip_anruf_ids', groups=GRUPPE)
     wb_voip_anruf_anzahl = fields.Integer(
         string='Anzahl Anrufe', compute='_compute_wb_voip_anruf_anzahl', groups=GRUPPE)
     wb_voip_protokoll_ids = fields.Many2many(
@@ -27,14 +27,6 @@ class CrmLead(models.Model):
             lead.wb_voip_anruf_anzahl = zaehler.get(lead._origin.id, 0)
 
     @api.depends_context('uid')
-    def _compute_wb_voip_anruf_ids(self):
-        """List the calls of these leads that the current user may see."""
-        Anruf = self.env['wb.voip.anruf'].with_user(self.env.user)
-        for lead in self:
-            lead.wb_voip_anruf_ids = Anruf.search([
-                ('res_model', '=', 'crm.lead'), ('res_id', '=', lead._origin.id or 0)])
-
-    @api.depends_context('uid')
     def _compute_wb_voip_protokoll_ids(self):
         """List the call logs of these leads that the current user may see."""
         Protokoll = self.env['wb.voip.protokoll'].with_user(self.env.user)
@@ -42,6 +34,7 @@ class CrmLead(models.Model):
             lead.wb_voip_protokoll_ids = Protokoll.search([
                 ('res_model', '=', 'crm.lead'), ('res_id', '=', lead._origin.id or 0)])
 
+    @nur_voip_benutzer
     def action_wb_voip_anrufe(self):
         """Open the calls of this lead (the record rules of WB VoIP apply)."""
         self.ensure_one()

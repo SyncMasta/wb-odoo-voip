@@ -141,3 +141,33 @@ class TestZuordnung(WbVoipCrmCase):
         lead.action_set_won()
         daten = self._beginnen(self.vertrieb_eigene)
         self.assertFalse(daten['res_id'])
+
+    def test_archivierter_vorgang_auch_mit_active_test_false(self):
+        archiv = self._lead(name='Archiv')
+        archiv.active = False
+        Anruf = self.env['wb.voip.anruf'].with_user(self.vertrieb_eigene).with_context(
+            active_test=False)
+        partner = self.kontakt.with_user(self.vertrieb_eigene)
+        self.assertFalse(Anruf._wb_voip_zuordnung(partner, None))
+        daten = self.env['wb.voip.anruf'].with_user(self.vertrieb_eigene).with_context(
+            active_test=False).wb_voip_beginnen(
+                'eingehend', '+491701234567', 'crm-at-1', False, False)
+        self.assertFalse(daten['res_id'])
+
+    def test_mehrere_aktiv_neben_archiviertem_eigenen_gewinnt(self):
+        archiv = self._lead(name='Archiv')
+        archiv.active = False
+        eigener = self._lead(name='Eigener')
+        self._lead(name='Fremd', user_id=self.vertrieb_alle.id)
+        self.assertEqual(self._vorschlag(self.vertrieb_eigene), eigener)
+
+    def test_viele_vorgaenge_eigener_neuester_ohne_vollsuche(self):
+        leads = [self._lead(name=f'V{i}') for i in range(4)]
+        fremd = self._lead(name='Fremd', user_id=self.vertrieb_alle.id)
+        self.env.cr.execute(
+            "UPDATE crm_lead SET write_date = write_date + interval '1 day' WHERE id = %s",
+            (fremd.id,))
+        self.env.invalidate_all()
+        # neuester Vorgang ist der fremde: die Zuordnung nimmt den neuesten eigenen
+        self.assertEqual(self._vorschlag(self.vertrieb_alle), fremd)
+        self.assertEqual(self._vorschlag(self.vertrieb_eigene), leads[-1])

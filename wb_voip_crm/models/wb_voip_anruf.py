@@ -67,15 +67,22 @@ class WbVoipAnruf(models.Model):
         if not Lead.has_access('read'):
             return None
         kontakte = partner | partner.commercial_partner_id
-        leads = Lead.search([
+        domain = [
+            ('active', '=', True),
             ('partner_id', 'in', kontakte.ids),
             ('probability', '<', 100),
             ('company_id', 'in', [self.env.company.id, False]),
-        ], order='write_date desc, id desc')
+        ]
+        reihenfolge = 'write_date desc, id desc'
+        # Zwei Treffer genügen, um „genau einer“ von „mehrere“ zu trennen
+        leads = Lead.search(domain, order=reihenfolge, limit=2)
         if len(leads) == 1:
             return leads
-        eigene = leads.filtered(lambda lead: lead.user_id == self.env.user)
-        return eigene[:1] or None
+        if not leads:
+            return None
+        eigene = Lead.search(domain + [('user_id', '=', self.env.user.id)],
+                             order=reihenfolge, limit=1)
+        return eigene or None
 
     @nur_voip_benutzer
     @license_required(PRODUKT_CODE)

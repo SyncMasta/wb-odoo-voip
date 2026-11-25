@@ -166,6 +166,11 @@ class TestAktionVorgang(WbVoipCrmCase):
         titel = self._titel('{kontakt}', 'Zeile1\nZeile2\t\x01Ende')
         self.assertEqual(titel, 'Zeile1 Zeile2 Ende')
 
+    def test_unsichtbare_zeichen_werden_entfernt(self):
+        # Zero-width space/joiner, Bidi-Override und weicher Bindestrich (Kategorie Cf)
+        titel = self._titel('{kontakt}', 'A\u200bB\u200dC\u202eD\u00adE\ufeffF')
+        self.assertEqual(titel, 'ABCDEF')
+
     # --- Fix round 1 ---
 
     def test_client_defaults_landen_nicht_im_vorgang(self):

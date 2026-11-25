@@ -1,4 +1,5 @@
 import re
+import unicodedata
 
 from odoo import api, fields, models
 from odoo.exceptions import AccessError, UserError, ValidationError
@@ -41,7 +42,8 @@ class WbVoipAktion(models.Model):
 
         Plain text only: one ``re.sub`` pass over ``{kontakt}``, ``{nummer}`` and ``{datum}``
         (a replaced value is never scanned again), no ``format``, no evaluation, no markup.
-        Control characters and line breaks become blanks, the result has at most 200 characters.
+        Control characters and line breaks become blanks, invisible format characters
+        (category Cf, e.g. zero-width, bidi) are dropped, the result has at most 200 characters.
         """
         self.ensure_one()
         vorlage = self.sudo().titel_vorlage or self.env._("Anruf von {kontakt}")
@@ -52,6 +54,8 @@ class WbVoipAktion(models.Model):
             'datum': format_date(self.env, fields.Date.context_today(self)),
         }
         titel = PLATZHALTER_MUSTER.sub(lambda treffer: werte[treffer.group(1)], vorlage)
+        # unsichtbare Formatzeichen (Kategorie Cf: Zero-Width, Bidi) entfallen ganz
+        titel = ''.join(z for z in titel if unicodedata.category(z) != 'Cf')
         titel = ' '.join(STEUERZEICHEN_MUSTER.sub(' ', titel).split())
         return titel[:TITEL_MAX] or self.env._("Anruf")
 
