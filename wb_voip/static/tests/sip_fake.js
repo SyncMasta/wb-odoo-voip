@@ -221,6 +221,111 @@ class Sender {
 
 let sitzungsZaehler = 0;
 
+// --- WebAudio/WebRTC für die Konferenz ----------------------------------------------------
+
+let spurZaehler = 0;
+
+/** MediaStreamTrack-Ersatz. */
+export class FakeSpur {
+    constructor(name = `spur-${++spurZaehler}`) {
+        this.name = name;
+        this.kind = "audio";
+        this.enabled = true;
+        this.gestoppt = false;
+    }
+    stop() {
+        this.gestoppt = true;
+    }
+}
+
+/** RTCRtpSender-Ersatz: merkt sich jede ersetzte Spur. */
+export class FakeSender {
+    constructor(track = new FakeSpur()) {
+        this.track = track;
+        this.ersetzungen = [];
+        this.fehler = null;
+    }
+    replaceTrack(spur) {
+        if (this.fehler) {
+            return Promise.reject(this.fehler);
+        }
+        this.ersetzungen.push(spur);
+        this.track = spur;
+        return Promise.resolve();
+    }
+}
+
+class FakeKnoten {
+    constructor(art, extra = {}) {
+        this.art = art;
+        this.ziele = [];
+        this.getrennt = false;
+        Object.assign(this, extra);
+    }
+    connect(ziel) {
+        this.ziele.push(ziel);
+        return ziel;
+    }
+    disconnect() {
+        this.ziele = [];
+        this.getrennt = true;
+    }
+}
+
+/** AudioContext-Ersatz mit nachverfolgbarem Graphen. */
+export class FakeAudioContext {
+    constructor() {
+        this.knoten = [];
+        this.geschlossen = false;
+        this.destination = new FakeKnoten("lautsprecher");
+    }
+    _neu(knoten) {
+        this.knoten.push(knoten);
+        return knoten;
+    }
+    createMediaStreamSource(strom) {
+        return this._neu(new FakeKnoten("quelle", { strom }));
+    }
+    createGain() {
+        return this._neu(new FakeKnoten("verstaerkung", { gain: { value: 1 } }));
+    }
+    createMediaStreamDestination() {
+        const spur = new FakeSpur();
+        return this._neu(
+            new FakeKnoten("ziel", { spur, stream: { getAudioTracks: () => [spur] } })
+        );
+    }
+    resume() {
+        return Promise.resolve();
+    }
+    close() {
+        this.geschlossen = true;
+        return Promise.resolve();
+    }
+    /**
+     * Ströme, die hörbar (Verstärkung > 0, nicht getrennt) bei ``ziel`` ankommen.
+     */
+    quellenVon(ziel) {
+        const ergebnis = new Set();
+        const besuchen = (knoten, faktor) => {
+            for (const kandidat of this.knoten) {
+                if (kandidat.ziele.includes(knoten)) {
+                    const f = faktor * (kandidat.gain ? kandidat.gain.value : 1);
+                    if (kandidat.art === "quelle") {
+                        if (f > 0) {
+                            ergebnis.add(kandidat.strom);
+                        }
+                    } else {
+                        besuchen(kandidat, f);
+                    }
+                }
+            }
+        };
+        besuchen(ziel, 1);
+        return ergebnis;
+    }
+}
+
 export class FakeSitzung extends Sender {
     constructor({ ziel = null, remoteNummer = null } = {}) {
         super();
@@ -228,6 +333,16 @@ export class FakeSitzung extends Sender {
         this.ziel = ziel;
         this.remoteNummer = remoteNummer || ziel;
         this.aufrufe = [];
+        const n = sitzungsZaehler;
+        // Ton der Leitung (wie SipJsSitzung.konferenzMedien)
+        this.medien = {
+            mikrofon: { name: `mikrofon-${n}` },
+            empfang: { name: `empfang-${n}` },
+            sender: new FakeSender(new FakeSpur(`mik-spur-${n}`)),
+        };
+    }
+    konferenzMedien() {
+        return this.medien;
     }
     _merke(name, ...args) {
         this.aufrufe.push([name, ...args]);

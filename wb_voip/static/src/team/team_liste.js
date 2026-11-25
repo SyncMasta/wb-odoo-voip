@@ -167,9 +167,16 @@ export class TeamListe extends Component {
         return ["verbunden", "anderer_tab"].includes(this.telefonState.status);
     }
 
-    /** Eigenes Gespräch läuft (angenommen): nur dann Übergeben, Rückfrage, Konferenz. */
+    /**
+     * Eigenes Gespräch läuft (angenommen): nur dann Übergeben, Rückfrage, Konferenz; nicht
+     * während „Verbinden“ oder einer Konferenz.
+     */
     get imGespraech() {
-        return this.telefonState.anruf?.zustand === "laeuft";
+        return (
+            this.telefonState.anruf?.zustand === "laeuft" &&
+            !this.telefonState.verbindet &&
+            !this.telefonState.konferenz
+        );
     }
 
     erreichbar(kollege) {

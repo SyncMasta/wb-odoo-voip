@@ -66,6 +66,27 @@ export class Anrufansicht extends Component {
         return Boolean(this.state.verbindet);
     }
 
+    get konferenz() {
+        return Boolean(this.state.konferenz);
+    }
+
+    /** Konferenz möglich: aktive und gehaltene Leitung, beide angenommen, kein „Verbinden“. */
+    get konferenzMoeglich() {
+        return Boolean(
+            this.state.anruf &&
+                this.gehaltener &&
+                this.laeuft &&
+                this.gehaltener.zustand === "laeuft" &&
+                !this.verbindet &&
+                !this.konferenz
+        );
+    }
+
+    /** Halten, Tastatur und Weiterleiten: nur im eigenen Gespräch ohne Verbinden/Konferenz. */
+    get bedienungGesperrt() {
+        return !this.laeuft || this.verbindet || this.konferenz;
+    }
+
     /** „Zurück“ legt die aktive Leitung auf: eine Rückfrage oder den angenommenen zweiten Anruf. */
     get zurueckText() {
         return this.state.anruf?.rueckfrage ? _t("Rückfrage beenden") : _t("Auflegen und zurück");
@@ -214,6 +235,16 @@ export class Anrufansicht extends Component {
         if (!(await this.telefon.verbinden())) {
             this._fehler(_t("Verbinden nicht möglich."));
         }
+    }
+
+    async konferenzStarten() {
+        if (!(await this.telefon.konferenz())) {
+            this._fehler(_t("Konferenz nicht möglich."));
+        }
+    }
+
+    konferenzBeenden() {
+        return this.telefon.konferenzBeenden();
     }
 
     async rueckfrage() {

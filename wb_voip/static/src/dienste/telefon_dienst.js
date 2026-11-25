@@ -5,6 +5,7 @@ import { registry } from "@web/core/registry";
 import { session } from "@web/session";
 
 import { Klaenge } from "./klaenge";
+import { konferenzAbbauen, konferenzAufbauen } from "./konferenz";
 import { erzeugeAgentFabrik } from "./sip_agent";
 
 // Die Anlage nimmt je Nebenstelle nur eine Registrierung an: Nur der Tab, der die
@@ -91,6 +92,7 @@ export class TelefonDienst {
      * @param {EventTarget} [deps.fenster]       window: bei „pagehide“ abmelden, bei
      *                                           „pageshow“ aus dem bfcache neu starten
      * @param {() => BroadcastChannel} [deps.kanalFabrik] neuer Kanal für den Neustart
+     * @param {() => AudioContext} [deps.audioKontext] neuer AudioContext für die Konferenz
      */
     constructor({
         orm,
@@ -102,6 +104,7 @@ export class TelefonDienst {
         klaenge,
         fenster = null,
         kanalFabrik = null,
+        audioKontext = null,
     }) {
         this.orm = orm;
         this.sperren = sperren;
@@ -111,6 +114,8 @@ export class TelefonDienst {
         this.tabId = tabId;
         this.agentFabrik = agentFabrik;
         this.klaenge = klaenge;
+        this._audioKontext =
+            audioKontext || (() => new (window.AudioContext || window.webkitAudioContext)());
         this.bus = new EventBus();
         /**
          * status: aus | verbinde | verbunden | getrennt | anderer_tab | ohne_lizenz
@@ -119,7 +124,8 @@ export class TelefonDienst {
         /**
          * anruf: aktive Leitung; gehaltener: zweite, gehaltene Leitung (Rückfrage oder
          * angenommener zweiter Anruf); klopfend: zweiter eingehender Anruf, der noch klingelt.
-         * Höchstens zwei Leitungen zugleich.
+         * Höchstens zwei Leitungen zugleich. konferenz: beide Leitungen laufen gemischt
+         * (keine gehalten).
          */
         this.state = reactive({
             status: "aus",
@@ -127,6 +133,7 @@ export class TelefonDienst {
             gehaltener: null,
             klopfend: null,
             verbindet: false, // „Verbinden“ wartet auf die Anlage
+            konferenz: false,
             fehler: null,
         });
 
@@ -147,6 +154,7 @@ export class TelefonDienst {
         this._klopfend = null; // Kontext des wartenden eingehenden Anrufs
         this._rueckfrageLaeuft = false; // Halten vor der Rückfrage läuft noch
         this._verbindet = null; // {aktiv, gehalten, beideBeendet} während „Verbinden“
+        this._konferenz = null; // {aktiv, gehalten, handle} ab dem Aufbau der Konferenz
         this._abgewiesenIds = new Set(); // Call-IDs schon gemeldeter 480-Anrufe
         this._abgewiesenZeiten = []; // Meldezeiten im laufenden Minutenfenster
         this._popupWarten = []; // Protokoll-Popups, bis keine Leitung mehr läuft
@@ -702,6 +710,7 @@ export class TelefonDienst {
 
     /** Beendet alle Leitungen mit ``fn``, ohne die gehaltene zurückzuholen. */
     _alleBeenden(fn) {
+        this._konferenzAufloesen();
         const verbinden = this._verbindet;
         this._verbindet = null;
         this.state.verbindet = false;
@@ -805,6 +814,11 @@ export class TelefonDienst {
         kontext.anruf.zustand = "laeuft";
         kontext.anruf.annahme = this.uhr.jetzt();
         this._aktivMelden(kontext);
+        if (kontext.konferenzNachAnnahme && this._aktiv === kontext && this._gehalten) {
+            // Konferenz mit einem Kollegen (Team): mischen, sobald er abnimmt
+            kontext.konferenzNachAnnahme = false;
+            this.konferenz().catch(() => {});
+        }
         // Lebenszeichen je Leitung, auch für die gehaltene
         this._lebenszeichenStoppen(kontext);
         kontext.lebenTimer = this.uhr.setInterval(
@@ -856,8 +870,16 @@ export class TelefonDienst {
         // Während „Verbinden“ endet nur die betroffene Leitung; über die andere entscheidet
         // das Ergebnis des REFER (verbinden())
         const waehrendVerbinden = Boolean(this._verbindet);
+        const konferenz = this._konferenz;
+        const inKonferenz = Boolean(
+            konferenz && (konferenz.aktiv === kontext || konferenz.gehalten === kontext)
+        );
         kontext.beendet = true;
         this._lebenszeichenStoppen(kontext);
+        if (inKonferenz) {
+            // Review Focus 4: Mischung auflösen, die andere Leitung läuft allein weiter
+            this._konferenzAufloesen();
+        }
         if (this._aktiv === kontext) {
             this._aktiv = null;
             this.klaenge.aus();
@@ -865,8 +887,9 @@ export class TelefonDienst {
             if (waehrendVerbinden) {
                 // nichts zurückholen
             } else if (this._gehalten) {
-                // Review Focus 3: Rückfrage endet (Kollege legt auf, besetzt, nicht erreicht)
-                this._fortsetzen();
+                // Review Focus 3: Rückfrage endet (Kollege legt auf, besetzt, nicht erreicht);
+                // aus der Konferenz ist die andere Leitung schon aus dem Halten geholt
+                this._fortsetzen({ unhold: !inKonferenz || this._gehalten.anruf.gehalten });
             } else if (this._klopfend) {
                 // der wartende Anruf klingelt jetzt als einziger weiter
                 const wartend = this._klopfend;
@@ -919,8 +942,11 @@ export class TelefonDienst {
         }
     }
 
-    /** Macht die gehaltene Leitung wieder zur aktiven und nimmt sie aus dem Halten. */
-    _fortsetzen() {
+    /**
+     * Macht die gehaltene Leitung wieder zur aktiven und nimmt sie aus dem Halten (mit
+     * ``unhold: false`` nur zur aktiven, z. B. nach einer Konferenz).
+     */
+    _fortsetzen({ unhold = true } = {}) {
         const kontext = this._gehalten;
         this._gehalten = null;
         this.state.gehaltener = null;
@@ -930,6 +956,10 @@ export class TelefonDienst {
             // Anrufer-Fenster zeigt wieder dieses Gespräch
             kontext.aktivGemeldet = true;
             this.bus.trigger("anruf-aktiv", { anrufId: kontext.anruf.id, eigenerTab: true });
+        }
+        if (!unhold) {
+            kontext.anruf.gehalten = false;
+            return;
         }
         let ergebnis;
         try {
@@ -1072,6 +1102,10 @@ export class TelefonDienst {
     }
 
     async auflegen() {
+        if (this._konferenz) {
+            // in der Konferenz legt „Auflegen“ beide Leitungen auf
+            return this.konferenzBeenden();
+        }
         const kontext = this._aktiv;
         if (!kontext || this._verbindet) {
             return;
@@ -1094,6 +1128,14 @@ export class TelefonDienst {
     }
 
     stumm(an) {
+        const konferenz = this._konferenz;
+        if (konferenz) {
+            // nur das Mikrofon in der Mischung; die gemischte Spur bleibt an
+            konferenz.handle?.stumm(Boolean(an));
+            konferenz.aktiv.anruf.stumm = Boolean(an);
+            konferenz.gehalten.anruf.stumm = Boolean(an);
+            return;
+        }
         const kontext = this._laufend();
         if (!kontext) {
             return;
@@ -1104,7 +1146,7 @@ export class TelefonDienst {
 
     async halten(an) {
         const kontext = this._laufend();
-        if (!kontext || this._verbindet) {
+        if (!kontext || this._verbindet || this._konferenz) {
             return;
         }
         try {
@@ -1117,7 +1159,7 @@ export class TelefonDienst {
 
     dtmf(ziffer) {
         const kontext = this._laufend();
-        if (!kontext || !DTMF.test(String(ziffer))) {
+        if (!kontext || this._konferenz || !DTMF.test(String(ziffer))) {
             return;
         }
         kontext.sitzung.dtmf(String(ziffer));
@@ -1181,7 +1223,7 @@ export class TelefonDienst {
 
     /** Legt die aktive Leitung (Rückfrage) auf; die gehaltene kommt zurück. */
     async zurueck() {
-        if (!this._gehalten || !this._aktiv || this._verbindet) {
+        if (!this._gehalten || !this._aktiv || this._verbindet || this._konferenz) {
             return false;
         }
         await this.auflegen();
@@ -1195,8 +1237,8 @@ export class TelefonDienst {
      * Endet eine Leitung während des Wartens, endet nur diese.
      */
     async verbinden() {
-        if (this._verbindet) {
-            return false; // läuft schon (Knopf ist gesperrt)
+        if (this._verbindet || this._konferenz) {
+            return false; // läuft schon bzw. Konferenz (Knopf ist gesperrt)
         }
         const aktiv = this._laufend();
         const gehalten = this._gehalten;
@@ -1249,6 +1291,144 @@ export class TelefonDienst {
         return true;
     }
 
+    /**
+     * Dreier-Konferenz. Ohne ``nummer``: verbindet die aktive mit der gehaltenen Leitung
+     * (beide angenommen); die gehaltene kommt aus dem Halten, der Ton wird im Browser
+     * gemischt (konferenz.js). Mit ``nummer`` (Team): Rückfrage an ``nummer``, gemischt wird,
+     * sobald der Kollege abnimmt; nimmt er nicht ab, kommt das Gespräch zurück.
+     */
+    async konferenz(nummer) {
+        if (nummer !== undefined && nummer !== null) {
+            const ok = await this.rueckfrage(nummer);
+            if (ok && this._aktiv) {
+                this._aktiv.konferenzNachAnnahme = true;
+            }
+            return ok;
+        }
+        if (this._konferenz || this._verbindet || this._rueckfrageLaeuft) {
+            return false; // läuft schon (Knopf ist gesperrt)
+        }
+        const aktiv = this._laufend();
+        const gehalten = this._gehalten;
+        if (!aktiv || !gehalten || gehalten.beendet || !gehalten.angenommen || this._klopfend) {
+            this.state.fehler = _t("Konferenz geht erst mit zwei angenommenen Leitungen.");
+            return false;
+        }
+        if (this.state.status !== "verbunden" || !this._agent) {
+            this.state.fehler = _t("Telefon ist nicht verbunden.");
+            return false;
+        }
+        // Simulation (Modus „test“): Konferenz ohne Ton
+        const simuliert = Boolean(aktiv.sitzung.simuliert && gehalten.sitzung.simuliert);
+        const medienA = simuliert ? null : aktiv.sitzung.konferenzMedien?.();
+        const medienB = simuliert ? null : gehalten.sitzung.konferenzMedien?.();
+        if (!simuliert && (!medienA || !medienB)) {
+            this.state.fehler = _t("Konferenz nicht möglich: Ton einer Leitung fehlt.");
+            return false;
+        }
+        const konferenz = { aktiv, gehalten, handle: null };
+        this._konferenz = konferenz;
+        this.state.fehler = null;
+        try {
+            if (gehalten.anruf.gehalten) {
+                await gehalten.sitzung.unhold();
+            }
+            gehalten.anruf.gehalten = false;
+        } catch (fehler) {
+            if (this._konferenz === konferenz) {
+                this._konferenz = null;
+                this.state.fehler = fehlertext(fehler);
+            }
+            return false;
+        }
+        if (this._konferenz !== konferenz) {
+            return false; // eine Leitung ist inzwischen beendet
+        }
+        const stumm = Boolean(aktiv.anruf.stumm);
+        if (!simuliert) {
+            let handle;
+            try {
+                handle = await konferenzAufbauen({
+                    ctx: this._audioKontext(),
+                    mikrofon: medienA.mikrofon,
+                    a: { empfang: medienA.empfang, sender: medienA.sender },
+                    b: { empfang: medienB.empfang, sender: medienB.sender },
+                    stumm,
+                });
+            } catch (fehler) {
+                if (this._konferenz === konferenz) {
+                    this._konferenz = null;
+                    this.state.fehler = fehlertext(fehler);
+                    this._konferenzZurueckHalten(gehalten);
+                }
+                return false;
+            }
+            if (this._konferenz !== konferenz) {
+                // eine Leitung endete während des Aufbaus
+                konferenzAbbauen(handle, { stumm }).catch(() => {});
+                return false;
+            }
+            konferenz.handle = handle;
+        }
+        // Stumm gilt für beide Richtungen (ggf. während des Aufbaus geändert)
+        konferenz.handle?.stumm(Boolean(aktiv.anruf.stumm));
+        gehalten.anruf.stumm = Boolean(aktiv.anruf.stumm);
+        this.state.konferenz = true;
+        return true;
+    }
+
+    /** Aufbau gescheitert: die zweite Leitung wieder halten (best effort). */
+    _konferenzZurueckHalten(kontext) {
+        if (kontext.beendet || this._gehalten !== kontext) {
+            return;
+        }
+        Promise.resolve()
+            .then(() => kontext.sitzung.hold())
+            .then(
+                () => {
+                    if (!kontext.beendet) {
+                        kontext.anruf.gehalten = true;
+                    }
+                },
+                () => {}
+            );
+    }
+
+    /** Legt beide Leitungen der Konferenz auf; jedes Kundengespräch bekommt sein Popup. */
+    async konferenzBeenden() {
+        const konferenz = this._konferenz;
+        if (!konferenz) {
+            return false;
+        }
+        // gehaltene zuerst, damit die andere nicht kurz zur aktiven wird
+        for (const kontext of [konferenz.gehalten, konferenz.aktiv]) {
+            if (kontext.beendet) {
+                continue;
+            }
+            try {
+                Promise.resolve(kontext.sitzung.bye()).catch(() => {});
+            } catch {
+                // Sitzung war schon beendet
+            }
+            this._beenden(kontext, "bye");
+        }
+        return true;
+    }
+
+    /** Löst die Mischung auf (ohne Leitungen zu beenden); jede sendet wieder ihr Mikrofon. */
+    _konferenzAufloesen() {
+        const konferenz = this._konferenz;
+        if (!konferenz) {
+            return;
+        }
+        this._konferenz = null;
+        this.state.konferenz = false;
+        if (konferenz.handle) {
+            const stumm = Boolean(konferenz.aktiv.anruf.stumm);
+            konferenzAbbauen(konferenz.handle, { stumm }).catch(() => {});
+        }
+    }
+
     /** Übergibt die aktive Leitung direkt (ohne Rückfrage) per REFER an ``nummer``. */
     uebergeben(nummer) {
         return this.weiterleiten(nummer);
@@ -1257,7 +1437,7 @@ export class TelefonDienst {
     async weiterleiten(nummer) {
         const kontext = this._laufend();
         const ziel = waehlbar(nummer);
-        if (!kontext || !ziel || this._verbindet) {
+        if (!kontext || !ziel || this._verbindet || this._konferenz) {
             return false;
         }
         try {

@@ -3,10 +3,12 @@
 //   Agent:   register(), unregister(), stop(), invite(ziel) -> Sitzung
 //            Ereignisse: "invitation" (Sitzung), "getrennt" (Text)
 //   Sitzung: callId, remoteNummer, accept(), reject({statusCode}), cancel(), bye(),
-//            hold(), unhold(), mute(an), dtmf(ziffer), refer(ziel)
+//            hold(), unhold(), mute(an), dtmf(ziffer), refer(ziel), konferenzMedien()
 //            refer(ziel): ziel ist eine Nummer (blindes Übergeben, danach legt die Sitzung
 //            selbst auf) oder eine andere Sitzung (Verbinden: Refer-To mit Replaces,
 //            RFC 3891; Auflegen übernimmt der Dienst)
+//            konferenzMedien(): {sender, empfang, mikrofon} für die Mischung (konferenz.js)
+//            oder null; die Simulation hat ``simuliert = true`` und mischt nichts
 //            Ereignisse: "fortschritt" ({statusCode, mitSdp}), "angenommen",
 //            "beendet" ({grund})
 //
@@ -235,6 +237,22 @@ export class SipJsSitzung extends Sender {
                 sender.track.enabled = !an;
             }
         }
+    }
+    /**
+     * Audio of this session for the browser conference: the audio RTCRtpSender, the remote
+     * stream and the local microphone stream; null if the session has no media (yet).
+     */
+    konferenzMedien() {
+        const sdh = this._sdh;
+        const sender = (sdh?.peerConnection?.getSenders?.() || []).find(
+            (s) => s.track?.kind === "audio"
+        );
+        const empfang = sdh?.remoteMediaStream;
+        const mikrofon = sdh?.localMediaStream;
+        if (!sender || !empfang || !mikrofon) {
+            return null;
+        }
+        return { sender, empfang, mikrofon };
     }
     dtmf(ziffer) {
         // RFC 4733 über RTP; sonst SIP INFO
@@ -475,6 +493,7 @@ class TestSitzung extends Sender {
         this.remoteNummer = remoteNummer;
         this._timer = [];
         this._vorbei = false;
+        this.simuliert = true; // Konferenz ohne Ton (kein WebRTC)
     }
     _spaeter(ms, fn) {
         this._timer.push(this._uhr.setTimeout(() => !this._vorbei && fn(), ms));
@@ -511,6 +530,9 @@ class TestSitzung extends Sender {
     }
     mute() {}
     dtmf() {}
+    konferenzMedien() {
+        return null;
+    }
     refer(ziel) {
         // Verbinden: der Dienst legt beide Leitungen selbst auf
         if (!(ziel instanceof TestSitzung)) {

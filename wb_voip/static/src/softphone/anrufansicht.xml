@@ -3,7 +3,19 @@
     <t t-name="wb_voip.Anrufansicht">
         <!-- beide Leitungen können im selben Takt enden, bevor das Softphone die Ansicht entfernt -->
         <div t-if="anruf" class="o_wb_voip_anrufansicht p-3">
-            <div t-if="state.anruf and gehaltener" class="o_wb_voip_gehalten alert alert-secondary d-flex align-items-center gap-2 py-2 mb-3"
+            <div t-if="konferenz" class="o_wb_voip_konferenz alert alert-info py-2 mb-3" role="status">
+                <div class="fw-bold mb-1"><i class="fa fa-users me-1" aria-hidden="true"/>Konferenz</div>
+                <ul class="list-unstyled mb-2">
+                    <li class="o_wb_voip_konferenz_teilnehmer text-truncate" t-esc="nameVon(state.anruf)"/>
+                    <li t-if="gehaltener" class="o_wb_voip_konferenz_teilnehmer text-truncate" t-esc="nameVon(gehaltener)"/>
+                </ul>
+                <button type="button" class="o_wb_voip_konferenz_beenden btn btn-sm btn-danger w-100"
+                        title="Konferenz beenden (beide auflegen)" aria-label="Konferenz beenden (beide auflegen)"
+                        t-on-click="konferenzBeenden">
+                    <i class="fa fa-phone o_wb_voip_auflegen_symbol me-1" aria-hidden="true"/>Konferenz beenden
+                </button>
+            </div>
+            <div t-if="state.anruf and gehaltener and !konferenz" class="o_wb_voip_gehalten alert alert-secondary d-flex align-items-center gap-2 py-2 mb-3"
                  role="status">
                 <i class="fa fa-pause" aria-hidden="true"/>
                 <span class="flex-grow-1 text-truncate">Gehalten: <t t-esc="nameVon(gehaltener)"/></span>
@@ -16,6 +28,11 @@
                         title="Gehaltenes Gespräch mit diesem verbinden"
                         aria-label="Gehaltenes Gespräch mit diesem verbinden"
                         t-on-click="verbinden">Verbinden</button>
+                <button type="button" class="o_wb_voip_konferenz_starten btn btn-sm btn-outline-primary"
+                        t-att-disabled="!konferenzMoeglich"
+                        title="Dreier-Konferenz mit beiden Gesprächen"
+                        aria-label="Dreier-Konferenz mit beiden Gesprächen"
+                        t-on-click="konferenzStarten">Konferenz</button>
             </div>
             <div t-if="klopfend" class="o_wb_voip_klopfend alert alert-warning py-2 mb-3" role="alert">
                 <div class="text-truncate mb-2">
@@ -59,26 +76,26 @@
                         <i class="fa fa-microphone-slash" aria-hidden="true"/>
                     </button>
                     <button type="button" class="o_wb_voip_halten btn btn-outline-secondary"
-                            t-att-class="{active: anruf.gehalten}" t-att-disabled="!laeuft or verbindet"
+                            t-att-class="{active: anruf.gehalten}" t-att-disabled="bedienungGesperrt"
                             t-att-aria-pressed="anruf.gehalten ? 'true' : 'false'"
                             title="Halten" aria-label="Halten" t-on-click="halten">
                         <i class="fa fa-pause" aria-hidden="true"/>
                     </button>
                     <button type="button" class="o_wb_voip_tastatur_umschalten btn btn-outline-secondary"
-                            t-att-class="{active: lokal.tastatur}" t-att-disabled="!laeuft or verbindet"
+                            t-att-class="{active: lokal.tastatur}" t-att-disabled="bedienungGesperrt"
                             t-att-aria-pressed="lokal.tastatur ? 'true' : 'false'"
                             title="Tastatur" aria-label="Tastatur" t-on-click="tastaturUmschalten">
                         <i class="fa fa-th" aria-hidden="true"/>
                     </button>
                     <button type="button" class="o_wb_voip_weiterleiten_umschalten btn btn-outline-secondary"
-                            t-att-class="{active: lokal.weiterleiten}" t-att-disabled="!laeuft or verbindet"
+                            t-att-class="{active: lokal.weiterleiten}" t-att-disabled="bedienungGesperrt"
                             t-att-aria-pressed="lokal.weiterleiten ? 'true' : 'false'"
                             title="Weiterleiten" aria-label="Weiterleiten" t-on-click="weiterleitenUmschalten">
                         <i class="fa fa-share" aria-hidden="true"/>
                     </button>
                     <button t-if="!gehaltener and !klopfend" type="button"
                             class="o_wb_voip_team_umschalten btn btn-outline-secondary"
-                            t-att-class="{active: lokal.team}" t-att-disabled="!laeuft or verbindet"
+                            t-att-class="{active: lokal.team}" t-att-disabled="bedienungGesperrt"
                             t-att-aria-pressed="lokal.team ? 'true' : 'false'"
                             title="Team: Übergeben oder Rückfrage" aria-label="Team: Übergeben oder Rückfrage"
                             t-on-click="teamUmschalten">
@@ -88,8 +105,8 @@
                 <div t-if="lokal.team and zweiteFrei" class="o_wb_voip_team_auswahl border rounded mb-3">
                     <TeamListe auswahl="true" onFertig.bind="teamFertig"/>
                 </div>
-                <Tastenfeld t-if="lokal.tastatur and laeuft and !verbindet" onTaste.bind="dtmf"/>
-                <div t-if="lokal.weiterleiten and laeuft and !verbindet" class="input-group mb-3">
+                <Tastenfeld t-if="lokal.tastatur and !bedienungGesperrt" onTaste.bind="dtmf"/>
+                <div t-if="lokal.weiterleiten and !bedienungGesperrt" class="input-group mb-3">
                     <input type="tel" class="o_wb_voip_weiterleiten_ziel form-control" maxlength="64"
                            placeholder="Weiterleiten an" aria-label="Weiterleiten an"
                            t-model="lokal.ziel" t-on-keydown="onZielKeydown"/>
@@ -120,7 +137,7 @@
             <div t-if="anruf.richtung === 'eingehend'" id="wb_voip_notiz_hinweis"
                  class="o_wb_voip_notiz_hinweis small text-muted mb-3">Kollegen, die diesen Anruf verpasst haben, sehen diese Notiz.</div>
 
-            <button t-if="!eingehendKlingelt" type="button"
+            <button t-if="!eingehendKlingelt and !konferenz" type="button"
                     class="o_wb_voip_auflegen btn btn-danger w-100" t-att-disabled="verbindet"
                     title="Auflegen" aria-label="Auflegen" t-on-click="auflegen">
                 <i class="fa fa-phone o_wb_voip_auflegen_symbol me-1" aria-hidden="true"/>Auflegen
