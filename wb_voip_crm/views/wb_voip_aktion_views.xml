@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="wb_voip_aktion_view_form_crm" model="ir.ui.view">
+        <field name="name">wb.voip.aktion.form.crm</field>
+        <field name="model">wb.voip.aktion</field>
+        <field name="inherit_id" ref="wb_voip.wb_voip_aktion_view_form"/>
+        <field name="arch" type="xml">
+            <field name="url_vorlage" position="after">
+                <field name="crm_team_id" invisible="art != 'vorgang'"/>
+                <field name="titel_vorlage" invisible="art != 'vorgang'"
+                       placeholder="Anruf von {kontakt}"/>
+            </field>
+        </field>
+    </record>
+</odoo>

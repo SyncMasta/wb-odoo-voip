@@ -1,3 +1,6 @@
 from . import test_zuordnung
 from . import test_vorgang
 from . import test_rueckruf
+from . import test_aktion_vorgang
+from . import test_block_vorgaenge
+from . import test_js

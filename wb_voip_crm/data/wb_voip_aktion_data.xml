@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- Beispiel-Button, inaktiv: zum Einschalten aktivieren und Orte prüfen -->
+    <record id="wb_voip_aktion_vorgang" model="wb.voip.aktion">
+        <field name="name">Vorgang anlegen</field>
+        <field name="icon">fa-handshake-o</field>
+        <field name="farbe">primary</field>
+        <field name="art">vorgang</field>
+        <field name="titel_vorlage">Anruf von {kontakt} ({datum})</field>
+        <field name="ort_anrufer_fenster" eval="True"/>
+        <field name="ort_softphone" eval="False"/>
+        <field name="active" eval="False"/>
+        <field name="sequence">90</field>
+    </record>
+</odoo>

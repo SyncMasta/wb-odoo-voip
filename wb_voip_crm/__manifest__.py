@@ -16,7 +16,17 @@ zugeordnet, am Vorgang erscheinen Anrufe und Anrufprotokolle.
     'data': [
         'views/wb_voip_anruf_views.xml',
         'views/crm_lead_views.xml',
+        'views/wb_voip_aktion_views.xml',
+        'data/wb_voip_aktion_data.xml',
     ],
+    'assets': {
+        'web.assets_backend': [
+            'wb_voip_crm/static/src/**/*',
+        ],
+        'web.assets_unit_tests': [
+            'wb_voip_crm/static/tests/**/*',
+        ],
+    },
     'installable': True,
     'application': False,
     'auto_install': True,
