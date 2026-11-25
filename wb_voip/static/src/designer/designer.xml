@@ -41,7 +41,9 @@
                             <option t-foreach="breiten" t-as="b" t-key="b[0]" t-att-value="b[0]" t-esc="b[1]"/>
                         </select>
                     </div>
-                    <div class="o_wb_voip_ds_gruppen" role="group" aria-labelledby="wb_voip_ds_gruppen_titel">
+                    <!-- Das Standard-Layout gilt für alle: keine Gruppen -->
+                    <div t-if="!entwurf.ist_standard" class="o_wb_voip_ds_gruppen" role="group"
+                         aria-labelledby="wb_voip_ds_gruppen_titel">
                         <span id="wb_voip_ds_gruppen_titel" class="form-label small mb-1 d-block">Gruppen</span>
                         <MultiRecordSelector resModel="'res.groups'" resIds="entwurf.group_ids"
                                              update.bind="gruppenSetzen" placeholder="'Alle Benutzer'"/>

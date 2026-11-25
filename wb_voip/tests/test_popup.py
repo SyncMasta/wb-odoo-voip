@@ -28,42 +28,11 @@ class TestPopup(WbVoipCase):
 
     # --- rechte Spalte -----------------------------------------------------------------
 
-    def test_letzte_protokolle_fuenf_ohne_aktuelles(self):
-        protokolle = [self._protokoll(tag=tag) for tag in range(1, 8)]
-        aktuell = protokolle[-1]
-        letzte = aktuell.with_user(self.user_a).wb_voip_letzte_protokoll_ids
-        self.assertEqual(len(letzte), 5)
-        self.assertNotIn(aktuell, letzte)
-        # neueste zuerst: 6, 5, 4, 3, 2
-        self.assertEqual(letzte.ids, [p.id for p in reversed(protokolle[1:6])])
-
-    def test_letzte_protokolle_nur_lesbare(self):
-        eigenes = self._protokoll(tag=1)
-        fremd = self._protokoll(user=self.user_b, tag=2)
-        aktuell = self._protokoll(tag=3)
-        letzte = aktuell.with_user(self.user_a).wb_voip_letzte_protokoll_ids
-        self.assertEqual(letzte, eigenes)
-        self.assertNotIn(fremd, letzte)
-
-    def test_letzte_protokolle_ohne_kontakt_leer(self):
-        ohne = self.Protokoll.sudo().create({'user_id': self.user_a.id})
-        self.assertFalse(ohne.with_user(self.user_a).wb_voip_letzte_protokoll_ids)
-
-    def test_kontaktdaten(self):
-        protokoll = self._protokoll()
-        als_a = protokoll.with_user(self.user_a)
-        self.assertEqual(als_a.wb_voip_partner_telefon, '+49 170 1234567')
-        self.assertEqual(als_a.wb_voip_partner_email, 'popup@example.com')
-
-    def test_kontaktdaten_ohne_leserecht_leer(self):
-        protokoll = self._protokoll()
-        self.env['ir.rule'].create({
-            'name': 'Test: Kontakt gesperrt', 'model_id': self.env.ref('base.model_res_partner').id,
-            'domain_force': "[('id', '!=', %d)]" % self.kontakt.id,
-        })
-        als_a = protokoll.with_user(self.user_a)
-        self.assertFalse(als_a.wb_voip_partner_telefon)
-        self.assertFalse(als_a.wb_voip_partner_email)
+    def test_alte_felder_entfernt(self):
+        # die rechte Spalte kommt aus wb_voip_popup_layout (siehe test_layout_kontext)
+        for feld in ('wb_voip_letzte_protokoll_ids', 'wb_voip_partner_telefon',
+                     'wb_voip_partner_email'):
+            self.assertNotIn(feld, self.Protokoll._fields)
 
     # --- Folgeaktivität ----------------------------------------------------------------
 

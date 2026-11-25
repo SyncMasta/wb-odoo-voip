@@ -202,7 +202,8 @@ class ResUsers(models.Model):
         """Return the window layout of this user for ``ort``.
 
         Layouts restricted to groups win by lowest sequence if one of the groups matches;
-        layouts without groups apply to everyone; otherwise the standard layout of the place.
+        layouts without groups apply to everyone; otherwise the standard layout of the place,
+        or an unsaved layout with the delivered blocks if that is missing.
         Private helper (not callable via RPC); the search runs as superuser after the group check.
         """
         self.ensure_one()
@@ -214,4 +215,6 @@ class ResUsers(models.Model):
             ('ort', '=', ort), ('ist_standard', '=', False),
             '|', ('group_ids', '=', False), ('group_ids', 'in', gruppen),
         ], order='sequence, id', limit=1)
-        return passend or Layout.search([('ort', '=', ort), ('ist_standard', '=', True)], limit=1)
+        # fehlt das Standard-Layout (z. B. per SQL gelöscht), gilt der Auslieferungszustand
+        return (passend or Layout.search([('ort', '=', ort), ('ist_standard', '=', True)], limit=1)
+                or Layout._wb_voip_ersatz(ort))

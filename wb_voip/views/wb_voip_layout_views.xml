@@ -40,7 +40,8 @@
                         </group>
                         <group>
                             <field name="sequence"/>
-                            <field name="group_ids" widget="many2many_tags"/>
+                            <!-- Das Standard-Layout gilt für alle: keine Gruppen -->
+                            <field name="group_ids" widget="many2many_tags" invisible="ist_standard"/>
                             <field name="ist_standard"/>
                             <field name="active" invisible="1"/>
                         </group>
@@ -51,12 +52,17 @@
                             <field name="art"/>
                             <field name="titel"/>
                             <field name="spalte"/>
-                            <field name="feld_ids" widget="many2many_tags"
+                            <!-- Feldauswahl über ir.model.fields nur mit Einstellungsrechten,
+                                 sonst im Designer -->
+                            <field name="feld_ids" widget="many2many_tags" groups="base.group_erp_manager"
                                    invisible="art != 'felder'" required="art == 'felder'"/>
                             <field name="anzahl" invisible="art not in ('protokolle', 'aufgaben')"/>
                             <field name="text" invisible="art != 'text'"/>
                         </list>
                     </field>
+                    <div class="text-muted small" groups="!base.group_erp_manager">
+                        Felder im Designer wählen.
+                    </div>
                 </sheet>
             </form>
         </field>

@@ -105,6 +105,29 @@ class TestLayoutKontext(WbVoipCase):
         self.assertEqual(anzahl['aufgaben'], 10)
         self.assertFalse(anzahl['kontaktkopf'])
 
+    def test_standard_fehlt_ersatz_ohne_datensatz(self):
+        # Standard-Layouts per SQL gelöscht (Blöcke per Fremdschlüssel mit): kein Absturz
+        protokoll = self._protokoll()
+        self._protokoll()
+        self.env.flush_all()
+        self.env.cr.execute("DELETE FROM wb_voip_layout WHERE ist_standard IS TRUE")
+        self.env.invalidate_all()
+        self.assertFalse(self.std_fenster.exists())
+        daten = self._kontext()
+        layout = daten['layout']
+        self.assertFalse(layout['id'])
+        self.assertEqual(layout['breite'], 'normal')
+        self.assertEqual([b['art'] for b in layout['bloecke']],
+                         ['kontaktkopf', 'buttons', 'protokolle', 'aufgaben', 'notiz'])
+        self.assertEqual({b['art']: b['anzahl'] for b in layout['bloecke']}['aufgaben'], 10)
+        self.assertEqual(len(daten['protokolle']), 2)
+        popup = protokoll.with_user(self.user_a).wb_voip_popup_layout()
+        self.assertEqual([b['art'] for b in popup['layout']['bloecke']], ['kontaktkopf', 'protokolle'])
+        self.assertEqual(len(popup['protokolle']), 1)
+        # es wurde nichts angelegt
+        self.assertFalse(self.Layout.with_context(active_test=False).search(
+            [('ist_standard', '=', True)]))
+
     def test_text_block_klartext(self):
         layout = self._layout([{'art': 'text', 'titel': 'Hinweis', 'text': '<b>Bitte</b> fragen'}])
         block = self._kontext()['layout']['bloecke'][0]

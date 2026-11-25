@@ -64,6 +64,43 @@ class TestLayout(WbVoipCase):
         self.std_fenster.write({'name': 'Geändert', 'breite': 'breit'})
         self.assertEqual(self.std_fenster.breite, 'breit')
 
+    def test_standard_ohne_gruppen(self):
+        for std in (self.std_fenster, self.std_popup):
+            with self.assertRaises(UserError) as fang:
+                std.with_user(self.user_manager).write({'group_ids': [(6, 0, [self.gruppe_a.id])]})
+            self.assertIn("Gruppen nur an eigenen Layouts", str(fang.exception))
+            with self.assertRaises(UserError):
+                std.write({'group_ids': [(4, self.gruppe_a.id)]})
+            self.assertFalse(std.group_ids)
+            # leere Gruppen sind erlaubt (Designer schickt sie immer mit)
+            std.write({'group_ids': [(6, 0, [])], 'name': 'Standard neu'})
+        # eigene Layouts dürfen Gruppen haben
+        self._layout(group_ids=[(6, 0, [self.gruppe_a.id])])
+
+    def test_formular_gruppen_und_felder(self):
+        from lxml import etree
+
+        def ansicht(benutzer):
+            arch = self.Layout.with_user(benutzer).get_views([(False, 'form')])['views']['form']['arch']
+            return etree.fromstring(arch)
+
+        erp = self.env['res.users'].with_context(no_reset_password=True).create({
+            'name': 'Layout ERP', 'login': 'wb_voip_layout_erp',
+            'group_ids': [(6, 0, [self.env.ref('base.group_user').id,
+                                  self.env.ref('wb_voip.group_wb_voip_manager').id,
+                                  self.env.ref('base.group_erp_manager').id])]})
+        for benutzer in (self.user_manager, erp):
+            baum = ansicht(benutzer)
+            gruppen = baum.xpath("//field[@name='group_ids']")
+            self.assertTrue(gruppen)
+            self.assertIn('ist_standard', gruppen[0].get('invisible', ''))
+        baum = ansicht(self.user_manager)
+        self.assertFalse(baum.xpath("//field[@name='block_ids']//field[@name='feld_ids']"))
+        self.assertIn('Felder im Designer wählen', etree.tostring(baum, encoding='unicode'))
+        baum = ansicht(erp)
+        self.assertTrue(baum.xpath("//field[@name='block_ids']//field[@name='feld_ids']"))
+        self.assertNotIn('Felder im Designer wählen', etree.tostring(baum, encoding='unicode'))
+
     def test_eigenes_loeschbar_mit_bloecken(self):
         layout = self._layout()
         block = self._block(layout)
@@ -527,6 +564,17 @@ class TestLayoutDesigner(WbVoipCase):
             'name': 'Popup', 'ort': 'protokoll_popup', 'breite': 'normal', 'group_ids': [],
             'bloecke': [{'art': 'text', 'text': 'Hallo'}]})
         self.assertEqual([b.art for b in self.std_popup.block_ids], ['text'])
+
+    def test_speichern_standard_ohne_gruppen(self):
+        vorher = self._bloecke(self.std_fenster)
+        with self.assertRaises(UserError) as fang:
+            self._als_manager().wb_voip_designer_speichern(self.std_fenster.id, self._daten())
+        self.assertIn("Gruppen nur an eigenen Layouts", str(fang.exception))
+        self.assertFalse(self.std_fenster.group_ids)
+        self.assertEqual(self._bloecke(self.std_fenster), vorher)
+        self._als_manager().wb_voip_designer_speichern(
+            self.std_fenster.id, self._daten(group_ids=[]))
+        self.assertEqual(self.std_fenster.name, 'Neu')
 
     # --- Vorschau ---
 

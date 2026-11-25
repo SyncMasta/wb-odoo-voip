@@ -4,9 +4,6 @@ from odoo.exceptions import AccessError
 from ..tools import serverfelder
 from ..tools.rechte import nur_voip_benutzer
 
-# So viele frühere Protokolle desselben Kontakts zeigt das Popup nach dem Anruf
-LETZTE_PROTOKOLLE = 5
-
 
 class WbVoipProtokoll(models.Model):
     _name = 'wb.voip.protokoll'
@@ -38,37 +35,8 @@ class WbVoipProtokoll(models.Model):
     anruf_id = fields.Many2one(
         'wb.voip.anruf', string='Anruf', index=True, ondelete='set null', copy=False)
 
-    # Rechte Spalte des Popups: Kontaktdaten und frühere Protokolle, nur Lesbares
-    wb_voip_partner_telefon = fields.Char(
-        string='Telefon', compute='_compute_wb_voip_partner_daten')
-    wb_voip_partner_email = fields.Char(
-        string='E-Mail', compute='_compute_wb_voip_partner_daten')
-    wb_voip_letzte_protokoll_ids = fields.Many2many(
-        'wb.voip.protokoll', string='Letzte Anrufe', compute='_compute_wb_voip_letzte_protokolle')
-
     _anruf_eindeutig = models.Constraint(
         'unique(anruf_id)', 'Zu diesem Anruf gibt es schon ein Protokoll.')
-
-    @api.depends('partner_id')
-    def _compute_wb_voip_partner_daten(self):
-        # Als aufrufender Benutzer (kein sudo): Kontakte ohne Leserecht bleiben leer
-        for protokoll in self:
-            partner = protokoll.partner_id
-            lesbar = bool(partner) and partner.has_access('read')
-            protokoll.wb_voip_partner_telefon = partner.phone if lesbar else False
-            protokoll.wb_voip_partner_email = partner.email if lesbar else False
-
-    @api.depends('partner_id')
-    def _compute_wb_voip_letzte_protokolle(self):
-        # Als aufrufender Benutzer: Datensatzregeln begrenzen auf eigene Protokolle
-        for protokoll in self:
-            if not protokoll.partner_id:
-                protokoll.wb_voip_letzte_protokoll_ids = False
-                continue
-            protokoll.wb_voip_letzte_protokoll_ids = self.search([
-                ('partner_id', '=', protokoll.partner_id.id),
-                ('id', '!=', protokoll._origin.id),
-            ], limit=LETZTE_PROTOKOLLE)
 
     @api.model_create_multi
     def create(self, vals_list):

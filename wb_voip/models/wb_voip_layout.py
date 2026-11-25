@@ -139,7 +139,14 @@ class WbVoipLayout(models.Model):
                         "Beim Standard-Layout lassen sich Standard-Kennzeichen und Fenster nicht ändern."))
         elif vals.get('ist_standard') and not self._wb_voip_daten_laden():
             raise UserError(self.env._("Standard-Layouts kommen nur aus den Moduldaten."))
-        return super().write(vals)
+        ergebnis = super().write(vals)
+        if 'group_ids' in vals and self.sudo().filtered(lambda l: l.ist_standard and l.group_ids):
+            raise self._wb_voip_standard_gruppen_fehler()
+        return ergebnis
+
+    def _wb_voip_standard_gruppen_fehler(self):
+        return UserError(self.env._(
+            "Das Standard-Layout gilt für alle; Gruppen nur an eigenen Layouts."))
 
     @api.ondelete(at_uninstall=False)
     def _unlink_nicht_standard(self):
@@ -180,6 +187,17 @@ class WbVoipLayout(models.Model):
 
     # --- Laufzeit: Layout für den Client ---
 
+    @api.model
+    def _wb_voip_ersatz(self, ort):
+        """Return an unsaved layout with the delivered blocks of ``ort``.
+
+        Used when the standard layout is missing (e.g. deleted by SQL); nothing is written.
+        """
+        bloecke = [Command.create({'sequence': nr * 10, 'art': art, 'spalte': '1',
+                                   **({'anzahl': anzahl} if anzahl else {})})
+                   for nr, (art, anzahl) in enumerate(STANDARD_BLOECKE[ort], start=1)]
+        return self.sudo().new({'name': ort, 'ort': ort, 'breite': 'normal', 'block_ids': bloecke})
+
     def _wb_voip_anzahl(self, art):
         """Return how many entries the blocks of ``art`` show (0 = no such block, max 20)."""
         self.ensure_one()
@@ -200,7 +218,8 @@ class WbVoipLayout(models.Model):
             self._wb_voip_block_fuer_client(block.art, block.titel, block.spalte, block.anzahl,
                                             block.text, block.feld_ids, partner)
             for block in layout._wb_voip_gueltige_bloecke()]
-        return {'id': layout.id, 'breite': layout.breite, 'bloecke': bloecke}
+        # ein Ersatz ohne Datensatz hat keine ID
+        return {'id': layout._origin.id or False, 'breite': layout.breite, 'bloecke': bloecke}
 
     def _wb_voip_gueltige_bloecke(self):
         """Return the blocks in order that the place allows (first note only).
@@ -246,7 +265,10 @@ class WbVoipLayout(models.Model):
     def _wb_voip_designer_layout(self, layout_id, leer_erlaubt=True):
         """Return the layout ``layout_id`` (False: standard caller-window layout)."""
         if leer_erlaubt and layout_id in (False, None):
-            return self.search([('ort', '=', 'anrufer_fenster'), ('ist_standard', '=', True)], limit=1)
+            layout = self.search([('ort', '=', 'anrufer_fenster'), ('ist_standard', '=', True)], limit=1)
+            if not layout:
+                raise self._wb_voip_ungueltig(self.env._("Layout"))
+            return layout
         if type(layout_id) is not int or layout_id <= 0:
             raise self._wb_voip_ungueltig(self.env._("Layout"))
         layout = self.browse(layout_id).exists()
@@ -310,6 +332,8 @@ class WbVoipLayout(models.Model):
                 or any(type(g) is not int or g <= 0 for g in gruppen)
                 or len(self.env['res.groups'].browse(set(gruppen)).exists()) != len(set(gruppen))):
             raise ungueltig(self.env._("Gruppen"))
+        if gruppen and self.ist_standard:
+            raise self._wb_voip_standard_gruppen_fehler()
         bloecke = daten['bloecke']
         if not isinstance(bloecke, list) or len(bloecke) > DESIGNER_MAX_BLOECKE:
             raise ungueltig(self.env._("Blöcke"))
