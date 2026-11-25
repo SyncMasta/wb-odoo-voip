@@ -1,7 +1,9 @@
 import logging
 
+from datetime import timedelta
+
 from odoo import api, fields, models
-from odoo.exceptions import AccessError, ValidationError
+from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tools import SQL
 
 from odoo.addons.wb_license_client.models.wb_license_client import license_required
@@ -11,6 +13,11 @@ from ..tools.rechte import GRUPPE_MANAGER, ist_voip_benutzer, nur_voip_benutzer
 from . import PRODUKT_CODE
 
 _logger = logging.getLogger(__name__)
+
+# Team-Übersicht: Lebenszeichen des Telefon-Tabs, Gültigkeit und Obergrenze der Liste
+LEBENSZEICHEN_SEKUNDEN = 60
+LEBENSZEICHEN_GUELTIG = 150
+TEAM_HOECHSTENS = 200
 
 # Nebenstelle und Anlage setzen nur VoIP-Administratoren
 _NUR_MANAGER = ('wb_voip_sip_benutzer', 'wb_voip_anlage_id')
@@ -32,6 +39,12 @@ class ResUsers(models.Model):
     wb_voip_sip_passwort_gesetzt = fields.Boolean(
         string='SIP-Passwort gespeichert', compute='_compute_wb_voip_sip_passwort_gesetzt',
         groups='wb_voip.group_wb_voip_user')
+
+    # Nur der Server schreibt diese Felder (nicht in SELF_WRITEABLE); Lesen nur per sudo
+    wb_voip_lebenszeichen = fields.Datetime(
+        string='VoIP: letztes Lebenszeichen', copy=False, groups='base.group_system')
+    wb_voip_registriert = fields.Boolean(
+        string='VoIP: an der Anlage angemeldet', copy=False, groups='base.group_system')
 
     _wb_voip_nebenstelle_eindeutig = models.UniqueIndex(
         '(wb_voip_anlage_id, wb_voip_sip_benutzer) '
@@ -218,3 +231,99 @@ class ResUsers(models.Model):
         # fehlt das Standard-Layout (z. B. per SQL gelöscht), gilt der Auslieferungszustand
         return (passend or Layout.search([('ort', '=', ort), ('ist_standard', '=', True)], limit=1)
                 or Layout._wb_voip_ersatz(ort))
+
+    # --- Team-Übersicht ---
+
+    def _wb_voip_team_mitglieder(self, firmen):
+        """Return (sudo) the team members visible to a user of ``firmen``, without ``self``.
+
+        Active internal users with the VoIP group, a PBX and an SIP user that share at least
+        one of ``firmen`` (a company recordset). Sorted by name, at most ``TEAM_HOECHSTENS``.
+        """
+        gruppe = self.env.ref('wb_voip.group_wb_voip_user')
+        kandidaten = self.sudo().search([
+            ('id', 'not in', self.ids), ('active', '=', True), ('share', '=', False),
+            ('all_group_ids', 'in', gruppe.ids), ('wb_voip_anlage_id', '!=', False),
+            ('wb_voip_sip_benutzer', '!=', False), ('company_ids', 'in', firmen.ids),
+        ], order='name, id', limit=TEAM_HOECHSTENS)
+        return kandidaten.filtered(lambda u: u.wb_voip_sip_benutzer)
+
+    def _wb_voip_team_status(self):
+        """Return ``{user_id: (status, seit)}`` for these users (read with sudo).
+
+        ``abgemeldet``: no sign of life within ``LEBENSZEICHEN_GUELTIG`` seconds or not
+        registered (whatever calls are open); else ``klingelt`` (own incoming call ringing),
+        ``telefoniert`` (call running, ``seit`` = earliest answer) or ``frei``.
+        """
+        jetzt = fields.Datetime.now()
+        grenze = jetzt - timedelta(seconds=LEBENSZEICHEN_GUELTIG)
+        angemeldet = self.sudo().filtered(
+            lambda u: u.wb_voip_registriert and u.wb_voip_lebenszeichen
+            and u.wb_voip_lebenszeichen >= grenze)
+        anrufe = self.env['wb.voip.anruf'].sudo().search([
+            ('user_id', 'in', angemeldet.ids), ('zustand', 'in', ('klingelt', 'laeuft'))])
+        ergebnis = {}
+        for benutzer in self:
+            if benutzer not in angemeldet:
+                ergebnis[benutzer.id] = ('abgemeldet', False)
+                continue
+            eigene = anrufe.filtered(lambda a: a.user_id == benutzer)
+            if eigene.filtered(lambda a: a.zustand == 'klingelt' and a.richtung == 'eingehend'):
+                ergebnis[benutzer.id] = ('klingelt', False)
+                continue
+            laufend = eigene.filtered(lambda a: a.zustand == 'laeuft')
+            if laufend:
+                zeiten = [a.annahme for a in laufend if a.annahme]
+                seit = fields.Datetime.to_string(min(zeiten)) if zeiten else False
+                ergebnis[benutzer.id] = ('telefoniert', seit)
+            else:
+                ergebnis[benutzer.id] = ('frei', False)
+        return ergebnis
+
+    def _wb_voip_team_melden(self):
+        """Tell the team of these users that a status changed (empty payload, once per member)."""
+        empfaenger = self.browse()
+        for benutzer in self.sudo():
+            empfaenger |= benutzer._wb_voip_team_mitglieder(benutzer.company_ids)
+        for benutzer in empfaenger - self.sudo():
+            benutzer._bus_send('wb_voip/team', {})
+
+    @api.model
+    @nur_voip_benutzer
+    def wb_voip_lebenszeichen_melden(self, registriert):
+        """Record the sign of life of the caller's phone tab; tell the team if the status changes.
+
+        ``registriert`` (bool): the tab is registered on the PBX. Never changes anyone else.
+        """
+        if type(registriert) is not bool:
+            raise UserError(self.env._("Ungültige Angabe: %s.", self.env._("Angemeldet")))
+        benutzer = self.env.user.sudo()
+        vorher = benutzer._wb_voip_team_status()[benutzer.id][0]
+        benutzer.write({'wb_voip_lebenszeichen': fields.Datetime.now(),
+                        'wb_voip_registriert': registriert})
+        if benutzer._wb_voip_team_status()[benutzer.id][0] != vorher:
+            benutzer._wb_voip_team_melden()
+        return True
+
+    @api.model
+    @nur_voip_benutzer
+    def wb_voip_team(self):
+        """Return the pickup prefix of the caller's PBX and the colleagues' status.
+
+        ``{'heranholen_praefix': str|False, 'kollegen': [{user_id, name, nebenstelle, status,
+        seit}]}``. Colleagues: see ``_wb_voip_team_mitglieder`` with the caller's active company;
+        only name, extension, status and, while on a call, the answer time (never the number).
+        """
+        benutzer = self.env.user.sudo()
+        mitglieder = benutzer._wb_voip_team_mitglieder(self.env.company)
+        status = mitglieder._wb_voip_team_status()
+        return {
+            'heranholen_praefix': benutzer.wb_voip_anlage_id.heranholen_praefix or False,
+            'kollegen': [{
+                'user_id': m.id,
+                'name': m.name,
+                'nebenstelle': m.wb_voip_sip_benutzer,
+                'status': status[m.id][0],
+                'seit': status[m.id][1],
+            } for m in mitglieder],
+        }

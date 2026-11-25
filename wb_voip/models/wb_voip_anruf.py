@@ -225,12 +225,21 @@ class WbVoipAnruf(models.Model):
                 serverfelder.pruefen(self.env, vals, self._WB_VOIP_NUR_SERVER)
             self = self.with_context(
                 serverfelder.kontext_ohne_defaults(self.env, self._WB_VOIP_NUR_SERVER))
-        return super().create(vals_list)
+        anrufe = super().create(vals_list)
+        # Neuer Anruf, der gleich klingelt oder läuft: Team-Status ändert sich
+        anrufe.sudo().filtered(lambda a: a.zustand in OFFENE_ZUSTAENDE).user_id._wb_voip_team_melden()
+        return anrufe
 
     def write(self, vals):
         if not self.env.su:
             serverfelder.pruefen(self.env, vals, self._WB_VOIP_NUR_SERVER)
-        return super().write(vals)
+        if 'zustand' not in vals:
+            return super().write(vals)
+        # Team-Status: nur Anrufe, deren Zustand sich wirklich ändert, melden (je Besitzer einmal)
+        geaendert = self.sudo().filtered(lambda a: a.zustand != vals['zustand'])
+        ergebnis = super().write(vals)
+        geaendert.user_id._wb_voip_team_melden()
+        return ergebnis
 
     # --- Hilfen ---
 

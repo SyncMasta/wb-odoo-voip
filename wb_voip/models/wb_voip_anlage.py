@@ -8,6 +8,8 @@ from odoo.exceptions import ValidationError
 ICE_URL_MUSTER = re.compile(r'^stun:\S+$', re.IGNORECASE)
 ICE_MAX_ZEILEN = 10
 ICE_MAX_LAENGE = 255
+# Heranholen: Wahlpräfix der Anlage, nur Ziffern, * und # (kein Wählstring mit Steuerzeichen)
+HERANHOLEN_MUSTER = re.compile(r'[0-9*#]{1,8}')
 
 
 class WbVoipAnlage(models.Model):
@@ -35,6 +37,11 @@ class WbVoipAnlage(models.Model):
         'res.country', string='Land',
         default=lambda self: self.env.ref('base.de', raise_if_not_found=False),
     )
+
+    heranholen_praefix = fields.Char(
+        string='Heranholen-Präfix',
+        help="Wahlpräfix der Anlage, um einen klingelnden Anruf eines Kollegen heranzuholen, "
+             "z. B. **. Höchstens 8 Zeichen aus 0-9, * und #. Leer = Heranholen aus.")
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -73,3 +80,11 @@ class WbVoipAnlage(models.Model):
                 raise ValidationError(self.env._(
                     "ICE-Server: höchstens %(anzahl)s Zeilen, je eine URL mit stun:, z. B. "
                     "stun:stun.example.org:3478. Nur stun: ist erlaubt, TURN wird noch nicht unterstützt.", anzahl=ICE_MAX_ZEILEN))
+
+    @api.constrains('heranholen_praefix')
+    def _check_heranholen_praefix(self):
+        for anlage in self:
+            wert = anlage.heranholen_praefix
+            if wert and not HERANHOLEN_MUSTER.fullmatch(wert):
+                raise ValidationError(self.env._(
+                    "Heranholen-Präfix: höchstens 8 Zeichen, nur Ziffern, * und #."))

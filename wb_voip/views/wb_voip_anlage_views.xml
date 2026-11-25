@@ -34,6 +34,9 @@
                     <group string="Netzwerk">
                         <field name="ice_server_urls" placeholder="leer = kein STUN/TURN"/>
                     </group>
+                    <group string="Team">
+                        <field name="heranholen_praefix" placeholder="z. B. ** (leer = Heranholen aus)"/>
+                    </group>
                 </sheet>
             </form>
         </field>
