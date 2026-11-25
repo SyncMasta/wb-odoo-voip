@@ -24,10 +24,10 @@
                         <group>
                             <field name="name"/>
                             <field name="modus"/>
-                            <field name="country_id"/>
+                            <field name="verbindung_gesperrt" invisible="1"/>
+                            <field name="country_id" readonly="verbindung_gesperrt"/>
                         </group>
                         <group>
-                            <field name="verbindung_gesperrt" invisible="1"/>
                             <field name="sip_domain" readonly="verbindung_gesperrt"/>
                             <field name="ws_url" readonly="verbindung_gesperrt"/>
                         </group>

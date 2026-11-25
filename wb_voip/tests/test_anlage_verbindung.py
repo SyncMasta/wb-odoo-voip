@@ -23,6 +23,16 @@ class TestAnlageVerbindung(WbVoipCase):
             self.assertEqual(str(fehler.exception), MELDUNG)
         self.assertEqual(self.anlage.ws_url, 'wss://anlage.test/ws')
 
+    def test_manager_darf_land_nicht_aendern(self):
+        # Das Land der Anlage gilt bei der Zielprüfung als Inland: kein Weg an der Auslandssperre vorbei
+        land = self.anlage.country_id
+        with self.assertRaises(AccessError) as fehler:
+            self.anlage.with_user(self.user_manager).write({'country_id': self.env.ref('base.at').id})
+        self.assertEqual(str(fehler.exception), MELDUNG)
+        self.assertEqual(self.anlage.country_id, land)
+        self.anlage.with_user(self._system()).write({'country_id': self.env.ref('base.at').id})
+        self.assertEqual(self.anlage.country_id, self.env.ref('base.at'))
+
     def _neu_werte(self):
         return {'name': 'X', 'ws_url': 'wss://x.test/ws', 'sip_domain': 'x.test'}
 

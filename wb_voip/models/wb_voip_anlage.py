@@ -11,7 +11,8 @@ ICE_MAX_LAENGE = 255
 # Heranholen: Wahlpräfix der Anlage, nur Ziffern, * und # (kein Wählstring mit Steuerzeichen)
 HERANHOLEN_MUSTER = re.compile(r'[0-9*#]{1,8}')
 # Felder, an denen der Browser sich anmeldet: nur die Systemverwaltung ändert sie
-VERBINDUNGSFELDER = frozenset({'ws_url', 'sip_domain', 'ice_server_urls'})
+# (``country_id`` gehört dazu: das Land der Anlage gilt bei der Zielprüfung als Inland)
+VERBINDUNGSFELDER = frozenset({'ws_url', 'sip_domain', 'ice_server_urls', 'country_id'})
 
 
 class WbVoipAnlage(models.Model):

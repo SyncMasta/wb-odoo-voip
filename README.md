@@ -34,7 +34,7 @@ am richtigen Datensatz.
 - Reiter „Team“: Kollegen mit Status frei, telefoniert (optional mit Dauer), klingelt oder abgemeldet. Angezeigt
   werden aktive interne Benutzer mit VoIP-Recht, SIP-Benutzer, derselben Firma und derselben Anlage, nicht man selbst
 - Standardmäßig ausgeschaltet; je Firma unter Einstellungen › WB VoIP „Team-Übersicht anzeigen“ und „Gesprächsdauer
-  im Team anzeigen“; maßgeblich ist die Firma, in der die Person gerade arbeitet (aktive Firma). Vor dem Einschalten Beschäftigte informieren (§ 26 BDSG) und ggf. den Betriebsrat beteiligen
+  im Team anzeigen“; maßgeblich ist die Firma, in der die Person gerade arbeitet (aktive Firma). Vor dem Einschalten Beschäftigte informieren (Art. 13 DSGVO) und die Mitbestimmung beachten (§ 87 Abs. 1 Nr. 6 BetrVG)
   (§ 87 Abs. 1 Nr. 6 BetrVG)
 - Datenschutz: nur Name, Nebenstelle, Status und Dauer; nie Gegennummer, Kontakt oder Notiz. Als Anwesenheit
   steht nur der Zeitpunkt des letzten Lebenszeichens des Telefon-Tabs in Odoo (nach 150 s ohne Meldung
@@ -165,7 +165,9 @@ am richtigen Datensatz.
 2. **Nebenstellen** (Benutzerformular, Reiter „Telefonie“): Anlage und SIP-Benutzer je Benutzer; jede Nebenstelle
    gehört genau einem Benutzer. Das SIP-Passwort setzt der Benutzer unter „Mein Profil“ oder der Administrator.
 3. **Rechte**: „WB VoIP: Benutzer“ für alle, die telefonieren; „WB VoIP: Administrator“ für die Pflege von Anlagen
-   und Nebenstellen.
+   und Nebenstellen. Anlagen anlegen, löschen und ihre Verbindungsdaten ändern (WebSocket-URL, SIP-Domain,
+   ICE-Server und Land) darf nur die Systemverwaltung: Der Browser meldet sich an der URL an, und das Land der
+   Anlage gilt bei der Zielprüfung als Inland. Name, Modus und Heranholen-Präfix pflegt auch der Administrator.
 4. **Löschfrist** (Einstellungen › WB VoIP): Monate bis zur Löschung beendeter Anrufe, `0` = nie.
 5. **Anruf-Buttons** (Einstellungen › Technisch › WB VoIP › Anruf-Buttons, optional): eigene Schaltflächen für
    Anrufer-Fenster, Protokoll-Popup und Softphone anlegen. Buttons vom Typ „Webadresse“ geben Rufnummer und
