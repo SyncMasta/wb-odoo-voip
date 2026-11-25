@@ -7,6 +7,8 @@ import functools
 import hashlib
 import logging
 import time
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import requests
 from cryptography.fernet import InvalidToken
@@ -22,6 +24,13 @@ _logger = logging.getLogger(__name__)
 
 TIMEOUT = 10  # seconds
 PEER_CACHE_SEKUNDEN = 600
+# Anrufliste (getcdr): höchstens so viele Zeilen je Abruf (Obergrenze der Anlage), geblättert wird
+# über ``linepos``; mehr als CDR_MAX_SEITEN Seiten je Fenster gelten als Fehler (Endlosschleife)
+CDR_SEITE = 1000
+CDR_MAX_SEITEN = 50
+CDR_FORMAT = '%Y-%m-%d %H:%M:%S'
+# Gerät eines ``Local/…``-Kanals: über eine Weiterleitung nach außen (kein Peer-Name, enthält ':')
+WEITERLEITUNG = ':weiterleitung'
 # Per worker process. Every key carries a hash of the encrypted token and the
 # write date of the PBX, so a token change invalidates entries in all workers.
 # Neither keys nor values ever hold the token.
@@ -294,3 +303,64 @@ class WbVoipAnsitel(models.AbstractModel):
             if not sofort:
                 werte['option_ringtime_seconds'] = str(int(sekunden))
         self._aufruf(anlage, 'setvoicemailoncuserbytoken', token=token, **werte)
+
+    # --- Anrufliste (CDR) ---
+
+    @_robust
+    def _cdr_lesen(self, anlage, von_utc, bis_utc):
+        """Return all CDR legs of ``anlage`` with ``calldate`` in ``[von_utc, bis_utc]`` (naive UTC).
+
+        The PBX works in the local time of ``ansitel_tz``; every leg gets ``zeit_utc`` (naive UTC
+        from ``calldate``). ``getcdr`` returns at most ``CDR_SEITE`` legs per call, so it pages
+        with ``linepos``. Numbers and token never reach the log.
+        """
+        zone = ZoneInfo(anlage.sudo().ansitel_tz or 'Europe/Berlin')
+        utc = ZoneInfo('UTC')
+
+        def lokal(zeit):
+            return zeit.replace(tzinfo=utc).astimezone(zone).strftime(CDR_FORMAT)
+
+        zeilen = []
+        linepos = 0
+        for _seite in range(CDR_MAX_SEITEN):
+            antwort = self._aufruf(anlage, 'getcdr', datetimefrom=lokal(von_utc),
+                                   datetimeto=lokal(bis_utc), linepos=str(linepos))
+            daten = antwort.get('data')
+            gesamt = antwort.get('resultcount')
+            if isinstance(daten, dict):
+                gesamt = daten.get('resultcount', gesamt)
+                daten = daten.get('cdr')
+            daten = daten or []
+            if not isinstance(daten, list):
+                raise AntwortFormFehler('getcdr')
+            for roh in daten:
+                if not isinstance(roh, dict):
+                    raise AntwortFormFehler('getcdr')
+                zeile = dict(roh)
+                # Ortszeit -> UTC; in der doppelten Stunde im Herbst gilt das erste Vorkommen
+                ortszeit = datetime.strptime(str(zeile['calldate']), CDR_FORMAT).replace(tzinfo=zone)
+                zeile['zeit_utc'] = ortszeit.astimezone(utc).replace(tzinfo=None)
+                zeilen.append(zeile)
+            linepos += CDR_SEITE
+            # Ohne ``resultcount`` weiterblättern, solange volle Seiten kommen
+            if len(daten) < CDR_SEITE or (gesamt is not None and linepos >= int(gesamt)):
+                break
+        else:
+            _logger.warning("[wb_voip_ansitel] getcdr: mehr als %s Seiten", CDR_MAX_SEITEN)
+            raise AnsitelFehler(self.env._("Ansitel liefert zu viele Anrufe auf einmal."))
+        _logger.debug("[wb_voip_ansitel] getcdr: %s Zeilen", len(zeilen))
+        return zeilen
+
+    def _kanal_geraet(self, kanal):
+        """Return the device (peer name) of a channel: ``PJSIP/Tel51-000000a1`` -> ``Tel51``.
+
+        ``Local/...`` gives ``WEITERLEITUNG``; empty gives ``None``.
+        """
+        kanal = str(kanal or '').strip()
+        if not kanal:
+            return None
+        technik, _trenner, rest = kanal.partition('/')
+        if technik == 'Local':
+            return WEITERLEITUNG
+        name = rest.rsplit('-', 1)[0] if '-' in rest else rest
+        return name.strip() or None

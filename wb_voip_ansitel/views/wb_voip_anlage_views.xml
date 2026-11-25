@@ -21,7 +21,11 @@
                     <div colspan="2" invisible="not id or not ansitel_token_gesetzt">
                         <button name="action_ansitel_testen" type="object" class="btn-secondary"
                                 string="Verbindung testen" groups="wb_voip.group_wb_voip_manager"/>
+                        <button name="action_wb_voip_ansitel_geraete_laden" type="object"
+                                class="btn-secondary ms-2" string="Geräte aus Anlage laden"
+                                groups="base.group_system"/>
                     </div>
+                    <field name="ansitel_cdr_stand" groups="base.group_system"/>
                 </group>
             </xpath>
         </field>

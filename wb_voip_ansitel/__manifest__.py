@@ -8,7 +8,8 @@ WB VoIP Ansitel
 ===============
 Verbindung von WB VoIP mit der REST-Schnittstelle einer Ansitel-Telefonanlage:
 Zugangsdaten an der Anlage (Token nur verschlüsselt), ein gemeinsamer API-Client und
-Schnelltasten für Weiterleitung, Nicht stören und Anrufbeantworter je Benutzer.
+Schnelltasten für Weiterleitung, Nicht stören und Anrufbeantworter je Benutzer sowie der
+Abgleich mit der Anrufliste der Anlage (verpasste und anderswo angenommene Anrufe, Geräte).
 """,
     'author': 'WISSEN BERATUNG (Tobias Wissen)',
     'website': 'https://www.wissen-beratung.de',
@@ -17,8 +18,10 @@ Schnelltasten für Weiterleitung, Nicht stören und Anrufbeantworter je Benutzer
     'data': [
         'security/ir.model.access.csv',
         'data/tasten_data.xml',
+        'data/ir_cron.xml',
         'views/wb_voip_anlage_views.xml',
         'views/wb_voip_taste_views.xml',
+        'views/wb_voip_geraet_views.xml',
         'views/res_users_views.xml',
     ],
     'assets': {

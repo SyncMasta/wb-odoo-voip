@@ -1,5 +1,10 @@
+import logging
+from datetime import timedelta
+
+from psycopg2 import errors
+
 from odoo import api, fields, models
-from odoo.exceptions import UserError, ValidationError
+from odoo.exceptions import AccessError, ConcurrencyError, UserError, ValidationError
 from odoo.addons.base.models.res_partner import _tz_get
 
 from odoo.addons.wb_voip.tools import geheimnis
@@ -7,6 +12,22 @@ from odoo.addons.wb_voip.tools.rechte import nur_voip_manager
 
 from ..tools.adresse import url_ist_https
 from .ansitel_api import AnsitelFehler
+from .wb_voip_anruf import MAX_LINKEDID, zweig_ende
+
+_logger = logging.getLogger(__name__)
+
+# Gruppen, deren letzter Zweig später als jetzt − 60 s endet, laufen evtl. noch: nächster Lauf
+CDR_RUHE = timedelta(seconds=60)
+# Überlappung mit dem vorigen Lauf: die Anlage schreibt eine Zeile erst beim Auflegen, ein langes
+# Gespräch erscheint also spät mit frühem ``calldate``. Doppelt Gelesenes ist harmlos (idempotent).
+CDR_UEBERLAPPUNG = timedelta(hours=4)
+# Erster Lauf ohne Stand (z. B. nach der Einrichtung): keine alten Anrufe importieren
+CDR_ERSTES_FENSTER = timedelta(minutes=30)
+# Höchstens so viel je Lauf; nach längerem Ausfall holen die folgenden Läufe Stück für Stück nach
+CDR_MAX_FENSTER = timedelta(hours=6)
+# Fehler, nach denen Odoo den ganzen Lauf wiederholt: nie verschlucken
+WIEDERHOLBAR = (errors.SerializationFailure, errors.DeadlockDetected, errors.LockNotAvailable,
+                ConcurrencyError)
 
 
 class WbVoipAnlage(models.Model):
@@ -29,6 +50,17 @@ class WbVoipAnlage(models.Model):
     ansitel_tz = fields.Selection(
         _tz_get, string='Zeitzone der Anrufliste', default='Europe/Berlin', required=True,
         help="Die Anlage liefert die Zeiten der Anrufliste in Ortszeit dieser Zone.")
+    # Stand und Beginn des Abgleichs: per SQL geschrieben, damit das Schreibdatum (Schlüssel des
+    # Peer-Caches) unberührt bleibt
+    ansitel_cdr_stand = fields.Datetime(
+        string='Anrufliste abgeglichen bis (UTC)', readonly=True, copy=False,
+        groups='base.group_system',
+        help="Bis hierhin ist die Anrufliste abgeglichen; der nächste Lauf beginnt 4 Stunden davor.")
+    ansitel_cdr_ab = fields.Datetime(
+        string='Anrufliste abgeglichen ab (UTC)', readonly=True, copy=False,
+        groups='base.group_system',
+        help="Beginn des ersten Abgleichs; kein Lauf liest weiter zurück.")
+    ansitel_geraet_ids = fields.One2many('wb.voip.geraet', 'anlage_id', string='Geräte')
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -101,3 +133,139 @@ class WbVoipAnlage(models.Model):
             'tag': 'display_notification',
             'params': {'title': self.env._("Ansitel"), 'message': text, 'type': art, 'sticky': False},
         }
+
+    # --- Geräte ---
+
+    def action_wb_voip_ansitel_geraete_laden(self):
+        """Create a device for every peer of the PBX (``getpeer``) that is not in the table yet.
+
+        Only the system administration: the table maps PBX devices to users. The owner is the
+        unique user of this PBX with that SIP user, else with that extension.
+        """
+        if not self.env.user._is_system():
+            raise AccessError(self.env._("Geräte laden darf nur die Systemverwaltung."))
+        Geraet = self.env['wb.voip.geraet'].sudo()
+        Users = self.env['res.users'].sudo()
+        neu = 0
+        for anlage in self.sudo():
+            try:
+                liste = self.env['wb.voip.ansitel']._aufruf(anlage, 'getpeer').get('data') or []
+            except AnsitelFehler as fehler:
+                raise UserError(str(fehler)) from None
+            if not isinstance(liste, list):
+                raise UserError(self.env._("Ansitel hat unverständlich geantwortet."))
+            vorhanden = set(Geraet.with_context(active_test=False).search(
+                [('anlage_id', '=', anlage.id)]).mapped('peer_name'))
+            for peer in liste:
+                if not isinstance(peer, dict):
+                    continue
+                peer_name = str(peer.get('peerName') or '').strip()[:128]
+                if not peer_name or peer_name in vorhanden:
+                    continue
+                intern = str(peer.get('peerInternalCallerId') or '').strip()[:64]
+                benutzer = Users.search([('wb_voip_anlage_id', '=', anlage.id),
+                                         ('wb_voip_sip_benutzer', '=', peer_name)])
+                if len(benutzer) != 1 and intern:
+                    benutzer = Users.search([('wb_voip_anlage_id', '=', anlage.id),
+                                             ('wb_voip_ansitel_nebenstelle', '=', intern)])
+                name = str(peer.get('peerDisplayName') or '').strip()[:128] or peer_name
+                Geraet.create({
+                    'name': name, 'peer_name': peer_name, 'nebenstelle': intern or False,
+                    'anlage_id': anlage.id, 'user_id': benutzer.id if len(benutzer) == 1 else False,
+                })
+                vorhanden.add(peer_name)
+                neu += 1
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {'title': self.env._("Ansitel"), 'type': 'success', 'sticky': False,
+                       'message': self.env._("%s neue Geräte angelegt.", neu)},
+        }
+
+    # --- Abgleich mit der Anrufliste (Cron) ---
+
+    @api.model
+    def _wb_voip_ansitel_abgleich_alle(self):
+        """Cron: synchronise every active Ansitel PBX with its call list.
+
+        Runs without a licence: it only reads the call list and records calls, it switches
+        nothing. A failure only affects its PBX (savepoint, log without token or numbers);
+        retryable database errors propagate so that Odoo repeats the run.
+        """
+        anlagen = self.sudo().search([
+            ('ansitel_aktiv', '=', True), ('ansitel_api_url', '!=', False),
+            ('ansitel_token_enc', '!=', False)])
+        for anlage in anlagen:
+            try:
+                with self.env.cr.savepoint():
+                    anlage._wb_voip_ansitel_abgleich()
+            except WIEDERHOLBAR:
+                raise
+            except Exception as fehler:  # noqa: BLE001 - eine Anlage darf die anderen nicht aufhalten
+                _logger.warning("[wb_voip_ansitel] Abgleich: Anlage %s fehlgeschlagen (%s)",
+                                anlage.id, type(fehler).__name__)
+
+    def _wb_voip_ansitel_abgleich(self):
+        """Read the call list since the last state and align it per ``linkedid``.
+
+        Window: from = max(state − 4 h, first start), to = min(now − 60 s, from + 6 h); without
+        state the last 30 minutes, remembered as lower bound. Only groups with an incoming leg
+        whose last leg ended by ``to``. A PBX error leaves the state; the next run catches up.
+        """
+        Anruf = self.env['wb.voip.anruf'].sudo()
+        for anlage in self.sudo():
+            if not (anlage.ansitel_aktiv and anlage.ansitel_api_url and anlage.ansitel_token_enc):
+                continue
+            jetzt = fields.Datetime.now()
+            if anlage.ansitel_cdr_stand:
+                von = anlage.ansitel_cdr_stand - CDR_UEBERLAPPUNG
+                # nie vor den ersten Lauf: die Überlappung importierte sonst alte Anrufe
+                if anlage.ansitel_cdr_ab:
+                    von = max(von, anlage.ansitel_cdr_ab)
+            else:
+                von = jetzt - CDR_ERSTES_FENSTER
+                if not anlage.ansitel_cdr_ab:
+                    anlage._wb_voip_ansitel_sql_setzen('ansitel_cdr_ab', von)
+            bis = min(jetzt - CDR_RUHE, von + CDR_MAX_FENSTER)
+            if bis <= von:
+                continue
+            try:
+                zeilen = self.env['wb.voip.ansitel']._cdr_lesen(anlage, von, bis)
+            except AnsitelFehler as fehler:
+                # feste Meldung ohne Token, URL und Rufnummern
+                _logger.warning("[wb_voip_ansitel] Abgleich: Anlage %s nicht gelesen: %s",
+                                anlage.id, fehler)
+                continue
+            gruppen = {}
+            for zeile in zeilen:
+                lid = str(zeile.get('linkedid') or '').strip()[:MAX_LINKEDID]
+                if lid:
+                    gruppen.setdefault(lid, []).append(zeile)
+            fehler_anzahl = geaendert = 0
+            for zweige in gruppen.values():
+                if not any(z.get('direction') == 'incoming' for z in zweige):
+                    continue
+                # endet ein Zweig nach ``bis``, kann die Gruppe unvollständig sein: nächster Lauf
+                if max(zweig_ende(z) for z in zweige) > bis:
+                    continue
+                try:
+                    with self.env.cr.savepoint():
+                        geaendert += bool(Anruf._wb_voip_cdr_gruppe(anlage, zweige))
+                except WIEDERHOLBAR:
+                    raise
+                except Exception as fehler:  # noqa: BLE001 - eine Gruppe hält den Lauf nicht auf
+                    fehler_anzahl += 1
+                    _logger.warning("[wb_voip_ansitel] Abgleich: Anruf der Anlage %s nicht "
+                                    "abgeglichen (%s)", anlage.id, type(fehler).__name__)
+            anlage._wb_voip_ansitel_sql_setzen('ansitel_cdr_stand', bis)
+            _logger.log(logging.INFO if geaendert or fehler_anzahl else logging.DEBUG,
+                        "[wb_voip_ansitel] Abgleich: Anlage %s, %s Anrufe, %s geändert, %s Fehler",
+                        anlage.id, len(gruppen), geaendert, fehler_anzahl)
+
+    def _wb_voip_ansitel_sql_setzen(self, feld, wert):
+        """Write state or start by SQL: ``write`` would change ``write_date`` and with it the key
+        of the peer cache, which would then expire on every run."""
+        assert feld in ('ansitel_cdr_stand', 'ansitel_cdr_ab')
+        self.ensure_one()
+        self.env.cr.execute(f'UPDATE wb_voip_anlage SET {feld} = %s WHERE id = %s', [wert, self.id])
+        self.invalidate_recordset([feld])

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-inherit="wb_voip.Verpasstliste" t-inherit-mode="extension">
+        <xpath expr="//button[hasclass('o_wb_voip_erledigen')]" position="before">
+            <button t-if="zeile.bemerkung_moeglich" type="button"
+                    class="o_wb_voip_ansitel_bemerkung btn btn-sm btn-outline-secondary"
+                    title="Bemerkung" aria-label="Bemerkung"
+                    t-att-aria-expanded="bemerkung.offen === zeile.schluessel ? 'true' : 'false'"
+                    t-on-click="() => this.bemerkungOeffnen(zeile)">
+                <i class="fa fa-pencil" aria-hidden="true"/>
+            </button>
+        </xpath>
+        <xpath expr="//div[hasclass('o_wb_voip_erledigen_feld')]" position="before">
+            <div t-if="zeile.bemerkung and bemerkung.offen !== zeile.schluessel"
+                 class="o_wb_voip_ansitel_bemerkung_text small mt-1" t-esc="zeile.bemerkung"/>
+            <div t-if="bemerkung.offen === zeile.schluessel" class="o_wb_voip_ansitel_bemerkung_feld mt-2">
+                <div t-if="bemerkung.fehler" class="alert alert-warning small mb-1" role="alert"
+                     t-esc="bemerkung.fehler"/>
+                <textarea class="o_wb_voip_ansitel_bemerkung_eingabe form-control form-control-sm"
+                          rows="2" t-att-maxlength="maxBemerkung"
+                          placeholder="Bemerkung zum Gespräch" aria-label="Bemerkung zum Gespräch"
+                          t-model="bemerkung.text" t-on-keydown="bemerkungTaste"/>
+                <div class="d-flex gap-2 mt-1">
+                    <button type="button" class="o_wb_voip_ansitel_bemerkung_speichern btn btn-sm btn-primary"
+                            t-att-disabled="bemerkung.speichert"
+                            t-on-click="() => this.bemerkungSpeichern(zeile)">Speichern</button>
+                    <button type="button" class="o_wb_voip_ansitel_bemerkung_abbrechen btn btn-sm btn-secondary"
+                            t-on-click="() => this.bemerkungAbbrechen()">Abbrechen</button>
+                </div>
+            </div>
+        </xpath>
+    </t>
+</templates>

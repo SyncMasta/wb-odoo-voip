@@ -58,3 +58,41 @@ Schalten (ein früher gespeichertes Ziel wird nicht gewählt, die Taste bleibt g
 
 Feste Ziele der Tasten setzt nur die Systemverwaltung; VoIP-Administratoren pflegen Beschriftung, Art und
 Reihenfolge.
+
+Abgleich mit der Anrufliste
+---------------------------
+
+Der Cron „WB VoIP Ansitel: Abgleich mit der Anrufliste“ (alle 5 Minuten) liest je aktiver Anlage mit Token die
+Anrufliste (``getcdr``, zentraler Token, je Abruf höchstens 1000 Zeilen, geblättert über ``linepos``) und gleicht sie
+mit den Anrufen in Odoo ab. So erscheinen auch Anrufe, die Odoo nicht gesehen hat (Odoo geschlossen), und Anrufe, die
+an einem Tischtelefon, einem anderen Gerät oder über eine Weiterleitung angenommen wurden.
+
+* Fenster: von = Stand − 4 Stunden (nie vor den Beginn des ersten Laufs), bis = jetzt − 60 Sekunden, höchstens
+  6 Stunden je Lauf. Der erste Lauf liest die letzten 30 Minuten und merkt sich diesen Beginn. Stand und Beginn sind
+  nur für die Systemverwaltung sichtbar.
+* Die Zeiten der Anrufliste gelten in der Zeitzone der Anlage (Feld „Zeitzone der Anrufliste“, Standard
+  Europe/Berlin).
+* Verarbeitet wird je ``linkedid`` eine Gruppe mit mindestens einem eingehenden Zweig, und erst, wenn ihr letzter
+  Zweig vor „bis“ endete. Doppelt gelesene Gruppen ändern nichts (je Benutzer und ``linkedid`` ein Anruf).
+* Angenommen ist ein Zweig mit ``ANSWERED`` und ``Dial`` auf einem Gerät, das nicht die Amtsleitung ist;
+  Weiterleitung: ein ``Local/…``-Zweig (oder ein eingehender Zweig auf der Amtsleitung) und ein ausgehender Zweig auf
+  der Amtsleitung mit ``ANSWERED`` und Gesprächsdauer > 0. Anrufbeantworter, Warteschlange und ``Local`` ohne
+  angenommenen Amtszweig gelten als nicht angenommen. Amtsleitung ist das Gerät eines ausgehenden Zweigs, das weder
+  in der Geräte-Tabelle noch als SIP-Benutzer der Anlage vorkommt; die Amtsleitung also nie als Gerät eintragen.
+* Beteiligt sind Benutzer der Anlage, deren Nebenstelle angerufen wurde, deren SIP-Benutzer ein Gerät der Gruppe ist
+  oder denen ein Gerät der Gruppe gehört. Fehlt ihr Anruf, wird er angelegt (Herkunft „Anrufliste der Anlage“).
+* Nirgends angenommen: verpasst, mit Protokoll und Rückruf-Aktivität wie im Softphone. Mit dem eigenen
+  Softphone-Konto angenommen: ein klingelnder oder verpasster Anruf wird beendet, ein angenommener bleibt. Sonst:
+  „anderswo angenommen“ mit Gerät und Dauer (beim Kollegen mit Verweis auf dessen Anruf); Rückruf-Aktivität und
+  unberührtes Protokoll eines vorher verpassten Anrufs entfallen. Eine Annahme erledigt offene Verpasst-Einträge der
+  Nummer bis zum Ende der Gruppe. Laufende Anrufe werden nie geändert.
+* In der Verpasst-Liste steht „↪ angenommen auf <Gerät> (Dauer)“ bzw. „↪ angenommen von <Name> · <Gerät>“. Mit
+  „Bemerkung“ legt der Besitzer einmal ein Protokoll „erreicht“ an („Angenommen auf <Gerät>.“ und der Text), danach
+  wird nur die Beschreibung nachgeführt; eine von Hand geänderte Beschreibung bekommt den Text angehängt.
+* Der Abgleich läuft auch ohne gültige Lizenz: er liest nur und schreibt Anrufe, er schaltet nichts an der Anlage.
+  Fehler einer Anlage oder einer Gruppe halten die übrigen nicht auf; das Log nennt nur Kennungen und Fehlertypen.
+
+Geräte (Einstellungen › Technisch › WB VoIP › Geräte): Bezeichnung, Peer-Name, Nebenstelle, Anlage, Benutzer.
+VoIP-Administratoren lesen sie, ändern darf sie nur die Systemverwaltung (sie ordnen Geräte der Anlage Benutzern zu).
+Der Knopf „Geräte aus Anlage laden“ an der Anlage (nur Systemverwaltung) legt fehlende Geräte aus ``getpeer`` an,
+Besitzer über den SIP-Benutzer, sonst über die Nebenstelle (nur bei genau einem Treffer).
