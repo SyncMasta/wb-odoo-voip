@@ -108,7 +108,10 @@ export class SoftphoneFenster extends Component {
     }
 
     get sichtbar() {
-        return Boolean(session.wb_voip_aktiv) && Boolean(this.ui.offen || this.state.anruf);
+        return (
+            Boolean(session.wb_voip_aktiv) &&
+            Boolean(this.ui.offen || this.state.anruf || this.state.gehaltener)
+        );
     }
 }
 

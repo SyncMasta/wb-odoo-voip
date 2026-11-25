@@ -2,6 +2,8 @@ import { describe, expect, test } from "@odoo/hoot";
 
 import { SipJsSitzung, sipfragStatus } from "@wb_voip/dienste/sip_agent";
 
+import { FakeUhr } from "./sip_fake";
+
 describe.current.tags("desktop");
 
 /** Minimale SIP.js-Sitzung: stateChange und Delegate wie in SIP.js 0.21.2. */
@@ -100,4 +102,45 @@ test("Verbinden: REFER mit der anderen Sitzung, Abschluss über NOTIFY (sipfrag)
     };
     expect(await versuch("SIP/2.0 200 OK")).toBe("ok");
     expect(await versuch("SIP/2.0 503 Service Unavailable")).toMatch(/503/);
+});
+
+/** Verbinden mit steuerbarem REFER; liefert Ergebnis-Versprechen und Hilfen. */
+function verbindenMitUhr() {
+    const uhr = new FakeUhr();
+    const agent = { ...FAKE_AGENT, _uhr: uhr };
+    const gehalten = fakeSitzung();
+    let referiert;
+    gehalten.refer = (ziel, optionen) => {
+        referiert = optionen;
+        return Promise.resolve();
+    };
+    const sitzung = new SipJsSitzung(agent, gehalten, { ausgehend: false });
+    const zweite = new SipJsSitzung(agent, fakeSitzung(), { ausgehend: true });
+    const ergebnis = sitzung.refer(zweite).then(
+        () => "ok",
+        (fehler) => fehler.message
+    );
+    return { uhr, gehalten, ergebnis, angenommen: () => referiert.requestDelegate.onAccept() };
+}
+
+test("Verbinden: ohne NOTIFY nach 15 s gilt es als gescheitert", async () => {
+    const { uhr, ergebnis, angenommen } = verbindenMitUhr();
+    await Promise.resolve();
+    angenommen();
+    await uhr.vorspulen(14_000);
+    let fertig = false;
+    ergebnis.then(() => (fertig = true));
+    await uhr.vorspulen(0);
+    expect(fertig).toBe(false);
+    await uhr.vorspulen(1000);
+    expect(await ergebnis).toMatch(/Anlage/);
+});
+
+test("Verbinden: ohne NOTIFY, aber Anlage hat die gehaltene Leitung beendet – erfolgreich", async () => {
+    const { uhr, gehalten, ergebnis, angenommen } = verbindenMitUhr();
+    await Promise.resolve();
+    angenommen();
+    gehalten.beenden();
+    await uhr.vorspulen(15_000);
+    expect(await ergebnis).toBe("ok");
 });

@@ -47,7 +47,7 @@
             </header>
             <StatusAnzeige/>
             <div class="o_wb_voip_inhalt card-body p-0 overflow-auto">
-                <Anrufansicht t-if="state.anruf"/>
+                <Anrufansicht t-if="state.anruf or state.gehaltener"/>
                 <t t-else="">
                     <div class="o_wb_voip_reiter nav nav-tabs px-2 pt-2" role="tablist">
                         <t t-foreach="reiter" t-as="r" t-key="r.schluessel">

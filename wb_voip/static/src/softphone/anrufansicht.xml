@@ -1,17 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
     <t t-name="wb_voip.Anrufansicht">
-        <div class="o_wb_voip_anrufansicht p-3">
-            <div t-if="gehaltener" class="o_wb_voip_gehalten alert alert-secondary d-flex align-items-center gap-2 py-2 mb-3"
+        <!-- beide Leitungen können im selben Takt enden, bevor das Softphone die Ansicht entfernt -->
+        <div t-if="anruf" class="o_wb_voip_anrufansicht p-3">
+            <div t-if="state.anruf and gehaltener" class="o_wb_voip_gehalten alert alert-secondary d-flex align-items-center gap-2 py-2 mb-3"
                  role="status">
                 <i class="fa fa-pause" aria-hidden="true"/>
                 <span class="flex-grow-1 text-truncate">Gehalten: <t t-esc="nameVon(gehaltener)"/></span>
                 <button type="button" class="o_wb_voip_zurueck btn btn-sm btn-outline-secondary"
-                        title="Rückfrage beenden und zurück zum gehaltenen Gespräch"
-                        aria-label="Rückfrage beenden und zurück zum gehaltenen Gespräch"
-                        t-on-click="zurueck">Zurück</button>
+                        t-att-disabled="verbindet"
+                        t-att-title="zurueckText" t-att-aria-label="zurueckText"
+                        t-on-click="zurueck" t-esc="zurueckText"/>
                 <button type="button" class="o_wb_voip_verbinden btn btn-sm btn-primary"
-                        t-att-disabled="!laeuft"
+                        t-att-disabled="!laeuft or verbindet"
                         title="Gehaltenes Gespräch mit diesem verbinden"
                         aria-label="Gehaltenes Gespräch mit diesem verbinden"
                         t-on-click="verbinden">Verbinden</button>
@@ -58,7 +59,7 @@
                         <i class="fa fa-microphone-slash" aria-hidden="true"/>
                     </button>
                     <button type="button" class="o_wb_voip_halten btn btn-outline-secondary"
-                            t-att-class="{active: anruf.gehalten}" t-att-disabled="!laeuft"
+                            t-att-class="{active: anruf.gehalten}" t-att-disabled="!laeuft or verbindet"
                             t-att-aria-pressed="anruf.gehalten ? 'true' : 'false'"
                             title="Halten" aria-label="Halten" t-on-click="halten">
                         <i class="fa fa-pause" aria-hidden="true"/>
@@ -115,12 +116,12 @@
                       t-att-class="anruf.richtung === 'eingehend' ? 'mb-1' : 'mb-3'"
                       t-att-maxlength="maxNotiz" placeholder="Notiz zum Gespräch"
                       t-att-aria-describedby="anruf.richtung === 'eingehend' ? 'wb_voip_notiz_hinweis' : false"
-                      t-model="state.anruf.notiz"/>
+                      t-model="anruf.notiz"/>
             <div t-if="anruf.richtung === 'eingehend'" id="wb_voip_notiz_hinweis"
                  class="o_wb_voip_notiz_hinweis small text-muted mb-3">Kollegen, die diesen Anruf verpasst haben, sehen diese Notiz.</div>
 
             <button t-if="!eingehendKlingelt" type="button"
-                    class="o_wb_voip_auflegen btn btn-danger w-100"
+                    class="o_wb_voip_auflegen btn btn-danger w-100" t-att-disabled="verbindet"
                     title="Auflegen" aria-label="Auflegen" t-on-click="auflegen">
                 <i class="fa fa-phone o_wb_voip_auflegen_symbol me-1" aria-hidden="true"/>Auflegen
             </button>

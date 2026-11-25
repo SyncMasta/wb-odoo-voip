@@ -18,6 +18,7 @@ import {
     FakeOrm,
     FakeSperren,
     FakeUhr,
+    lizenzFehler,
 } from "./sip_fake";
 
 describe.current.tags("desktop");
@@ -33,11 +34,19 @@ afterEach(() => {
     translatedTerms[translationLoaded] = uebersetzungVorher;
 });
 
-/** Verbundener Telefon-Dienst mit Fakes; ``beendet`` ohne Protokoll (kein Popup im UI-Test). */
+/**
+ * Verbundener Telefon-Dienst mit Fakes. Protokoll-ID = 100 + Anruf-ID; ``popups`` sammelt
+ * die Anruf-IDs, für die das Protokoll-Popup öffnen soll (sofort oder aus der Warteschlange).
+ */
 async function verbunden() {
     const uhr = new FakeUhr();
     const fabrik = new FakeAgentFabrik(uhr);
     const orm = new FakeOrm();
+    orm.antworten["wb.voip.anruf.wb_voip_beendet"] = (args) => ({
+        id: args[0][0],
+        zustand: "beendet",
+        protokoll_id: 100 + args[0][0],
+    });
     const dienst = new TelefonDienst({
         orm,
         sperren: new FakeSperren(),
@@ -51,8 +60,15 @@ async function verbunden() {
     await uhr.vorspulen(0);
     expect(dienst.state.status).toBe("verbunden");
     const beendet = [];
-    dienst.bus.addEventListener("anruf-beendet", ({ detail }) => beendet.push(detail));
-    return { dienst, uhr, fabrik, orm, agent: fabrik.letzterAgent, beendet };
+    const popups = [];
+    dienst.bus.addEventListener("anruf-beendet", ({ detail }) => {
+        beendet.push(detail);
+        if (detail.popup) {
+            popups.push(detail.anrufId);
+        }
+    });
+    dienst.bus.addEventListener("protokoll-oeffnen", ({ detail }) => popups.push(detail.anrufId));
+    return { dienst, uhr, fabrik, orm, agent: fabrik.letzterAgent, beendet, popups };
 }
 
 /** Laufendes Gespräch (ausgehend, angenommen). */
@@ -181,7 +197,9 @@ test("Gehaltene Leitung legt auf: Leiste verschwindet, Rückfrage läuft weiter"
     zweite.gegenstelleLegtAuf("bye");
     await welt.uhr.vorspulen(0);
     expect(welt.dienst.state.anruf).toBe(null);
-    expect(welt.beendet.map((d) => d.popup)).toEqual([false, true]);
+    // Kunde (10) bekommt sein Popup, sobald keine Leitung mehr läuft; die Rückfrage keins
+    expect(welt.beendet.map((d) => d.popup)).toEqual([false, false]);
+    expect(welt.popups).toEqual([10]);
     welt.dienst.stop();
 });
 
@@ -198,11 +216,9 @@ test("Verbinden: REFER der gehaltenen Leitung mit der anderen Sitzung, beide end
     expect(erste.hat("unhold").length).toBe(0);
     expect(welt.dienst.state.anruf).toBe(null);
     expect(welt.dienst.state.gehaltener).toBe(null);
-    // Protokolle wie bei normalem Auflegen, Popup nur für die zuletzt aktive Leitung
+    // Protokolle wie bei normalem Auflegen; Popup für das Kundengespräch (10), nicht die Rückfrage (11)
     expect(welt.orm.zaehle("wb_voip_beendet")).toBe(2);
-    expect(welt.beendet.map((d) => d.popup)).toEqual([false, true]);
-    // Server-IDs des Fakes: Gespräch 10, Rückfrage 11
-    expect(welt.beendet.map((d) => d.anrufId)).toEqual([10, 11]);
+    expect(welt.popups).toEqual([10]);
     welt.dienst.stop();
 });
 
@@ -272,7 +288,8 @@ test("Dritter eingehender Anruf wird mit 480 abgewiesen", async () => {
     const vierte = welt.agent.eingehend("0170 4444");
     await welt.uhr.vorspulen(0);
     expect(vierte.hat("reject")).toEqual([["reject", { statusCode: 480 }]]);
-    expect(welt.orm.zaehle("wb_voip_beginnen")).toBe(2);
+    // zwei Leitungen plus die beiden abgewiesenen Anrufe (als verpasst gemeldet)
+    expect(welt.orm.zaehle("wb_voip_beginnen")).toBe(4);
     welt.dienst.stop();
 });
 
@@ -433,5 +450,258 @@ test("Anrufansicht: freie Nummer mit Rückfrage", async () => {
     expect(erste.hat("hold").length).toBe(1);
     expect(welt.agent.invites.at(-1).ziel).toBe("004930555");
     expect(".o_wb_voip_gehalten").toHaveText(/0170 1111/);
+    welt.dienst.stop();
+});
+
+// --- Fix-Runde 1 --------------------------------------------------------------------------
+
+/** Ersetzt ``refer`` der Sitzung durch ein von außen steuerbares Versprechen. */
+function referSteuern(sitzung) {
+    const steuerung = {};
+    sitzung.refer = (ziel) => {
+        sitzung.aufrufe.push(["refer", ziel]);
+        return new Promise((resolve, reject) => Object.assign(steuerung, { resolve, reject }));
+    };
+    return steuerung;
+}
+
+test("Verbinden: Kollegen-Leitung endet, dann scheitert REFER – Kunde kommt zurück", async () => {
+    const welt = await verbunden();
+    const { erste, zweite } = await mitRueckfrage(welt);
+    const refer = referSteuern(erste);
+    const ergebnis = welt.dienst.verbinden();
+    await welt.uhr.vorspulen(0);
+    expect(welt.dienst.state.verbindet).toBe(true);
+    zweite.gegenstelleLegtAuf("bye");
+    await welt.uhr.vorspulen(0);
+    // nur die beendete Leitung endet, der Kunde bleibt gehalten und wird nicht aufgelegt
+    expect(erste.hat("bye").length).toBe(0);
+    expect(erste.hat("unhold").length).toBe(0);
+    expect(welt.dienst.state.gehaltener.nummer).toBe("0170 1111");
+    refer.reject(new Error("Verbinden fehlgeschlagen (503)"));
+    expect(await ergebnis).toBe(false);
+    await welt.uhr.vorspulen(0);
+    expect(erste.hat("unhold").length).toBe(1);
+    expect(welt.dienst.state.verbindet).toBe(false);
+    expect(welt.dienst.state.gehaltener).toBe(null);
+    expect(welt.dienst.state.anruf.nummer).toBe("0170 1111");
+    expect(welt.popups).toEqual([]);
+    welt.dienst.stop();
+});
+
+test("Verbinden: Leitung endet, dann NOTIFY 200 – beide enden", async () => {
+    const welt = await verbunden();
+    const { erste, zweite } = await mitRueckfrage(welt);
+    const refer = referSteuern(erste);
+    const ergebnis = welt.dienst.verbinden();
+    await welt.uhr.vorspulen(0);
+    zweite.gegenstelleLegtAuf("bye");
+    await welt.uhr.vorspulen(0);
+    refer.resolve();
+    expect(await ergebnis).toBe(true);
+    await welt.uhr.vorspulen(0);
+    expect(erste.hat("bye").length).toBe(1);
+    expect(erste.hat("unhold").length).toBe(0);
+    expect(welt.dienst.state.anruf).toBe(null);
+    expect(welt.dienst.state.gehaltener).toBe(null);
+    expect(welt.dienst.state.verbindet).toBe(false);
+    expect(welt.orm.zaehle("wb_voip_beendet")).toBe(2);
+    expect(welt.popups).toEqual([10]);
+    welt.dienst.stop();
+});
+
+test("Während Verbinden: Zurück, Auflegen, Halten, zweites Verbinden ohne Wirkung und Fehler", async () => {
+    const welt = await verbunden();
+    const { erste, zweite } = await mitRueckfrage(welt);
+    const refer = referSteuern(erste);
+    const ergebnis = welt.dienst.verbinden();
+    await welt.uhr.vorspulen(0);
+    welt.dienst.state.fehler = null;
+    expect(await welt.dienst.verbinden()).toBe(false);
+    expect(await welt.dienst.zurueck()).toBe(false);
+    await welt.dienst.auflegen();
+    await welt.dienst.halten(true);
+    await welt.uhr.vorspulen(0);
+    expect(welt.dienst.state.fehler).toBe(null);
+    expect(erste.hat("refer").length).toBe(1);
+    expect(zweite.hat("bye").length).toBe(0);
+    expect(zweite.hat("hold").length).toBe(0);
+    refer.resolve();
+    await ergebnis;
+    welt.dienst.stop();
+});
+
+test("Popup: Kunde legt im Halten auf – Popup erst nach Ende der Rückfrage", async () => {
+    const welt = await verbunden();
+    const { erste, zweite } = await mitRueckfrage(welt);
+    erste.gegenstelleLegtAuf("bye");
+    await welt.uhr.vorspulen(0);
+    expect(welt.popups).toEqual([]);
+    zweite.gegenstelleLegtAuf("bye");
+    await welt.uhr.vorspulen(0);
+    expect(welt.popups).toEqual([10]);
+    welt.dienst.stop();
+});
+
+test("Popup: angenommener zweiter Anruf endet neben dem gehaltenen – beide Popups in Reihenfolge", async () => {
+    const welt = await verbunden();
+    const erste = await imGespraech(welt);
+    const zweite = welt.agent.eingehend("0170 2222");
+    await welt.uhr.vorspulen(0);
+    await welt.dienst.annehmen();
+    await welt.uhr.vorspulen(0);
+    zweite.gegenstelleLegtAuf("bye");
+    await welt.uhr.vorspulen(0);
+    // Kunde 1 ist wieder aktiv: Popup für Kunde 2 wartet
+    expect(welt.dienst.state.anruf.nummer).toBe("0170 1111");
+    expect(welt.popups).toEqual([]);
+    erste.gegenstelleLegtAuf("bye");
+    await welt.uhr.vorspulen(0);
+    expect(welt.popups).toEqual([11, 10]);
+    welt.dienst.stop();
+});
+
+test("Popup nach Verbinden nur für das Kundengespräch", async () => {
+    const welt = await verbunden();
+    await mitRueckfrage(welt);
+    await welt.dienst.verbinden();
+    await welt.uhr.vorspulen(0);
+    expect(welt.popups).toEqual([10]);
+    expect(welt.beendet.find((d) => d.anrufId === 11).popup).toBe(false);
+    welt.dienst.stop();
+});
+
+test("Abgewiesener dritter Anruf (480) wird auf dem Server als verpasst gemeldet", async () => {
+    const welt = await verbunden();
+    await mitRueckfrage(welt);
+    const vorher = welt.orm.zaehle("wb_voip_beginnen");
+    const dritte = welt.agent.eingehend("0170 3333");
+    await welt.uhr.vorspulen(0);
+    expect(dritte.hat("reject")).toEqual([["reject", { statusCode: 480 }]]);
+    expect(welt.orm.zaehle("wb_voip_beginnen")).toBe(vorher + 1);
+    const beginn = welt.orm.letzter("wb_voip_beginnen");
+    expect(beginn.args.slice(0, 3)).toEqual(["eingehend", "0170 3333", dritte.callId]);
+    const ende = welt.orm.letzter("wb_voip_beendet");
+    expect(ende.args).toEqual([[12], false, "480", false]);
+    // keine Spur in der Oberfläche
+    expect(welt.dienst.state.klopfend).toBe(null);
+    expect(welt.beendet.length).toBe(0);
+    // Fehler beim Melden bleiben still
+    welt.orm.antworten["wb.voip.anruf.wb_voip_beginnen"] = () => {
+        throw new Error("kaputt");
+    };
+    welt.dienst.state.fehler = null;
+    welt.agent.eingehend("0170 4444");
+    await welt.uhr.vorspulen(0);
+    expect(welt.dienst.state.fehler).toBe(null);
+    welt.dienst.stop();
+});
+
+test("Wartender Anruf: erster endet während des Haltens, Halten scheitert – direkt annehmen", async () => {
+    const welt = await verbunden();
+    const erste = await imGespraech(welt);
+    const zweite = welt.agent.eingehend("0170 2222");
+    await welt.uhr.vorspulen(0);
+    erste.hold = () => {
+        erste.gegenstelleLegtAuf("bye");
+        return Promise.reject(new Error("Re-INVITE abgelehnt (481)"));
+    };
+    await welt.dienst.annehmen();
+    await welt.uhr.vorspulen(0);
+    expect(zweite.hat("accept").length).toBe(1);
+    expect(welt.dienst.state.anruf.nummer).toBe("0170 2222");
+    expect(welt.dienst.state.anruf.zustand).toBe("laeuft");
+    expect(welt.dienst.state.gehaltener).toBe(null);
+    welt.dienst.stop();
+});
+
+test("Lizenzverlust mit zwei Leitungen: alle enden, gemeldet, nichts zurückgeholt", async () => {
+    const welt = await verbunden();
+    const erste = await imGespraech(welt);
+    welt.orm.antworten["wb.voip.anruf.wb_voip_beginnen"] = () => {
+        throw lizenzFehler();
+    };
+    welt.orm.antworten["res.users.wb_voip_status"] = () => ({
+        aktiv: true,
+        lizenz_gueltig: false,
+        meldung: "Lizenz abgelaufen",
+        eingerichtet: true,
+        konfiguriert: true,
+    });
+    expect(await welt.dienst.rueckfrage("102")).toBe(true);
+    await welt.uhr.vorspulen(0);
+    const zweite = welt.agent.invites.at(-1);
+    expect(welt.dienst.state.status).toBe("ohne_lizenz");
+    expect(erste.hat("bye").length).toBe(1);
+    expect(erste.hat("unhold").length).toBe(0);
+    expect(zweite.hat("cancel").length).toBe(1);
+    expect(welt.dienst.state.anruf).toBe(null);
+    expect(welt.dienst.state.gehaltener).toBe(null);
+    // die Rückfrage hat keine Server-ID; das Gespräch ist gemeldet
+    expect(welt.orm.letzter("wb_voip_beendet").args.slice(0, 3)).toEqual([[10], false, "fehler"]);
+    welt.dienst.stop();
+});
+
+test("stop mit Gespräch und wartendem Anruf: beide enden und werden gemeldet", async () => {
+    const welt = await verbunden();
+    await imGespraech(welt);
+    const zweite = welt.agent.eingehend("0170 2222");
+    await welt.uhr.vorspulen(0);
+    welt.dienst.stop();
+    await welt.uhr.vorspulen(0);
+    expect(zweite.hat("accept").length).toBe(0);
+    expect(welt.dienst.state.anruf).toBe(null);
+    expect(welt.dienst.state.klopfend).toBe(null);
+    expect(welt.orm.zaehle("wb_voip_beendet")).toBe(2);
+    expect(welt.orm.aufrufe.filter((a) => a.methode === "wb_voip_beendet").map((a) => a.args[2]))
+        .toEqual(["fehler", "fehler"]);
+});
+
+test("Protokoll-Popup aus der Warteschlange (protokoll-oeffnen)", async () => {
+    const geoeffnet = [];
+    const bus = new EventBus();
+    protokollPopupDienst.start({}, {
+        dialog: { add: (_k, props) => geoeffnet.push(props.resId) },
+        wb_voip_telefon: { bus },
+    });
+    bus.trigger("protokoll-oeffnen", { anrufId: 1, protokollId: 7 });
+    bus.trigger("protokoll-oeffnen", { anrufId: 2, protokollId: "x" });
+    expect(geoeffnet).toEqual([7]);
+});
+
+test("Anrufansicht: während Verbinden Knöpfe gesperrt", async () => {
+    const welt = await ansicht();
+    const { erste } = await mitRueckfrage(welt);
+    const refer = referSteuern(erste);
+    await animationFrame();
+    await click(".o_wb_voip_verbinden");
+    await welt.uhr.vorspulen(0);
+    await animationFrame();
+    for (const knopf of [".o_wb_voip_verbinden", ".o_wb_voip_zurueck", ".o_wb_voip_auflegen", ".o_wb_voip_halten"]) {
+        expect(knopf).toHaveAttribute("disabled");
+    }
+    expect(".o_wb_voip_zustand").toHaveText(/Verbinde/);
+    expect(".o_notification").toHaveCount(0);
+    refer.resolve();
+    await welt.uhr.vorspulen(0);
+    await animationFrame();
+    expect(".o_wb_voip_anrufansicht").toHaveCount(0);
+    welt.dienst.stop();
+});
+
+test("Anrufansicht: Zurück beschriftet nach Herkunft der aktiven Leitung", async () => {
+    const welt = await ansicht();
+    await mitRueckfrage(welt);
+    await animationFrame();
+    expect(".o_wb_voip_zurueck").toHaveAttribute("aria-label", "Rückfrage beenden");
+    await welt.dienst.zurueck();
+    await welt.uhr.vorspulen(0);
+    welt.agent.eingehend("0170 2222");
+    await welt.uhr.vorspulen(0);
+    await welt.dienst.annehmen();
+    await welt.uhr.vorspulen(0);
+    await animationFrame();
+    expect(".o_wb_voip_zurueck").toHaveAttribute("aria-label", "Auflegen und zurück");
+    expect(".o_wb_voip_zurueck").toHaveText("Auflegen und zurück");
     welt.dienst.stop();
 });

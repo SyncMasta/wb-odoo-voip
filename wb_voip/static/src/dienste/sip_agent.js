@@ -31,8 +31,17 @@ export class Sender {
 }
 
 const REGISTER_TIMEOUT_MS = 30_000;
-/** Wartezeit auf das abschließende NOTIFY nach 202 beim Verbinden; danach gilt es als erledigt. */
-export const VERBINDEN_NOTIFY_MS = 10_000;
+/**
+ * Wartezeit auf das abschließende NOTIFY nach 202 beim Verbinden. Danach gilt es als
+ * gescheitert, außer die Anlage hat die gehaltene Leitung schon beendet (BYE).
+ */
+export const VERBINDEN_NOTIFY_MS = 15_000;
+
+/** Uhr ohne Test-Ersatz (für Agenten, denen keine Uhr übergeben wurde). */
+const STANDARD_UHR = {
+    setTimeout: (fn, ms) => setTimeout(fn, ms),
+    clearTimeout: (id) => clearTimeout(id),
+};
 const REGISTER_EXPIRES_S = 300;
 
 function zufall() {
@@ -119,6 +128,7 @@ export class SipJsSitzung extends Sender {
         this._ausgehend = ausgehend;
         this._grund = "";
         this._angenommen = false;
+        this._vorbei = false; // SIP-Dialog beendet (z. B. BYE der Anlage)
         this._audio = null;
         this.callId = session.request?.callId || `wb-voip-${zufall()}`;
         this.remoteNummer = session.remoteIdentity?.uri?.user || "";
@@ -129,6 +139,7 @@ export class SipJsSitzung extends Sender {
                 this._audioAnhaengen();
                 this.emit("angenommen");
             } else if (zustand === SessionState.Terminated) {
+                this._vorbei = true;
                 this._audioLoesen();
                 // Grund aus onReject kann im selben Takt noch kommen
                 Promise.resolve().then(() =>
@@ -265,10 +276,12 @@ export class SipJsSitzung extends Sender {
     }
     /**
      * Verbinden (Übergeben mit Rückfrage): REFER mit der anderen Sitzung als Ziel, SIP.js baut
-     * Refer-To mit Replaces. Erfüllt, sobald das NOTIFY ein 2xx meldet (oder nach 202 und
-     * ``VERBINDEN_NOTIFY_MS`` ohne Abschluss); abgelehnt bei REFER- oder NOTIFY-Fehler.
+     * Refer-To mit Replaces. Erfüllt, sobald das NOTIFY ein 2xx meldet; nach 202 und
+     * ``VERBINDEN_NOTIFY_MS`` ohne Abschluss nur, wenn die Anlage diese Leitung schon beendet
+     * hat. Abgelehnt bei REFER- oder NOTIFY-Fehler und sonst nach Ablauf der Frist.
      */
     _verbinden(andere) {
+        const uhr = this._agent._uhr || STANDARD_UHR;
         return new Promise((resolve, reject) => {
             let fertig = false;
             let timer = null;
@@ -277,14 +290,26 @@ export class SipJsSitzung extends Sender {
                     return;
                 }
                 fertig = true;
-                clearTimeout(timer);
+                if (timer !== null) {
+                    uhr.clearTimeout(timer);
+                }
                 fn(wert);
             };
             this._session
                 .refer(andere._session, {
                     requestDelegate: {
                         onAccept: () => {
-                            timer = setTimeout(() => ende(resolve), VERBINDEN_NOTIFY_MS);
+                            timer = uhr.setTimeout(() => {
+                                timer = null;
+                                if (this._vorbei) {
+                                    ende(resolve); // Anlage hat die gehaltene Leitung übernommen
+                                } else {
+                                    ende(
+                                        reject,
+                                        new Error("Verbinden: keine Bestätigung der Anlage.")
+                                    );
+                                }
+                            }, VERBINDEN_NOTIFY_MS);
                         },
                         onReject: (antwort) =>
                             ende(
@@ -321,10 +346,12 @@ export class SipJsAgent extends Sender {
     /**
      * @param {object} zugang Ergebnis von res.users.wb_voip_zugang_lesen
      * @param {object} SIP    globales SIP.js-Objekt
+     * @param {object} [optionen.uhr] Uhr für Fristen (Tests: FakeUhr)
      */
-    constructor(zugang, SIP) {
+    constructor(zugang, SIP, { uhr = null } = {}) {
         super();
         this.SIP = SIP;
+        this._uhr = uhr;
         this._domain = zugang.sip_domain;
         this._gestoppt = false;
         this._registerer = null;
@@ -539,6 +566,6 @@ export function erzeugeAgentFabrik({ bibliothekLaden, sipBibliothek = () => wind
         if (!zugang.ws_url || !zugang.sip_domain || !zugang.sip_benutzer) {
             throw new Error("SIP-Zugang unvollständig (WebSocket, Domain oder Benutzer fehlt).");
         }
-        return new SipJsAgent(zugang, SIP);
+        return new SipJsAgent(zugang, SIP, { uhr });
     };
 }

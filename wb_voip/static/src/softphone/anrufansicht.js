@@ -57,8 +57,18 @@ export class Anrufansicht extends Component {
         onWillUnmount(() => browser.clearInterval(this._takt));
     }
 
+    /** Aktive Leitung; endet sie während „Verbinden“, bleibt das gehaltene Gespräch sichtbar. */
     get anruf() {
-        return this.state.anruf;
+        return this.state.anruf || this.state.gehaltener;
+    }
+
+    get verbindet() {
+        return Boolean(this.state.verbindet);
+    }
+
+    /** „Zurück“ legt die aktive Leitung auf: eine Rückfrage oder den angenommenen zweiten Anruf. */
+    get zurueckText() {
+        return this.state.anruf?.rueckfrage ? _t("Rückfrage beenden") : _t("Auflegen und zurück");
     }
 
     async aktionenLaden(id) {
@@ -124,6 +134,9 @@ export class Anrufansicht extends Component {
     }
 
     get zustandText() {
+        if (this.verbindet) {
+            return _t("Verbinde …");
+        }
         switch (this.anruf.zustand) {
             case "laeuft":
                 return _t("Im Gespräch");
