@@ -20,13 +20,29 @@ def _wb_voip_post_init(env):
 
 
 def _wb_voip_uninstall(env):
-    """Delete the server actions of the button wizard before the module data goes.
+    """Re-assign callback activities, then delete the button wizard's server actions.
+
+    Callback activities (active and archived) move to Odoo's standard "Call" type: the activity
+    type is referenced with ondelete restrict, so otherwise it would block the removal of the
+    module data and users would lose their tasks.
+
+    Server actions of the button wizard go before the module data does.
 
     Without the technical group (removed with the module data) Odoo would let anybody run
     them from the action menu. Deleted are all server actions that carry exactly that group
     or that a wizard-made button uses.
     """
     from .models.wb_voip_aktion import GRUPPE_BUTTON_AKTION, assistenten_aktion
+    from .models.wb_voip_anruf import RUECKRUF_TYP
+
+    rueckruf = env.ref(RUECKRUF_TYP, raise_if_not_found=False)
+    anruf = env.ref('mail.mail_activity_data_call', raise_if_not_found=False)
+    if rueckruf and anruf:
+        aktivitaeten = env['mail.activity'].sudo().with_context(active_test=False).search(
+            [('activity_type_id', '=', rueckruf.id)])
+        if aktivitaeten:
+            aktivitaeten.write({'activity_type_id': anruf.id})
+        _logger.info("[wb_voip] Deinstallation: %s Rückruf-Aufgaben auf „Anruf“ umgehängt", len(aktivitaeten))
 
     Server = env['ir.actions.server'].sudo().with_context(active_test=False)
     server = Server.browse()
