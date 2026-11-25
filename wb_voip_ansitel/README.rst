@@ -1,9 +1,10 @@
 WB VoIP Ansitel
 ===============
 
-Anbindung einer Ansitel-Telefonanlage an WB VoIP über deren REST-Schnittstelle.
+Anbindung einer Ansitel-Telefonanlage an WB VoIP über deren REST-Schnittstelle (Version 19.0.1.1.0).
 
-* Felder an der Anlage: Schnittstelle aktiv, REST-URL (nur https), zentraler Token, Zeitzone der Anrufliste.
+* Felder an der Anlage: Schnittstelle aktiv, REST-URL (nur https), zentraler Token, Zeitzone der Anrufliste,
+  weitere interne Weiterleitungsziele (Rufgruppen).
 * Der Token wird nur als Fernet-Chiffrat gespeichert (Schlüssel ``WB_VOIP_FERNET_KEY``), ist nur für
   Systemadministratoren sichtbar und wird nie gelesen, geloggt oder im Cache abgelegt.
 * ``wb.voip.ansitel._aufruf`` ist die einzige Netzstelle: https, Zeitlimit 10 s, keine Weiterleitungen,
@@ -24,8 +25,8 @@ Einrichtung
    einen eigenen Zugang schalten soll, bekommt zusätzlich einen persönlichen Token.
 4. Systemverwaltung: an der Anlage „Geräte aus Anlage laden“, Zuordnung der Geräte zu Benutzern prüfen
    (Amtsleitung nie als Gerät führen).
-5. Tasten unter Einstellungen › Technisch › WB VoIP › Softphone-Tasten prüfen (feste Ziele setzt nur die
-   Systemverwaltung). Jeder Benutzer trägt unter „Mein Profil“ › Telefonie „Mein Handy“ ein.
+5. Tasten unter Einstellungen › Technisch › WB VoIP › Softphone-Tasten prüfen (feste und interne Ziele setzt nur die
+   Systemverwaltung; Rufgruppen als Ziel vorher unter „Weitere interne Ziele“ an der Anlage eintragen). Jeder Benutzer trägt unter „Mein Profil“ › Telefonie „Mein Handy“ ein.
 6. Anzeige der Tastenleiste je Benutzer (Einstellung „Schnelltasten“: Softphone, Rand oder beide); die Änderung
    wirkt nach dem Neuladen der Seite. Die Rand-Leiste ist 2,75 rem breit; die Seite rückt dafür nach links.
 

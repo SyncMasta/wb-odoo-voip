@@ -4,7 +4,7 @@ WB VoIP
 
 Softphone im Browser, Anrufprotokoll und Anbindung an SIP-Telefonanlagen für Odoo 19.
 
-Stand Phase 5 (Version 19.0.4.2.0): Team-Übersicht, zweite Leitung, Übergeben, Konferenz, Softphone, Anrufprotokoll mit Popup nach dem Anruf, Anrufer-Fenster, eigene Anruf-Buttons,
+Stand Phase 6b (Version 19.0.4.5.0): Team-Übersicht (standardmäßig an), zweite Leitung, Übergeben, Konferenz, Softphone, Anrufprotokoll mit Popup nach dem Anruf, Anrufer-Fenster, eigene Anruf-Buttons,
 Rufnummer zuordnen, Löschfrist und Lizenzanbindung (Produktcode ``VOIP``).
 
 Einrichtung
