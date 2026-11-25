@@ -182,9 +182,17 @@ class WbVoipTaste(models.Model):
     @api.model
     def _intern_format_fehler(self, ziel):
         """Return the user message if ``ziel`` is no internal extension (format only), or ``False``."""
-        if self._intern_gueltig(ziel):
-            return False
-        return self.env._("Eine interne Nebenstelle hat 2 bis 6 Ziffern (nur 0–9), z. B. 100.")
+        _ = self.env._
+        if not self._intern_gueltig(ziel):
+            return _("Eine interne Nebenstelle hat 2 bis 6 Ziffern (nur 0–9), z. B. 100.")
+        ziel = ziel.strip()
+        # Kurzwahl, Notruf und Auskunft gehen über die Wählregel nach außen; 1xx-Nebenstellen bleiben erlaubt
+        if ziel in KURZ_NUMMERN or ziel.startswith(KURZ_PRAEFIXE):
+            return _("Notruf-, Kurzwahl- und Auskunftsnummern sind als Weiterleitungsziel nicht erlaubt.")
+        # Führende 0 ist an vielen Anlagen die Amtsholung
+        if ziel.startswith('0'):
+            return _("Ein internes Ziel beginnt nicht mit 0 (Amtsholung).")
+        return False
 
     @api.model
     def _ziel_e164(self, ziel, land_code=None):

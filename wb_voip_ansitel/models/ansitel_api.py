@@ -37,7 +37,7 @@ WEITERLEITUNG = ':weiterleitung'
 # Per worker process. Every key carries a hash of the encrypted token and the
 # write date of the PBX, so a token change invalidates entries in all workers.
 # Neither keys nor values ever hold the token.
-# (database, PBX id, URL, hash, extension) -> (monotonic time, peer id or None)
+# (database, 'getpeer', PBX id, URL, hash) -> (monotonic time, peers as tuples of id/name/internal number)
 _PEER_CACHE = {}
 # Zustand der Tasten je Benutzer, kurz zwischengespeichert (Abfrage alle 60 s je Tab, mehrere Tabs):
 # (database, user id, PBX id, write date of the PBX) -> (monotonic time, state without secrets)
@@ -204,13 +204,14 @@ class WbVoipAnsitel(models.AbstractModel):
             return self.env._("Ansitel lehnt die Anfrage ab."), None
         return None, daten
 
-    def _peer_id(self, anlage, nebenstelle):
-        """Return the peer id of an extension (number or name) or ``None``; cached per worker."""
-        nebenstelle = (nebenstelle or '').strip()
-        if not nebenstelle:
-            return None
+    def _peers(self, anlage):
+        """Return the peers of ``anlage`` as ``((peer id, peerName, peerInternalCallerId), ...)``.
+
+        One ``getpeer`` per PBX, cached per worker (``PEER_CACHE_SEKUNDEN``); the key carries the
+        hash of token ciphertext and write date, the value only ids and numbers (no token).
+        """
         anlage = anlage.sudo()
-        schluessel = (self.env.cr.dbname, anlage.id, anlage.ansitel_api_url, _anlage_hash(anlage), nebenstelle)
+        schluessel = (self.env.cr.dbname, 'getpeer', anlage.id, anlage.ansitel_api_url, _anlage_hash(anlage))
         treffer = _PEER_CACHE.get(schluessel)
         if treffer and time.monotonic() - treffer[0] < PEER_CACHE_SEKUNDEN:
             return treffer[1]
@@ -218,16 +219,46 @@ class WbVoipAnsitel(models.AbstractModel):
             liste = self._aufruf(anlage, 'getpeer').get('data') or []
             if not isinstance(liste, list):
                 raise TypeError('getpeer')
-            peer_id = None
-            for peer in liste:
-                if nebenstelle in (str(peer.get('peerInternalCallerId') or ''), str(peer.get('peerName') or '')):
-                    peer_id = int(peer['pk_peerId'])
-                    break
+            peers = tuple(
+                (int(peer['pk_peerId']), str(peer.get('peerName') or '').strip(),
+                 str(peer.get('peerInternalCallerId') or '').strip())
+                for peer in liste)
         except (KeyError, ValueError, TypeError, AttributeError):
             _logger.warning("[wb_voip_ansitel] getpeer: unerwartete Antwort")
             raise AnsitelFehler(self.env._("Ansitel hat unverständlich geantwortet.")) from None
-        _cache_setzen(schluessel, peer_id)
-        return peer_id
+        _cache_setzen(schluessel, peers)
+        return peers
+
+    def _peer_id(self, anlage, nebenstelle):
+        """Return the peer id of the user's extension (internal number or peer name) or ``None``."""
+        nebenstelle = (nebenstelle or '').strip()
+        if not nebenstelle:
+            return None
+        for peer_id, name, intern in self._peers(anlage):
+            if nebenstelle in (intern, name):
+                return peer_id
+        return None
+
+    def _peer_intern(self, anlage, nummer):
+        """Return the peer id whose internal number (``peerInternalCallerId``) is ``nummer``, or ``None``.
+
+        Forwarding targets match only the internal number: a numeric peer name (SIP user) could
+        lead the dial plan elsewhere.
+        """
+        nummer = (nummer or '').strip() if isinstance(nummer, str) else ''
+        if not nummer:
+            return None
+        for peer_id, _name, intern in self._peers(anlage):
+            if intern == nummer:
+                return peer_id
+        return None
+
+    def _peer_interne_nummer(self, anlage, peer_id):
+        """Return the internal number of peer ``peer_id`` or ``None``."""
+        for kennung, _name, intern in self._peers(anlage):
+            if kennung == peer_id:
+                return intern or None
+        return None
 
     # --- Weiterleitung ---
 

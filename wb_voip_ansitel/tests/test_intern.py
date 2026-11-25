@@ -1,6 +1,7 @@
 from odoo.exceptions import AccessError, ValidationError
 from odoo.tests import tagged
 
+from .common import PEERS
 from .test_tasten import TastenCase
 
 HINWEIS_UNBEKANNT = 'Interne Nebenstelle unbekannt – bitte Systemverwaltung fragen.'
@@ -27,8 +28,8 @@ class TestInterneWeiterleitung(TastenCase):
     # --- Speichern ---
 
     def test_ziel_bleibt_wie_eingegeben(self):
-        self.taste_intern.write({'ziel': ' 0600 '})
-        self.assertEqual(self.taste_intern.ziel, '0600')
+        self.taste_intern.write({'ziel': ' 600 '})
+        self.assertEqual(self.taste_intern.ziel, '600')
         self.assertEqual(self.taste_intern.ziel_art, 'intern')
 
     def test_externe_und_ungueltige_nummern_abgelehnt(self):
@@ -40,10 +41,28 @@ class TestInterneWeiterleitung(TastenCase):
                 with self.assertRaises(ValidationError), self.env.cr.savepoint():
                     self.env['wb.voip.taste'].create({
                         'name': 'X', 'art': 'weiterleitung', 'ziel_art': 'intern', 'ziel': ziel})
-        # 2 bis 6 Ziffern sind erlaubt
-        for ziel in ('10', '123456'):
+        # 2 bis 6 Ziffern sind erlaubt, auch 1xx-Nebenstellen
+        for ziel in ('10', '123456', '100', '119', '199'):
             with self.subTest(ziel=ziel):
                 self.taste_intern.write({'ziel': ziel})
+
+    SPERRE = ('110', '112', '115', '116', '11611', '116117', '118', '11833', '0600', '01', '0100')
+
+    def test_kurzwahl_notruf_und_null_gesperrt(self):
+        for ziel in self.SPERRE:
+            with self.subTest(ziel=ziel):
+                self.assertTrue(self.env['wb.voip.taste']._intern_format_fehler(ziel))
+                with self.assertRaises(ValidationError), self.env.cr.savepoint():
+                    self.taste_intern.write({'ziel': ziel})
+                with self.assertRaises(ValidationError), self.env.cr.savepoint():
+                    self.anlage.write({'ansitel_interne_ziele': '600\n' + ziel})
+        self.assertIn('Notruf', self.env['wb.voip.taste']._intern_format_fehler('112'))
+
+    def test_kurzwahl_am_orm_vorbei_nie_gewaehlt(self):
+        self._ziel_setzen('112')
+        zustand = self.schalten(self.taste_intern)
+        self.assertTrue(zustand['fehler'])
+        self.assertEqual(self.fake.anzahl('setcallfordwardingonpeer'), 0)
 
     def test_manager_darf_internes_ziel_nicht_setzen(self):
         Taste = self.env['wb.voip.taste'].with_user(self.user_manager)
@@ -90,10 +109,10 @@ class TestInterneWeiterleitung(TastenCase):
         self.assertIs(self.aktiv(zustand)['→ Zentrale'], False)
 
     def test_rufgruppe_aus_liste(self):
-        self.anlage.write({'ansitel_interne_ziele': '600\n0601'})
-        self.taste_intern.write({'ziel': '0601'})
+        self.anlage.write({'ansitel_interne_ziele': '600\n601'})
+        self.taste_intern.write({'ziel': '601'})
         zustand = self.schalten(self.taste_intern)
-        self.assertEqual(self.fake.letzte('setcallfordwardingonpeer')['destination'], '0601')
+        self.assertEqual(self.fake.letzte('setcallfordwardingonpeer')['destination'], '601')
         self.assertIs(self.aktiv(zustand)['→ Zentrale'], True)
         self.assertFalse(zustand['fehler'])
 
@@ -160,3 +179,47 @@ class TestInterneWeiterleitung(TastenCase):
         self.fake.peers = [{'pk_peerId': 7, 'peerInternalCallerId': '100', 'peerName': 'Tel100'}]
         zustand = self.zustand()
         self.assertEqual(zustand['fehler'], HINWEIS_UNBEKANNT)
+
+    # --- Abgleich nur über die interne Nummer, eine Peer-Liste je Anlage ---
+
+    def test_numerischer_geraetename_kein_internes_ziel(self):
+        # Gerätename 555 mit interner Nummer 105: nur 105 ist ein internes Ziel
+        self.fake.peers = PEERS['data'] + [{'pk_peerId': 9, 'peerInternalCallerId': '105', 'peerName': '555'}]
+        self.fake.fw[9] = None
+        self.taste_intern.write({'ziel': '555'})
+        zustand = self.schalten(self.taste_intern)
+        self.assertEqual(zustand['fehler'], HINWEIS_UNBEKANNT)
+        self.assertEqual(self.fake.anzahl('setcallfordwardingonpeer'), 0)
+        self.taste_intern.write({'ziel': '105'})
+        self.schalten(self.taste_intern)
+        self.assertEqual(self.fake.fw[7], '105')
+
+    def test_eigene_interne_nummer_als_fremder_geraetename(self):
+        # A pflegt den Gerätenamen Tel100 (interne Nummer 100); ein anderer Peer heißt „100“
+        self.fake.peers = [{'pk_peerId': 9, 'peerInternalCallerId': '109', 'peerName': '100'}] + PEERS['data']
+        self.fake.fw[9] = None
+        self.user_a.write({'wb_voip_ansitel_nebenstelle': 'Tel100'})
+        self.taste_intern.write({'ziel': '100'})
+        zustand = self.schalten(self.taste_intern)
+        self.assertIn('eigene Nebenstelle', zustand['fehler'])
+        self.assertEqual(self.fake.anzahl('setcallfordwardingonpeer'), 0)
+
+    def test_eine_peer_liste_je_anlage(self):
+        self.anlage.write({'ansitel_interne_ziele': '600'})
+        self.env['wb.voip.taste'].create({
+            'name': '→ Gruppe', 'art': 'weiterleitung', 'ziel_art': 'intern', 'ziel': '600', 'sequence': 6})
+        zustand = self.zustand()
+        self.assertFalse(zustand['fehler'])
+        self.assertEqual(self.fake.anzahl('getpeer'), 1)
+        self.schalten(self.taste_intern)
+        self.assertEqual(self.fake.anzahl('getpeer'), 1)
+
+    def test_rufgruppe_ohne_getpeer(self):
+        self.anlage.write({'ansitel_interne_ziele': '600'})
+        A = self.env['wb.voip.ansitel']
+        A._peer_id(self.anlage, '100')  # eigene Nebenstelle füllt den Cache
+        vorher = self.fake.anzahl('getpeer')
+        Users = self.env['res.users']
+        self.assertFalse(Users._wb_voip_intern_pruefen(self.anlage, '100', '600'))
+        self.assertFalse(Users._wb_voip_intern_pruefen(self.anlage, '100', '101'))
+        self.assertEqual(self.fake.anzahl('getpeer'), vorher)

@@ -134,9 +134,11 @@ class WbVoipAnlage(models.Model):
         Taste = self.env['wb.voip.taste']
         for anlage in self.sudo():
             for ziel in anlage._ansitel_interne_ziele_liste():
-                if not Taste._intern_gueltig(ziel):
+                fehler = Taste._intern_format_fehler(ziel)
+                if fehler:
                     raise ValidationError(self.env._(
-                        "Weitere interne Ziele: eine Nummer je Zeile, 2 bis 6 Ziffern (nur 0–9)."))
+                        "Weitere interne Ziele (eine Nummer je Zeile), „%(ziel)s“: %(fehler)s",
+                        ziel=ziel, fehler=fehler))
 
     def _compute_ansitel_token(self):
         for anlage in self:

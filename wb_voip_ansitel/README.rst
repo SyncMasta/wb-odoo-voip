@@ -142,11 +142,19 @@ Zielart „Interne Nebenstelle“: Die Taste leitet auf eine Nebenstelle oder Ru
 
 * Gespeichert werden nur 2 bis 6 Ziffern (0–9), ohne Gebühren-, Länder- oder Längenprüfung (das Ziel verlässt die
   Anlage nicht); externe Nummern sind in dieser Zielart nicht möglich.
-* Gültig ist das Ziel nur, wenn die Anlage des Benutzers es selbst als Nebenstelle kennt (``getpeer``: interne
-  Nummer oder Gerätename, 10 Minuten zwischengespeichert) oder es unter „Weitere interne Ziele“ an der Anlage steht
-  (Rufgruppen, Warteschlangen; eine Nummer je Zeile, nur Systemverwaltung).
+* Keine Notruf-, Kurzwahl- und Auskunftsnummern (110, 112, 115, 116…, 118…) und keine führende 0 (Amtsholung);
+  Nebenstellen 1xx bleiben erlaubt. Dasselbe gilt für „Weitere interne Ziele“.
+* Gültig ist das Ziel nur, wenn es unter „Weitere interne Ziele“ an der Anlage steht (Rufgruppen, Warteschlangen; eine
+  Nummer je Zeile, nur Systemverwaltung) oder die Anlage des Benutzers einen Peer mit genau dieser internen Nummer
+  (``peerInternalCallerId``) kennt. Gerätenamen (``peerName``) zählen als Ziel nie, auch nicht numerische.
+* Die Geräteliste (``getpeer``) wird je Anlage einmal gelesen und bis zu 10 Minuten zwischengespeichert; eine neue
+  oder gelöschte Nebenstelle wirkt also mit bis zu 10 Minuten Verzögerung. Rufgruppen aus der Liste lösen keinen
+  eigenen Abruf aus.
+* Rufgruppe ohne eigene Nebenstelle wählen (Schleife): Leitet ein Benutzer auf eine Rufgruppe um, in der er selbst
+  klingelt, prüft das Modul das nicht.
 * Geprüft wird bei jedem Lesen und Schalten. Unbekannt: Taste grau mit „Interne Nebenstelle unbekannt – bitte
-  Systemverwaltung fragen.“; die eigene Nebenstelle (auch über den Gerätenamen) ist als Ziel gesperrt (Schleife).
+  Systemverwaltung fragen.“; die eigene Nebenstelle (eingetragener Wert oder ihre interne Nummer) ist als Ziel
+  gesperrt (Schleife).
 * Gewählt wird die Nebenstelle wie eingegeben (keine Umwandlung in ``00…``).
 
 Abgleich mit der Anrufliste

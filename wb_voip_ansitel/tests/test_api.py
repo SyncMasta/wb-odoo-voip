@@ -169,6 +169,21 @@ class TestPeerId(AnsitelCase):
         self.assertEqual(self.api._peer_id(self.anlage, '100'), 7)
         self.assertEqual(post.call_count, 1)
 
+    def test_eine_liste_fuer_alle_nebenstellen(self):
+        post = self._post(antwort(PEERS))
+        self.assertEqual(self.api._peer_id(self.anlage, '100'), 7)
+        self.assertEqual(self.api._peer_id(self.anlage, 'Tel101'), 8)
+        self.assertEqual(self.api._peer_intern(self.anlage, '101'), 8)
+        self.assertEqual(post.call_count, 1)
+
+    def test_intern_nur_ueber_interne_nummer(self):
+        self._post(antwort(PEERS))
+        self.assertIsNone(self.api._peer_intern(self.anlage, 'Tel101'))
+        self.assertIsNone(self.api._peer_intern(self.anlage, ''))
+        self.assertEqual(self.api._peer_intern(self.anlage, ' 100 '), 7)
+        self.assertEqual(self.api._peer_interne_nummer(self.anlage, 8), '101')
+        self.assertIsNone(self.api._peer_interne_nummer(self.anlage, 99))
+
     def test_unbekannt_wird_auch_gemerkt(self):
         post = self._post(antwort(PEERS))
         self.assertIsNone(self.api._peer_id(self.anlage, '999'))
