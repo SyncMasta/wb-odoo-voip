@@ -800,9 +800,13 @@ class WbVoipAnruf(models.Model):
         Entries: state ``verpasst``, not done, same E.164 number, same company, started before
         this call (with ``bis``: started at the latest at ``bis``, e.g. the end of a call that
         a late synchronisation with the PBX found). ``text`` replaces the closing text (e.g. when
-        no user answered, only a device). Text "Zurückgerufen von <name>" (outgoing) or "Angenommen von <name>"; with
-        ``protokoll`` (callback log) the entry remembers it. Active callback activities that no
-        entry left open uses are marked done with this text. ``anderswo`` entries stay.
+        no user answered, only a device). Text "Zurückgerufen von <name>" (outgoing) or
+        "Angenommen von <name>"; with ``protokoll`` (callback log) the entry remembers it.
+        With ``protokoll`` also the open entries that this log closed before and that were
+        reopened (``erledigt_durch_protokoll_id``, state in ``_wb_voip_wieder_oeffnen_zustaende``)
+        close again, e.g. an entry that became ``anderswo`` meanwhile. Active callback activities
+        that no entry left open uses are marked done with this text. Other ``anderswo`` entries
+        stay.
         """
         self.ensure_one()
         anruf = self.sudo()
@@ -816,6 +820,14 @@ class WbVoipAnruf(models.Model):
             ('company_id', '=', anruf.company_id.id),
             ('beginn', '<=', bis) if bis else ('beginn', '<', anruf.beginn),
         ], order='beginn, id', limit=ERLEDIGEN_HOECHSTENS)
+        if protokoll:
+            # vom selben Rückruf früher erledigt und wieder geöffnet (auch andere Zustände)
+            offen |= anruf.search([
+                ('id', '!=', anruf.id),
+                ('erledigt_durch_protokoll_id', '=', protokoll.id),
+                ('erledigt', '=', False),
+                ('zustand', 'in', list(self._wb_voip_wieder_oeffnen_zustaende())),
+            ], order='beginn, id', limit=ERLEDIGEN_HOECHSTENS)
         if not offen:
             return offen
         name = anruf.user_id.name

@@ -560,3 +560,20 @@ class TestHooks(WbVoipCase):
         self.assertFalse(verpasst.rueckruf_aktivitaet_id)
         self.assertEqual(self.env['mail.activity'].sudo().with_context(active_test=False).search_count(
             [('activity_type_id', '=', self.typ.id)]), vorher)
+        # zurück auf „erreicht“: der wieder geöffnete Eintrag schließt sich wieder
+        protokoll.with_user(self.user_a).ergebnis = 'erreicht'
+        self.assertTrue(verpasst.erledigt)
+        self.assertEqual(verpasst.erledigt_durch_protokoll_id, protokoll)
+        self.assertFalse(verpasst.rueckruf_aktivitaet_id)
+        self.assertEqual(self.env['mail.activity'].sudo().with_context(active_test=False).search_count(
+            [('activity_type_id', '=', self.typ.id)]), vorher)
+
+    def test_nummer_erreicht_anderswo_nur_ueber_protokoll(self):
+        self._ueberschreiben('wb.voip.anruf', '_wb_voip_wieder_oeffnen_zustaende',
+                             lambda self: ('verpasst', 'anderswo'))
+        anderswo = self._anderswo_ohne_kollegen()
+        anderswo.sudo().beginn = fields.Datetime.now() - timedelta(minutes=5)
+        annahme, _daten = self._beginnen()
+        # ohne Protokoll: „anderswo“ wird nie über die Nummer erledigt
+        self.assertFalse(annahme.sudo()._wb_voip_nummer_erreicht())
+        self.assertFalse(anderswo.sudo().erledigt)
