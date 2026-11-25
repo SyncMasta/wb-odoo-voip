@@ -95,7 +95,10 @@
             <label t-att-id="titelId" class="form-label small text-muted mb-1" t-att-for="feldId"><t t-if="titel" t-esc="titel"/><t t-else="">Notiz</t></label>
             <textarea t-att-id="feldId" class="o_wb_voip_af_notiz form-control" rows="4"
                       t-att-maxlength="props.daten.maxNotiz" placeholder="Notiz zum Gespräch"
+                      t-att-aria-describedby="anruf.richtung === 'eingehend' ? feldId + '_hinweis' : false"
                       t-model="anruf.notiz"/>
+            <div t-if="anruf.richtung === 'eingehend'" t-att-id="feldId + '_hinweis'"
+                 class="o_wb_voip_notiz_hinweis small text-muted mt-1">Kollegen, die diesen Anruf verpasst haben, sehen diese Notiz.</div>
         </section>
     </t>
 

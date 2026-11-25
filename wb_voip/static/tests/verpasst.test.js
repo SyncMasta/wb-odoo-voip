@@ -123,6 +123,9 @@ test("Reiter „Verpasst“ steht nach „Anrufe“ und trägt die Plakette", as
     const anrufe = titel.findIndex((t) => t.startsWith("Anrufe"));
     expect(titel[anrufe + 1]).toMatch(/^Verpasst/);
     expect(".o_wb_voip_reiter .o_wb_voip_plakette").toHaveText("2");
+    // Bildschirmleser: übersetzter, sichtbar versteckter Text statt aria-label aus einem Literal
+    expect(".o_wb_voip_reiter .o_wb_voip_plakette").not.toHaveAttribute("aria-label");
+    expect(".o_wb_voip_reiter .o_wb_voip_plakette + .visually-hidden").toHaveText("ungesehen");
     expect.verifySteps(["zaehler"]);
 });
 
@@ -389,4 +392,17 @@ test("✓ setzt den Fokus ins Textfeld, Escape bricht ab", async () => {
     expect(".o_wb_voip_erledigen_text").toHaveCount(0);
     expect(".o_wb_voip_verpasstliste .o_wb_voip_eintrag").toHaveCount(1);
     expect.verifySteps([]);
+});
+
+test("Anderswo-Zeile hat eigenes Symbol und Titel", async () => {
+    vorbereiten({ zeilen: [ZEILE, ANDERSWO] });
+    await mountWithCleanup(Softphone);
+    await reiterOeffnen();
+    expect.verifySteps(["zaehler", "liste", "gesehen"]);
+    expect(".o_wb_voip_eintrag:eq(0) .o_wb_voip_art_verpasst").toHaveAttribute("title", "Verpasst");
+    expect(".o_wb_voip_eintrag:eq(0) .o_wb_voip_art_anderswo").toHaveCount(0);
+    expect(".o_wb_voip_eintrag:eq(1) .o_wb_voip_art_anderswo").toHaveClass("fa-share");
+    expect(".o_wb_voip_eintrag:eq(1) .o_wb_voip_art_anderswo").toHaveAttribute("title", "Anderswo angenommen");
+    expect(".o_wb_voip_eintrag:eq(1) .o_wb_voip_art_anderswo").toHaveAttribute("aria-label", "Anderswo angenommen");
+    expect(".o_wb_voip_eintrag:eq(1) .o_wb_voip_art_verpasst").toHaveCount(0);
 });

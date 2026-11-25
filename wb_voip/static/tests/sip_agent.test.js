@@ -55,3 +55,21 @@ test("CANCEL ohne Nachricht oder ohne getHeader ist 487", async () => {
     expect(await grundNachCancel(undefined)).toBe("487");
     expect(await grundNachCancel({})).toBe("487");
 });
+
+const mitReasons = (werte) => ({ getHeaders: (name) => (name === "Reason" ? werte : []) });
+
+test("Zwei Reason-Header: der SIP-Eintrag mit cause=200 zählt", async () => {
+    expect(
+        await grundNachCancel(mitReasons(["Q.850;cause=16", 'SIP;cause=200;text="Call completed elsewhere"']))
+    ).toBe("anderswo");
+});
+
+test("Q.850;cause=200 allein ist 487 (nur Protokoll SIP zählt)", async () => {
+    expect(await grundNachCancel(mitReasons(["Q.850;cause=200"]))).toBe("487");
+    expect(await grundNachCancel(mitReasons(['Q.850;cause=16;text="Call completed elsewhere"']))).toBe("487");
+});
+
+test("Mehrere Einträge in einem Reason-Header, auch mit Komma im Text", async () => {
+    expect(await grundNachCancel(mitReasons(['Q.850;cause=16;text="a, b", SIP;cause=200']))).toBe("anderswo");
+    expect(await grundNachCancel(mitReasons(['SIP;cause=2000', 'SIP;cause=487']))).toBe("487");
+});

@@ -42,21 +42,68 @@ export function iceServer(urls) {
 
 // --- SIP.js ---------------------------------------------------------------------------
 
+/** Zerlegt einen Header-Wert an Kommas außerhalb von Anführungszeichen (mehrere Reason-Einträge). */
+function headerEintraege(wert) {
+    const eintraege = [];
+    let aktuell = "";
+    let inText = false;
+    for (let i = 0; i < wert.length; i++) {
+        const zeichen = wert[i];
+        if (zeichen === "\\" && inText && i + 1 < wert.length) {
+            aktuell += zeichen + wert[++i];
+            continue;
+        }
+        if (zeichen === '"') {
+            inText = !inText;
+        } else if (zeichen === "," && !inText) {
+            eintraege.push(aktuell);
+            aktuell = "";
+            continue;
+        }
+        aktuell += zeichen;
+    }
+    eintraege.push(aktuell);
+    return eintraege.map((e) => e.trim()).filter(Boolean);
+}
+
+/** True für einen Reason-Eintrag des Protokolls SIP mit cause=200 oder „Call completed elsewhere“. */
+function anderswoEintrag(eintrag) {
+    const teile = eintrag.split(";");
+    if (teile[0].trim().toUpperCase() !== "SIP") {
+        return false;
+    }
+    return teile.slice(1).some((teil) => {
+        const [name, ...rest] = teil.split("=");
+        const wert = rest.join("=").trim();
+        const schluessel = name.trim().toLowerCase();
+        if (schluessel === "cause") {
+            return wert === "200";
+        }
+        return schluessel === "text" && /call completed elsewhere/i.test(wert);
+    });
+}
+
 /**
  * Grund eines CANCEL vor der Annahme: „anderswo“, wenn ein anderes Gerät angenommen hat
- * (Reason-Header nach RFC 3326: cause=200 bzw. „Call completed elsewhere“), sonst „487“.
+ * (Reason-Header nach RFC 3326: ein Eintrag des Protokolls SIP mit cause=200 bzw. Text
+ * „Call completed elsewhere“), sonst „487“. Alle Reason-Header und alle Einträge je Header
+ * zählen; Einträge anderer Protokolle (z. B. Q.850) werden ignoriert.
  */
 export function cancelGrund(nachricht) {
-    let reason = "";
+    let werte = [];
     try {
-        reason = String(nachricht?.getHeader?.("Reason") ?? "");
+        if (typeof nachricht?.getHeaders === "function") {
+            werte = nachricht.getHeaders("Reason") || [];
+        } else if (typeof nachricht?.getHeader === "function") {
+            werte = [nachricht.getHeader("Reason")];
+        }
     } catch {
-        reason = "";
+        werte = [];
     }
-    if (/cause\s*=\s*200\b/i.test(reason) || /call completed elsewhere/i.test(reason)) {
-        return "anderswo";
-    }
-    return "487";
+    const eintraege = (Array.isArray(werte) ? werte : [werte])
+        .filter((w) => w !== undefined && w !== null)
+        .flatMap((w) => headerEintraege(String(w)));
+    return eintraege.some(anderswoEintrag) ? "anderswo" : "487";
 }
 
 export class SipJsSitzung extends Sender {

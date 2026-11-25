@@ -226,6 +226,21 @@ test("eingehender Anruf zeigt Annehmen/Ablehnen", async () => {
     dienst.stop();
 });
 
+test("Eingehend: Hinweis an der Notiz, dass Kollegen sie sehen", async () => {
+    const { dienst, uhr, fabrik } = await echterDienst();
+    await softphoneMit(dienst);
+    fabrik.letzterAgent.eingehend("0170 5555");
+    await uhr.vorspulen(0);
+    await animationFrame();
+    expect(".o_wb_voip_notiz_hinweis").toHaveCount(1);
+    expect(".o_wb_voip_notiz_hinweis").toHaveText(
+        "Kollegen, die diesen Anruf verpasst haben, sehen diese Notiz."
+    );
+    expect(".o_wb_voip_notiz_hinweis").toHaveClass("text-muted");
+    expect(".o_wb_voip_notiz").toHaveAttribute("aria-describedby", "wb_voip_notiz_hinweis");
+    dienst.stop();
+});
+
 test("Notiz landet beim Auflegen im RPC", async () => {
     const { dienst, uhr, fabrik, orm } = await echterDienst();
     await softphoneMit(dienst);
@@ -234,6 +249,8 @@ test("Notiz landet beim Auflegen im RPC", async () => {
     await uhr.vorspulen(0);
     await animationFrame();
     expect(".o_wb_voip_notiz").toHaveAttribute("maxlength", String(MAX_NOTIZ));
+    // ausgehend: kein Hinweis auf Kollegen
+    expect(".o_wb_voip_notiz_hinweis").toHaveCount(0);
     await click(".o_wb_voip_notiz");
     await edit("Rückruf am Freitag");
     await animationFrame();

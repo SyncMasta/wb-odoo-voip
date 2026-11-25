@@ -420,6 +420,10 @@ test("Notiz ist dieselbe wie in der Anrufansicht", async () => {
     w.fabrik.letzterAgent.eingehend("0170 5555");
     await weiter(w.uhr);
     expect(".o_wb_voip_af_notiz").toHaveAttribute("maxlength", String(MAX_NOTIZ));
+    // eingehend: Hinweis, dass Kollegen die Notiz sehen
+    expect(".o_wb_voip_lb_notiz .o_wb_voip_notiz_hinweis").toHaveText(
+        "Kollegen, die diesen Anruf verpasst haben, sehen diese Notiz."
+    );
     await click(".o_wb_voip_af_notiz");
     await edit("Will Angebot");
     await animationFrame();

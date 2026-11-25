@@ -10,8 +10,10 @@
                 <li t-foreach="lokal.zeilen" t-as="zeile" t-key="zeile.schluessel"
                     class="o_wb_voip_eintrag list-group-item px-1">
                     <div class="d-flex align-items-center gap-2">
-                        <i class="fa fa-long-arrow-down text-danger" title="Verpasst"
-                           aria-label="Verpasst" role="img"/>
+                        <i t-if="zeile.art === 'anderswo'" class="o_wb_voip_art_anderswo fa fa-share text-muted"
+                           title="Anderswo angenommen" aria-label="Anderswo angenommen" role="img"/>
+                        <i t-else="" class="o_wb_voip_art_verpasst fa fa-long-arrow-down text-danger"
+                           title="Verpasst" aria-label="Verpasst" role="img"/>
                         <div class="flex-grow-1 text-truncate">
                             <div class="text-truncate fw-bold">
                                 <span t-esc="name(zeile)"/>
