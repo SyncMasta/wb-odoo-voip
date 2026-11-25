@@ -288,6 +288,8 @@ class TestVerpasstRpc(WbVoipCase):
         self.assertNotIn('<script>', nachricht.body)
         self.assertNotIn('<b>', nachricht.body)
         self.assertEqual(anruf.sudo().erledigt_text, '<script>alert(1)</script> & <b>fett</b>')
+        # Odoo speichert das Feedback als Klartext und maskiert es erst in der Chatter-Nachricht
+        self.assertEqual(aktivitaet.sudo().feedback, '<script>alert(1)</script> & <b>fett</b>')
 
     def test_erledigen_text_zu_lang(self):
         with freeze_time(START):
@@ -377,3 +379,24 @@ class TestVerpasstRpc(WbVoipCase):
                        Anruf.wb_voip_verpasst_gesehen):
             with self.subTest(aufruf=aufruf.__name__), self.assertRaises(AccessError):
                 aufruf()
+
+    def test_erledigen_jenseits_der_kappung(self):
+        # ✓ sieht auch Einträge hinter der Listen-Obergrenze und erledigt die ganze Gruppe
+        with freeze_time(START):
+            alt = self._verpasst(self.user_a)
+            neu = self._verpasst(self.user_a)
+            with patch('odoo.addons.wb_voip.models.wb_voip_anruf.VERPASST_HOECHSTENS', 1):
+                self.assertEqual(len(self._liste(self.user_a)), 1)
+                alt.wb_voip_verpasst_erledigen('')
+            self.assertTrue(alt.sudo().erledigt)
+            self.assertTrue(neu.sudo().erledigt)
+
+    def test_liste_ohne_beginn(self):
+        with freeze_time(START):
+            a = self._verpasst(self.user_a)
+            b = self._verpasst(self.user_a)
+            a.sudo().beginn = False
+            liste = self._liste(self.user_a)
+        self.assertEqual(len(liste), 1)
+        self.assertEqual(liste[0]['anzahl'], 2)
+        self.assertEqual(liste[0]['anruf_id'], b.id)

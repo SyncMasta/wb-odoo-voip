@@ -3,13 +3,12 @@ from odoo.tools import html2plaintext
 
 from ..tools.eingaben import limit_pruefen
 from ..tools.rechte import nur_voip_benutzer
+from .wb_voip_anruf import ERLEDIGT_TEXT_MAX
 
 # Obergrenzen je Aufruf (ASVS V11.1.4): höchstens so viele Stapel bzw. gelesene Aktivitäten
 AUFGABEN_MAX_STAPEL = 10
 AUFGABEN_MAX_GELESEN = 2000
 AUFGABEN_MIN_STAPEL = 50
-# Obergrenze des Erledigt-Texts am Verpasst-Eintrag (wie ✓ „Wie erledigt?“)
-ERLEDIGT_TEXT_MAX = 2000
 
 
 class MailActivity(models.Model):
