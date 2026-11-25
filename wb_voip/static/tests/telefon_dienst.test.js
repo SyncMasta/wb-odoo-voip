@@ -219,7 +219,7 @@ test("Backoff", async () => {
 test("Ablehnen sendet 603", async () => {
     const welt = umgebung();
     const dienst = await verbundenerDienst(welt);
-    const sitzung = welt.fabrik.agenten[0].eingehend("+49 5494 1234");
+    const sitzung = welt.fabrik.agenten[0].eingehend("+49 30 1234");
     await welt.uhr.vorspulen(0);
     expect(dienst.state.anruf.richtung).toBe("eingehend");
     expect(dienst.state.anruf.zustand).toBe("klingelt");

@@ -388,7 +388,7 @@ class TestLayoutDesigner(WbVoipCase):
         cls.gruppe = cls.env['res.groups'].create({'name': 'Designer-Gruppe'})
         cls.erika = cls.env['res.partner'].create({
             'name': 'Erika Designer', 'email': 'erika.designer@example.com',
-            'phone': '+49 170 1112223', 'city': 'Holdorf', 'ref': 'K-77'})
+            'phone': '+49 170 1112223', 'city': 'Musterstadt', 'ref': 'K-77'})
         cls.feld_email = cls.env['ir.model.fields']._get('res.partner', 'email')
         cls.feld_city = cls.env['ir.model.fields']._get('res.partner', 'city')
         cls.feld_ref = cls.env['ir.model.fields']._get('res.partner', 'ref')
@@ -589,7 +589,7 @@ class TestLayoutDesigner(WbVoipCase):
         self.assertEqual(daten['layout'], erwartet)
         self.assertEqual(daten['kontakt']['name'], 'Erika Designer')
         felder = daten['layout']['bloecke'][1]['felder']
-        self.assertEqual([(f['name'], f['wert']) for f in felder], [('city', 'Holdorf'), ('ref', 'K-77')])
+        self.assertEqual([(f['name'], f['wert']) for f in felder], [('city', 'Musterstadt'), ('ref', 'K-77')])
 
     def test_vorschau_entwurf(self):
         entwurf = self._daten(bloecke=[

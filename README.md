@@ -57,7 +57,7 @@ am richtigen Datensatz.
 **Button-Assistent**
 - Button und Serveraktion in einem Schritt anlegen: Feld setzen, Vorlage (Kategorie hinzufügen, Sprache setzen)
   oder Python-Code (nur Systemadministratoren)
-- Erzeugte Serveraktionen laufen nur aus WB VoIP heraus; Bearbeiten über „Bearbeiten mit Assistent“
+- Erzeugte Serveraktionen laufen nur aus WB VoIP heraus; Bearbeiten über „Mit Assistent bearbeiten“
 
 **Rufnummer zuordnen**
 - Unbekannte Nummer einem Kontakt zuordnen und auf Wunsch in dessen Telefonfeld speichern; danach erkennt

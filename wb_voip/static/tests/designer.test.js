@@ -75,7 +75,7 @@ function ladeDaten({ layout = {}, bloecke } = {}) {
     };
 }
 
-const WERTE = { city: "Holdorf", email: "erika@example.com", ref: "K-1" };
+const WERTE = { city: "Musterstadt", email: "erika@example.com", ref: "K-1" };
 const LABEL = { city: "Ort", email: "E-Mail", ref: "Referenz" };
 const NAME = { 11: "city", 12: "email", 13: "ref" };
 
@@ -375,6 +375,8 @@ test("Standard-Layout: Ort fest, Zurücksetzen nach Rückfrage", async () => {
         laden: () => ladeDaten({ layout: { ist_standard: true } }),
     });
     expect(".o_wb_voip_ds_ort").toHaveAttribute("disabled");
+    // Gruppen gibt es nur an eigenen Layouts
+    expect(".o_wb_voip_ds_gruppen").toHaveCount(0);
     await click(".o_wb_voip_ds_zuruecksetzen");
     await animationFrame();
     expect.verifySteps(["laden 5"]);
