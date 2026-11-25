@@ -14,9 +14,12 @@
                         <i class="o_wb_voip_team_punkt fa fa-circle" t-att-class="punkt(kollege)" aria-hidden="true"/>
                         <div class="flex-grow-1 text-truncate">
                             <div class="text-truncate fw-bold">
-                                <span t-esc="kollege.name"/>
-                                <span class="o_wb_voip_team_nebenstelle text-muted fw-normal"
-                                      t-esc="kollege.nebenstelle"/>
+                                <span class="o_wb_voip_team_name" t-esc="kollege.name"/>
+                                <t t-if="kollege.nebenstelle">
+                                    <span class="o_wb_voip_team_trenner text-muted fw-normal px-1" aria-hidden="true">·</span>
+                                    <span class="o_wb_voip_team_nebenstelle text-muted fw-normal"
+                                          t-esc="kollege.nebenstelle"/>
+                                </t>
                             </div>
                             <div class="o_wb_voip_team_status small" t-esc="statusText(kollege)"/>
                         </div>

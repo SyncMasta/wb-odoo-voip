@@ -157,6 +157,27 @@ test("Darstellung je Status: Text, Farbe und Dauer", async () => {
     );
 });
 
+test("Name und Nebenstelle sind sichtbar getrennt (Liste und Auswahl)", async () => {
+    vorbereiten();
+    await mountWithCleanup(TeamListe);
+    await animationFrame();
+    expect.verifySteps(["team"]);
+    const titel = (name) => zeile(name).querySelector(".fw-bold").textContent;
+    expect(titel("Anna Frei")).not.toMatch(/Frei\s*102/);
+    expect(titel("Anna Frei")).toMatch(/Anna Frei\s*·\s*102/);
+    expect(zeile("Anna Frei").querySelector(".o_wb_voip_team_nebenstelle")).toHaveText("102");
+});
+
+test("Auch in der Auswahl steht ein Trenner zwischen Name und Nebenstelle", async () => {
+    vorbereiten();
+    await mountWithCleanup(TeamListe, { props: { auswahl: true, onFertig: () => {} } });
+    await animationFrame();
+    expect.verifySteps(["team"]);
+    expect(zeile("Karl Klingelt").querySelector(".fw-bold").textContent).toMatch(
+        /Karl Klingelt\s*·\s*103/
+    );
+});
+
 test("Die Dauer zählt im Browser weiter", async () => {
     const seit = serializeDateTime(DateTime.now().minus({ seconds: 10 }));
     vorbereiten({ kollegen: [{ ...TELEFONIERT, seit }] });
