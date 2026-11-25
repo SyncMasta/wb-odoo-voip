@@ -16,12 +16,13 @@ Anbindung einer Ansitel-Telefonanlage an WB VoIP über deren REST-Schnittstelle.
 Schnelltasten
 -------------
 
-* Am Benutzer (Reiter Telefonie): Ansitel-Nebenstelle (VoIP-Administratoren, je Anlage eindeutig),
+* Am Benutzer (Reiter Telefonie): Ansitel-Nebenstelle (VoIP-Administratoren lesen sie, setzen darf sie nur die
+  Systemverwaltung; je Anlage eindeutig; Änderungen stehen mit Benutzerkennungen im Log),
   persönlicher Token und „AB über zentralen Token schalten“ (nur Systemverwaltung, Token nur als Chiffrat).
   Der Benutzer selbst sieht davon nichts. Wechselt jemand ohne Systemrecht die Anlage, wird der persönliche
   Token gelöscht; ebenso alle persönlichen Token einer Anlage, deren URL ohne Systemrecht geändert wird.
-* „Mein Handy“ (Mein Profil › Telefonie) liest und schreibt nur der Benutzer selbst (und die Systemverwaltung);
-  gültig sind Rufnummern mit mindestens drei Ziffern. Gewählt wird nur mit Ziffern, „+“ wird zu „00“.
+* „Mein Handy“ (Mein Profil › Telefonie) liest und schreibt nur der Benutzer selbst (und die Systemverwaltung).
+  Gewählt wird nur mit Ziffern, „+“ wird zu „00“.
 * Tasten unter Einstellungen › Technisch › WB VoIP › Softphone-Tasten: Arten Weiterleitung (feste Nummer oder
   eigenes Handy), Anrufschutz und Anrufbeantworter (sofort oder nach Rufzeit). Standardtasten „AB“, „→ Handy“,
   „Nicht stören“ (noupdate).
@@ -35,3 +36,20 @@ Schnelltasten
 * Fehler der Anlage machen die betroffenen Tasten grau (``aktiv`` None) mit Hinweis; ist die Anlage nicht
   erreichbar, entfallen weitere Aufrufe. Jeder Zustand geht per Bus ``wb_voip/tasten`` an die Tabs des
   Benutzers, ohne Token, URL oder Nebenstelle.
+
+Weiterleitungsziele und Gebührenbetrug
+--------------------------------------
+
+Eine Weiterleitung lässt die Anlage auf Kosten des Anschlusses nach außen wählen. Deshalb gilt für „Mein Handy“
+und für feste Tastenziele dieselbe Prüfung (``wb.voip.taste._ziel_pruefen``), beim Speichern und erneut bei jedem
+Schalten (ein früher gespeichertes Ziel wird nicht gewählt, die Taste bleibt grau mit Hinweis):
+
+* mindestens 6 Ziffern, gültige Rufnummer;
+* keine Notruf-, Kurzwahl- und Auskunftsnummern (110, 112, 115, 116xxx, 118xx);
+* keine deutschen Sonder- und Mehrwertnummern (0900, 0137, 0138, 0180, 0190, 0191–0194, 0700), auch nicht als
+  +49/0049;
+* Ziele mit anderer Ländervorwahl als das Land der Anlage nur, wenn der Systemparameter
+  ``wb_voip_ansitel.ausland_erlaubt`` den Wert ``1`` hat (Standard: gesperrt).
+
+Feste Ziele der Tasten setzt nur die Systemverwaltung; VoIP-Administratoren pflegen Beschriftung, Art und
+Reihenfolge.

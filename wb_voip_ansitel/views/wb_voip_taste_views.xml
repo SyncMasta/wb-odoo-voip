@@ -34,9 +34,12 @@
                         </group>
                         <group invisible="art != 'weiterleitung'">
                             <field name="ziel_art"/>
-                            <field name="ziel" invisible="ziel_art != 'fest'"
+                            <!-- Feste Ziele setzt nur die Systemverwaltung (Gebührenbetrug) -->
+                            <field name="ziel" invisible="ziel_art != 'fest'" groups="base.group_system"
                                    required="art == 'weiterleitung' and ziel_art == 'fest'"
                                    placeholder="+49 170 1234567"/>
+                            <field name="ziel" invisible="ziel_art != 'fest'" readonly="1"
+                                   groups="!base.group_system"/>
                         </group>
                         <group invisible="art != 'anrufbeantworter'">
                             <field name="ab_modus"/>

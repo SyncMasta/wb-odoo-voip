@@ -1,7 +1,7 @@
 import logging
 
 from odoo import api, fields, models
-from odoo.exceptions import UserError, ValidationError
+from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tools import SQL
 
 from odoo.addons.wb_license_client.models.wb_license_client import license_required
@@ -17,7 +17,8 @@ _logger = logging.getLogger(__name__)
 class ResUsers(models.Model):
     _inherit = 'res.users'
 
-    # Nebenstelle an der Ansitel-Anlage (`wb_voip_anlage_id`, die nur VoIP-Administratoren setzen).
+    # Nebenstelle an der Ansitel-Anlage: VoIP-Administratoren lesen sie, setzen darf sie nur die
+    # Systemverwaltung (siehe write/create): wer sie setzt, schaltet Weiterleitungen dieser Nebenstelle.
     # Nicht für den Benutzer selbst lesbar: der Zustand der Tasten verrät sie nicht.
     wb_voip_ansitel_nebenstelle = fields.Char(
         string='Ansitel-Nebenstelle', copy=False, groups='wb_voip.group_wb_voip_manager',
@@ -83,14 +84,31 @@ class ResUsers(models.Model):
                 vals[feld] = (vals[feld] or '').strip() or False
         return vals
 
+    def _wb_voip_nebenstelle_fehler(self):
+        return AccessError(self.env._("Die Ansitel-Nebenstelle darf nur die Systemverwaltung setzen."))
+
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
             self._wb_voip_ansitel_bereinigen(vals)
-        return super().create(vals_list)
+        mit_nebenstelle = [vals for vals in vals_list if vals.get('wb_voip_ansitel_nebenstelle')]
+        if mit_nebenstelle and not self.env.user._is_system():
+            raise self._wb_voip_nebenstelle_fehler()
+        benutzer = super().create(vals_list)
+        if mit_nebenstelle:
+            _logger.info("[wb_voip_ansitel] Ansitel-Nebenstelle gesetzt: Benutzer %s durch Benutzer %s",
+                         benutzer.filtered(lambda u: u.sudo().wb_voip_ansitel_nebenstelle).ids, self.env.uid)
+        return benutzer
 
     def write(self, vals):
         self._wb_voip_ansitel_bereinigen(vals)
+        # Nur echte Änderungen zählen (das Formular schickt unveränderte Werte nicht, andere evtl. schon)
+        geaendert = self.browse()
+        if 'wb_voip_ansitel_nebenstelle' in vals:
+            neu = vals['wb_voip_ansitel_nebenstelle'] or False
+            geaendert = self.sudo().filtered(lambda u: (u.wb_voip_ansitel_nebenstelle or False) != neu)
+            if geaendert and not self.env.user._is_system():
+                raise self._wb_voip_nebenstelle_fehler()
         # Wer ohne Systemrecht die Anlage wechselt, nimmt den persönlichen Token nicht mit
         # (er gehört zum Ansitel-Benutzer der bisherigen Anlage)
         wechsel = self.browse()
@@ -100,6 +118,10 @@ class ResUsers(models.Model):
         ergebnis = super().write(vals)
         if wechsel:
             wechsel.sudo().write({'wb_voip_ansitel_token_enc': False})
+        if geaendert:
+            # Nur Kennungen ins Log, keine Nummern
+            _logger.info("[wb_voip_ansitel] Ansitel-Nebenstelle geändert: Benutzer %s durch Benutzer %s",
+                         geaendert.ids, self.env.uid)
         return ergebnis
 
     @api.constrains('wb_voip_anlage_id', 'wb_voip_ansitel_nebenstelle')
@@ -117,13 +139,15 @@ class ResUsers(models.Model):
                     "Die Ansitel-Nebenstelle %s ist an dieser Telefonanlage schon vergeben.",
                     benutzer.wb_voip_ansitel_nebenstelle))
 
-    @api.constrains('wb_voip_handy')
+    @api.constrains('wb_voip_handy', 'wb_voip_anlage_id')
     def _check_wb_voip_handy(self):
         Taste = self.env['wb.voip.taste']
         for benutzer in self.sudo():
-            if benutzer.wb_voip_handy and not Taste._ziel_gueltig(benutzer.wb_voip_handy):
-                raise ValidationError(self.env._(
-                    "„%s“ ist keine gültige Handynummer (z. B. +49 170 1234567).", benutzer.wb_voip_handy))
+            if not benutzer.wb_voip_handy:
+                continue
+            fehler = Taste._ziel_pruefen(benutzer.wb_voip_handy, benutzer.wb_voip_anlage_id.country_id.code or 'DE')
+            if fehler:
+                raise ValidationError(fehler)
 
     # --- Schnelltasten ---
     # Alle Methoden wirken ausschließlich auf den angemeldeten Benutzer (`self.env.user`). Ansitel-Aufrufe
@@ -134,7 +158,7 @@ class ResUsers(models.Model):
         _ = self.env._
         return {
             'allgemein': _("Schnelltasten sind gerade nicht verfügbar."),
-            'handy': _("Bitte unter Mein Profil › VoIP Ihr Handy eintragen."),
+            'handy': _("Bitte unter Mein Profil › Telefonie Ihr Handy eintragen."),
             'ab_token': _("AB braucht persönlichen Ansitel-Token oder Freigabe – bitte Administrator fragen."),
             'taste_fehlt': _("Diese Taste gibt es nicht mehr."),
             'wunsch': _("Ungültiger Wunschzustand."),
@@ -246,10 +270,12 @@ class ResUsers(models.Model):
         for taste in tasten:
             if taste.art == 'weiterleitung':
                 ziel = taste._ziel_fuer(benutzer)
-                if taste.ziel_art == 'handy' and not Taste._ziel_gueltig(ziel):
-                    aktiv = None  # grau: noch kein Handy eingetragen
-                    if texte['handy'] not in fehler:
-                        fehler.append(texte['handy'])
+                ziel_fehler = (texte['handy'] if taste.ziel_art == 'handy' and not ziel
+                               else Taste._ziel_pruefen(ziel, land))
+                if ziel_fehler:
+                    aktiv = None  # grau: kein Handy eingetragen oder Ziel nicht (mehr) erlaubt
+                    if ziel_fehler not in fehler:
+                        fehler.append(ziel_fehler)
                 elif not fw_ok:
                     aktiv = None
                 else:
@@ -339,11 +365,12 @@ class ResUsers(models.Model):
             daten = A._ab_lesen(anlage, token)
             ist = self._wb_voip_ab_passt(daten, taste)
             wunsch = (not ist) if an is None else an
-            if wunsch != ist:  # an im Modus dieser Taste → aus; sonst an bzw. Modus wechseln
-                if wunsch:
-                    self._wb_voip_andere_aus(benutzer, anlage, nebenstelle, 'anrufbeantworter')
-                A._ab_setzen(anlage, token, wunsch, taste.ab_modus or 'sofort', taste.ab_sekunden or 20,
+            if wunsch and not ist:  # an bzw. in den Modus dieser Taste wechseln
+                self._wb_voip_andere_aus(benutzer, anlage, nebenstelle, 'anrufbeantworter')
+                A._ab_setzen(anlage, token, True, taste.ab_modus or 'sofort', taste.ab_sekunden or 20,
                              daten=daten)
+            elif not wunsch and str(daten.get('active')) == '1':  # aus, gleich in welchem Modus
+                A._ab_setzen(anlage, token, False, daten=daten)
             return
         peer_id = A._peer_id(anlage, nebenstelle)
         if peer_id is None:
@@ -357,10 +384,15 @@ class ResUsers(models.Model):
                 A._dnd_setzen(anlage, peer_id, wunsch)
             return
         ziel = taste._ziel_fuer(benutzer)
-        if not taste._ziel_gueltig(ziel):
+        land = anlage.country_id.code or 'DE'
+        if not ziel:
             raise AnsitelFehler(texte['handy'] if taste.ziel_art == 'handy' else texte['ziel'])
+        # Jedes Mal prüfen: ein vor der Regel gespeichertes Ziel darf nicht gewählt werden
+        ziel_fehler = taste._ziel_pruefen(ziel, land)
+        if ziel_fehler:
+            raise AnsitelFehler(ziel_fehler)
         aktuell = A._weiterleitung_lesen(anlage, peer_id)
-        ist = bool(aktuell and taste._ziel_gleich(ziel, aktuell, anlage.country_id.code or 'DE'))
+        ist = bool(aktuell and taste._ziel_gleich(ziel, aktuell, land))
         wunsch = (not ist) if an is None else an
         if wunsch and not ist:
             self._wb_voip_andere_aus(benutzer, anlage, nebenstelle, 'weiterleitung', peer_id)

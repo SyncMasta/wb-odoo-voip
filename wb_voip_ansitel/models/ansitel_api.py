@@ -33,18 +33,27 @@ class AnsitelFehler(UserError):
     """PBX not reachable or refuses; the message is safe to show (no token, no URL)."""
 
 
+class AntwortFormFehler(Exception):
+    """The PBX answered with an unexpected shape (internal, becomes ``AnsitelFehler``)."""
+
+
 class AnsitelNichtErreichbar(AnsitelFehler):
     """PBX not reachable (network error, time-out, server error): further calls would only wait."""
 
 
 def _robust(methode):
-    """Turn unexpected answer shapes (wrong types, missing keys) into ``AnsitelFehler``."""
+    """Turn unexpected answer shapes into ``AnsitelFehler``.
+
+    Only ``AntwortFormFehler`` (explicit shape checks), ``KeyError`` and ``ValueError`` (missing
+    keys, unparsable values) count; programming errors (``AttributeError``, ``TypeError`` ...)
+    propagate.
+    """
     @functools.wraps(methode)
     def huelle(self, *args, **kwargs):
         try:
             return methode(self, *args, **kwargs)
-        except (KeyError, ValueError, TypeError, AttributeError):
-            _logger.warning("[wb_voip_ansitel] %s: unerwartete Antwort", methode.__name__)
+        except (AntwortFormFehler, KeyError, ValueError) as exc:
+            _logger.warning("[wb_voip_ansitel] %s: unerwartete Antwort (%s)", methode.__name__, type(exc).__name__)
         # außerhalb des except-Blocks: keine verkettete Ausnahme mit Antwortinhalt
         raise AnsitelFehler(self.env._("Ansitel hat unverständlich geantwortet."))
     return huelle
@@ -184,7 +193,7 @@ class WbVoipAnsitel(models.AbstractModel):
         if isinstance(daten, dict):
             daten = daten.get('destination')
         if not isinstance(daten, (str, int, type(None))) or isinstance(daten, bool):
-            raise TypeError('getcallfordwardingonpeer')
+            raise AntwortFormFehler('getcallfordwardingonpeer')
         ziel = str(daten).strip() if daten is not None else ''
         return ziel if ziel and ziel != '0' else None
 
@@ -201,7 +210,7 @@ class WbVoipAnsitel(models.AbstractModel):
         if isinstance(daten, dict):
             daten = daten.get('dnd')
         if not isinstance(daten, (str, int, type(None))):
-            raise TypeError('getdndonpeer')
+            raise AntwortFormFehler('getdndonpeer')
         return daten is not None and str(daten) == '1'
 
     def _dnd_setzen(self, anlage, peer_id, an):
@@ -227,8 +236,9 @@ class WbVoipAnsitel(models.AbstractModel):
         if not (anlage and nebenstelle and anlage.ansitel_token_enc):
             return None
         genau_eine = not benutzer.wb_voip_ansitel_ab_zentral
+        # Je Benutzer und dessen Schreibdatum: eine entfernte oder umgehängte Nebenstelle erbt kein „passt“
         schluessel = (self.env.cr.dbname, 'ab', anlage.id, anlage.ansitel_api_url, _anlage_hash(anlage),
-                      nebenstelle, genau_eine)
+                      benutzer.id, str(benutzer.write_date or ''), nebenstelle, genau_eine)
         treffer = _PEER_CACHE.get(schluessel)
         if treffer and time.monotonic() - treffer[0] < PEER_CACHE_SEKUNDEN:
             passt = treffer[1]
@@ -246,10 +256,12 @@ class WbVoipAnsitel(models.AbstractModel):
         peer_id = self._peer_id(anlage, nebenstelle)
         info = self._aufruf(anlage, 'getinfooncuserbytoken').get('data') or {}
         if not isinstance(info, dict):
-            raise TypeError('getinfooncuserbytoken')
+            raise AntwortFormFehler('getinfooncuserbytoken')
         peers = info.get('peer') or {}
         if not isinstance(peers, dict):
-            raise TypeError('getinfooncuserbytoken')
+            raise AntwortFormFehler('getinfooncuserbytoken')
+        if not all(isinstance(peer, dict) for peer in peers.values()):
+            raise AntwortFormFehler('getinfooncuserbytoken')
         if genau_eine and len(peers) != 1:
             return False
         return any(
@@ -262,7 +274,7 @@ class WbVoipAnsitel(models.AbstractModel):
         """Return the voicemail settings (dict) of the Ansitel user of ``token``."""
         daten = self._aufruf(anlage, 'getvoicemailoncuserbytoken', token=token).get('data') or {}
         if not isinstance(daten, dict):
-            raise TypeError('getvoicemailoncuserbytoken')
+            raise AntwortFormFehler('getvoicemailoncuserbytoken')
         return daten
 
     @_robust

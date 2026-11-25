@@ -11,9 +11,10 @@ from .common import PEERS, TOKEN, URL, AnsitelCase, antwort
 
 TOKEN_A = 'persoenlicher-token-a-456'
 HINWEIS_AB = 'AB braucht persönlichen Ansitel-Token oder Freigabe – bitte Administrator fragen.'
-HINWEIS_HANDY = 'Bitte unter Mein Profil › VoIP Ihr Handy eintragen.'
+HINWEIS_HANDY = 'Bitte unter Mein Profil › Telefonie Ihr Handy eintragen.'
 NICHT_ERREICHBAR = 'Ansitel nicht erreichbar.'
 LOGGER_USERS = 'odoo.addons.wb_voip_ansitel.models.res_users'
+LOGGER_API = 'odoo.addons.wb_voip_ansitel.models.ansitel_api'
 
 
 class FakeAnlage:
@@ -100,6 +101,15 @@ class TastenCase(AnsitelCase):
         patcher.start()
         self.addCleanup(patcher.stop)
 
+    def _verwalter(self):
+        """User administrator and VoIP manager without system rights."""
+        verwalter = self.env['res.users'].with_context(no_reset_password=True).create({
+            'name': 'Benutzerverwaltung', 'login': 'wb_voip_ansitel_verwalter',
+            'group_ids': [(6, 0, [self.env.ref('base.group_user').id, self.env.ref('base.group_erp_manager').id,
+                                  self.env.ref('wb_voip.group_wb_voip_manager').id])]})
+        self.assertFalse(verwalter._is_system())
+        return verwalter
+
     def als(self, benutzer):
         return self.env['res.users'].with_user(benutzer)
 
@@ -133,6 +143,29 @@ class TestTastenFelder(TastenCase):
         for feld in ('wb_voip_ansitel_token', 'wb_voip_ansitel_token_enc', 'wb_voip_ansitel_ab_zentral'):
             with self.subTest(feld=feld), self.assertRaises(AccessError):
                 self.user_a.with_user(self.user_manager).read([feld])
+
+    def test_nebenstelle_nur_systemverwaltung(self):
+        verwalter = self._verwalter()
+        for benutzer in (self.user_manager, verwalter):
+            for werte in ({'wb_voip_ansitel_nebenstelle': '101'}, {'wb_voip_ansitel_nebenstelle': False},
+                          {'wb_voip_ansitel_token': 'x'}, {'wb_voip_ansitel_ab_zentral': True}):
+                with self.subTest(benutzer=benutzer.login, werte=werte), self.assertRaises(AccessError), \
+                        self.env.cr.savepoint():
+                    self.user_a.with_user(benutzer).write(werte)
+        with self.assertRaises(AccessError) as fehler:
+            self.user_a.with_user(verwalter).write({'wb_voip_ansitel_nebenstelle': '102'})
+        self.assertIn('Systemverwaltung', str(fehler.exception))
+        with self.assertRaises(AccessError):
+            self.env['res.users'].with_user(verwalter).with_context(no_reset_password=True).create({
+                'name': 'Neu', 'login': 'wb_voip_ansitel_neu', 'wb_voip_anlage_id': self.anlage.id,
+                'wb_voip_ansitel_nebenstelle': '102'})
+        # Unveränderter Wert und andere Felder bleiben erlaubt
+        self.user_a.with_user(verwalter).write({'wb_voip_ansitel_nebenstelle': '100'})
+        self.assertEqual(self.user_a.wb_voip_ansitel_nebenstelle, '100')
+        with self.assertLogs('odoo.addons.wb_voip_ansitel.models.res_users', 'INFO') as logs:
+            self.user_a.write({'wb_voip_ansitel_nebenstelle': '102'})
+        self.assertEqual(self.user_a.wb_voip_ansitel_nebenstelle, '102')
+        self.assertNotIn('102', ' '.join(logs.output))
 
     def test_token_nur_als_chiffrat(self):
         self.user_a.write({'wb_voip_ansitel_token': TOKEN_A})
@@ -178,7 +211,7 @@ class TestTastenFelder(TastenCase):
         for falsch in ('abc', '12', '+49 abc 123', '1; DROP', '++49 170 1'):
             with self.subTest(falsch=falsch), self.assertRaises(ValidationError), self.env.cr.savepoint():
                 self.user_a.with_user(self.user_a).write({'wb_voip_handy': falsch})
-        for richtig in ('+49 170 1234567', '0170 1234567', '00491701234567', '0170/123-45'):
+        for richtig in ('+49 170 1234567', '0170 1234567', '00491701234567', '0170/123-4567'):
             with self.subTest(richtig=richtig):
                 self.user_a.with_user(self.user_a).write({'wb_voip_handy': richtig})
         self.user_a.with_user(self.user_a).write({'wb_voip_handy': ''})
@@ -195,11 +228,7 @@ class TestTastenFelder(TastenCase):
         self.assertTrue(self.user_b.sudo().wb_voip_ansitel_token_enc)
 
     def test_anlagenwechsel_ohne_systemrecht_verwirft_token(self):
-        verwalter = self.env['res.users'].with_context(no_reset_password=True).create({
-            'name': 'Benutzerverwaltung', 'login': 'wb_voip_ansitel_verwalter',
-            'group_ids': [(6, 0, [self.env.ref('base.group_user').id, self.env.ref('base.group_erp_manager').id,
-                                  self.env.ref('wb_voip.group_wb_voip_manager').id])]})
-        self.assertFalse(verwalter._is_system())
+        verwalter = self._verwalter()
         andere = self.env['wb.voip.anlage'].create({
             'name': 'Zweite', 'ws_url': 'wss://zweite.test/ws', 'sip_domain': 'zweite.test'})
         self.user_a.write({'wb_voip_ansitel_token': TOKEN_A})
@@ -251,7 +280,87 @@ class TestTasteModell(TastenCase):
             self.taste_handy.with_user(self.user_a).write({'ziel': '+49 170 9999999'})
         with self.assertRaises(AccessError):
             self.env['wb.voip.taste'].with_user(self.user_a).create({'name': 'X', 'art': 'anrufschutz'})
-        self.taste_handy.with_user(self.user_manager).write({'ziel': '+49 170 9999999'})
+        self.taste_handy.with_user(self.user_manager).write({'name': 'Handy'})
+
+    def test_festes_ziel_nur_systemverwaltung(self):
+        manager = self.taste_handy.with_user(self.user_manager)
+        with self.assertRaises(AccessError) as fehler:
+            manager.write({'ziel': '+49 170 9999999'})
+        self.assertIn('Systemverwaltung', str(fehler.exception))
+        with self.assertRaises(AccessError):
+            self.env['wb.voip.taste'].with_user(self.user_manager).create({
+                'name': 'X', 'art': 'weiterleitung', 'ziel': '+49 170 9999999'})
+        self.env['wb.voip.taste'].with_user(self.user_manager).create({'name': 'X', 'art': 'anrufschutz'})
+        self.taste_handy.write({'ziel': '+49 170 9999999'})
+        self.assertEqual(self.taste_handy.ziel, '+49 170 9999999')
+
+
+@tagged('wb_voip_ansitel', 'post_install', '-at_install')
+class TestWeiterleitungsziele(TastenCase):
+    """Toll fraud: premium, service, emergency, short and foreign targets are refused."""
+
+    GESPERRT = (
+        # Mehrwert- und Servicenummern
+        '0900 1234567', '+49 900 1234567', '0049 900 1234567', '0137 1234567', '0138 1234567',
+        '0180 5123456', '01805 123456', '0190 1234567', '0191 1234567', '0192 1234567', '0193 1234567',
+        '0194 1234567', '0700 12345678',
+        # Auskunft, Notruf, Kurzwahl
+        '11833', '118 80', '110', '112', '115', '116116', '116 117', '12345',
+    )
+
+    def test_gesperrte_ziele(self):
+        Taste = self.env['wb.voip.taste']
+        for ziel in self.GESPERRT:
+            with self.subTest(ziel=ziel):
+                self.assertTrue(Taste._ziel_pruefen(ziel, 'DE'))
+                with self.assertRaises(ValidationError), self.env.cr.savepoint():
+                    self.user_a.with_user(self.user_a).write({'wb_voip_handy': ziel})
+                with self.assertRaises(ValidationError), self.env.cr.savepoint():
+                    self.taste_handy.write({'ziel': ziel})
+
+    def test_erlaubte_ziele(self):
+        Taste = self.env['wb.voip.taste']
+        for ziel in ('+49 170 1234567', '0170 1234567', '00491701234567', '030 12345678', '+49 30 12345678'):
+            with self.subTest(ziel=ziel):
+                self.assertFalse(Taste._ziel_pruefen(ziel, 'DE'))
+
+    def test_meldungen(self):
+        Taste = self.env['wb.voip.taste']
+        self.assertIn('Sonder', Taste._ziel_pruefen('0900 1234567', 'DE'))
+        self.assertIn('Notruf', Taste._ziel_pruefen('112', 'DE'))
+        self.assertIn('Ausland', Taste._ziel_pruefen('+43 660 1234567', 'DE'))
+
+    def test_ausland_nur_mit_freigabe(self):
+        Taste = self.env['wb.voip.taste']
+        ziel = '+43 660 1234567'
+        self.assertTrue(Taste._ziel_pruefen(ziel, 'DE'))
+        self.assertTrue(Taste._ziel_pruefen('0043 660 1234567', 'DE'))
+        with self.assertRaises(ValidationError), self.env.cr.savepoint():
+            self.user_a.with_user(self.user_a).write({'wb_voip_handy': ziel})
+        self.env['ir.config_parameter'].sudo().set_param('wb_voip_ansitel.ausland_erlaubt', '1')
+        self.assertFalse(Taste._ziel_pruefen(ziel, 'DE'))
+        self.user_a.with_user(self.user_a).write({'wb_voip_handy': ziel})
+        self.taste_handy.write({'ziel': ziel})
+        zustand = self.schalten(self.taste_handy)
+        self.assertEqual(self.fake.fw[7], '00436601234567')
+        self.assertTrue(self.aktiv(zustand)['→ Handy'])
+
+    def test_altes_ziel_wird_beim_schalten_geprueft(self):
+        # Vor der Regel gespeichert (am ORM vorbei): darf nicht gewählt werden
+        self.env.cr.execute("UPDATE wb_voip_taste SET ziel = '0900 1234567' WHERE id = %s", [self.taste_handy.id])
+        self.taste_handy.invalidate_recordset(['ziel'])
+        zustand = self.schalten(self.taste_handy)
+        self.assertIn('Sonder', zustand['fehler'])
+        self.assertEqual(self.fake.anzahl('setcallfordwardingonpeer'), 0)
+        self.assertIsNone(self.aktiv(zustand)['→ Handy'])
+
+    def test_altes_handy_wird_beim_schalten_geprueft(self):
+        self.env.cr.execute("UPDATE res_users SET wb_voip_handy = '0137 1234567' WHERE id = %s", [self.user_a.id])
+        self.user_a.invalidate_recordset(['wb_voip_handy'])
+        zustand = self.schalten(self.taste_mein)
+        self.assertIn('Sonder', zustand['fehler'])
+        self.assertEqual(self.fake.anzahl('setcallfordwardingonpeer'), 0)
+        self.assertIsNone(self.aktiv(zustand)['→ Mein Handy'])
 
 
 @tagged('wb_voip_ansitel', 'post_install', '-at_install')
@@ -317,8 +426,11 @@ class TestTastenZustand(TastenCase):
     def test_nur_eigene_nebenstelle(self):
         self.fake.dnd[8] = '1'
         self.assertFalse(self.aktiv(self.zustand())['Nicht stören'])
+        peers_a = {a['pk_peerId'] for a in self.fake.aufrufe if 'pk_peerId' in a}
+        self.fake.aufrufe.clear()
         self.assertTrue(self.aktiv(self.zustand(self.user_b))['Nicht stören'])
-        self.assertTrue(all(a.get('pk_peerId') in (None, 7) for a in self.fake.aufrufe[:4]))
+        peers_b = {a['pk_peerId'] for a in self.fake.aufrufe if 'pk_peerId' in a}
+        self.assertEqual((peers_a, peers_b), ({7}, {8}))
 
     def test_nicht_erreichbar_grau_ein_aufruf(self):
         self.fake.fehler = requests.ConnectTimeout('https://pbx.example.invalid?token=' + TOKEN)
@@ -338,6 +450,21 @@ class TestTastenZustand(TastenCase):
         self.assertTrue(zustand['verfuegbar'])
         self.assertEqual(zustand['fehler'], 'Ansitel hat unverständlich geantwortet.')
         self.assertEqual(set(self.aktiv(zustand).values()), {None})
+
+    def test_programmierfehler_nicht_verschluckt(self):
+        api = self.env['wb.voip.ansitel']
+        with patch.object(type(api), '_aufruf', side_effect=AttributeError('fehler im code')):
+            with self.assertRaises(AttributeError):
+                api._dnd_lesen(self.anlage, 7)
+        # Falsche Antwortform bleibt ein Ansitel-Fehler, im Log mit Typ
+        self._post(antwort({'status': 200, 'data': [1]}))
+        with self.assertLogs(LOGGER_API, 'WARNING') as logs, self.assertRaises(UserError) as fehler:
+            api._dnd_lesen(self.anlage, 7)
+        self.assertEqual(str(fehler.exception), 'Ansitel hat unverständlich geantwortet.')
+        self.assertIn('_dnd_lesen', ' '.join(logs.output))
+        self._post(antwort(PEERS), antwort({'status': 200, 'data': {'peer': {'1': 'kein dict'}}}))
+        with mute_logger(LOGGER_API), self.assertRaises(UserError):
+            api._zentraler_token_passt(self.anlage, '100', False)
 
     def test_unerwarteter_fehler_grau(self):
         with patch.object(type(self.env['res.users']), '_wb_voip_tasten_lesen', side_effect=RuntimeError('x')), \
@@ -423,6 +550,15 @@ class TestAbToken(TastenCase):
         self.zustand()
         self.assertEqual(self.fake.anzahl('getinfooncuserbytoken'), 1)
 
+    def test_pruefung_je_benutzer_zwischengespeichert(self):
+        self.zustand()
+        self.user_a.write({'wb_voip_ansitel_nebenstelle': False})
+        self.env.flush_all()  # sonst sieht die Prüfung die alte Nebenstelle von A
+        self.user_b.write({'wb_voip_ansitel_nebenstelle': '100'})
+        self.fake.info = {'peer': {'2': {'peerName': 'Tel101', 'peerId': 8}}}
+        self.assertIsNone(self.aktiv(self.zustand(self.user_b))['AB'])
+        self.assertEqual(self.fake.anzahl('getinfooncuserbytoken'), 2)
+
     def test_ab_setzen_nur_bekannte_felder(self):
         self.schalten(self.taste_ab)
         gesetzt = self.fake.letzte('setvoicemailoncuserbytoken')
@@ -430,6 +566,18 @@ class TestAbToken(TastenCase):
             'active', 'option_immediately_check', 'option_ringtime_check', 'option_ringtime_seconds'])
         self.assertEqual((gesetzt['active'], gesetzt['option_immediately_check'], gesetzt['option_ringtime_check']),
                          ('1', '1', '0'))
+
+    def test_ab_aus_auch_in_anderem_modus(self):
+        self.fake.vm_fuer(TOKEN).update({'active': '1', 'option_immediately_check': '0',
+                                         'option_ringtime_check': '1', 'option_ringtime_seconds': '20'})
+        zustand = self.schalten(self.taste_ab, an=False)
+        self.assertEqual(self.fake.vm_fuer(TOKEN)['active'], '0')
+        self.assertFalse(self.aktiv(zustand)['AB'])
+        # Umschalten (None) bei anderem Modus: Taste war „aus“ → Modus dieser Taste einschalten
+        self.fake.vm_fuer(TOKEN).update({'active': '1'})
+        self.schalten(self.taste_ab)
+        vm = self.fake.vm_fuer(TOKEN)
+        self.assertEqual((vm['active'], vm['option_immediately_check']), ('1', '1'))
 
     def test_ab_nach_rufzeit(self):
         self.taste_ab.write({'ab_modus': 'nach_rufzeit', 'ab_sekunden': 25})
@@ -531,8 +679,10 @@ class TestTastenSchalten(TastenCase):
         self.assertIn('→ Mein Handy', namen)
 
     def test_nur_eigene_nebenstelle_geschaltet(self):
-        self.schalten(self.taste_dnd, benutzer=self.user_b)
+        for taste in (self.taste_dnd, self.taste_handy, self.taste_dnd):
+            self.schalten(taste, benutzer=self.user_b)
         self.assertEqual(self.fake.dnd, {7: '0', 8: '1'})
+        self.assertEqual({a['pk_peerId'] for a in self.fake.aufrufe if 'pk_peerId' in a}, {8})
         self.assertEqual(self.bus[-1][0], self.user_b.id)
 
     def test_gegenseitiger_ausschluss(self):
