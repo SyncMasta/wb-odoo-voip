@@ -45,6 +45,8 @@ export class Softphone extends Component {
         this.telefon = useService("wb_voip_telefon");
         this.softphone = useService("wb_voip_softphone");
         this.benachrichtigung = useService("wb_voip_benachrichtigung");
+        this.verpasst = useService("wb_voip_verpasst");
+        this.verpasstState = useState(this.verpasst.state);
         this.state = useState(this.telefon.state);
         this.ui = useState(this.softphone.state);
         this.lokal = useState({ erlaubnis: this.benachrichtigung?.erlaubnis || "unsupported" });
@@ -60,6 +62,11 @@ export class Softphone extends Component {
     get aktiverReiter() {
         const alle = this.reiter;
         return alle.find((r) => r.schluessel === this.ui.reiter) || alle[0];
+    }
+
+    /** Zahl an der Reiter-Plakette (bisher nur „Verpasst“); 0 blendet sie aus. */
+    plakette(reiter) {
+        return reiter.schluessel === "verpasst" ? this.verpasstState.zaehler : 0;
     }
 
     waehleReiter(schluessel) {

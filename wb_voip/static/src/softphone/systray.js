@@ -16,6 +16,7 @@ export class WbVoipSystray extends Component {
         this.softphone = useService("wb_voip_softphone");
         this.state = useState(this.telefon.state);
         this.ui = useState(this.softphone.state);
+        this.verpasst = useState(useService("wb_voip_verpasst").state);
     }
 
     get info() {
@@ -23,7 +24,10 @@ export class WbVoipSystray extends Component {
     }
 
     get titel() {
-        return _t("Telefon: %s", this.info.text);
+        const titel = _t("Telefon: %s", this.info.text);
+        return this.verpasst.zaehler > 0
+            ? _t("%s, %s ungesehene verpasste Anrufe", titel, this.verpasst.zaehler)
+            : titel;
     }
 
     umschalten() {

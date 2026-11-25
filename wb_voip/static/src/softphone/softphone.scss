@@ -84,6 +84,14 @@ $wb-voip-cyan: #00C8E8;
         font-size: 0.55rem;
     }
 
+    .o_wb_voip_plakette {
+        position: absolute;
+        top: 0.1rem;
+        right: 0;
+        font-size: 0.6rem;
+        padding: 0.15em 0.4em;
+    }
+
     .o_wb_voip_systray_knopf:focus-visible {
         outline: 2px solid $wb-voip-cyan;
     }

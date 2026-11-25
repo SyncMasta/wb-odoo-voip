@@ -55,8 +55,13 @@
                                     t-att-class="{active: r.schluessel === aktiverReiter.schluessel}"
                                     t-att-aria-selected="r.schluessel === aktiverReiter.schluessel ? 'true' : 'false'"
                                     t-att-title="r.titel"
-                                    t-on-click="() => this.waehleReiter(r.schluessel)"
-                                    t-esc="r.titel"/>
+                                    t-on-click="() => this.waehleReiter(r.schluessel)">
+                                <t t-esc="r.titel"/>
+                                <span t-if="plakette(r) > 0"
+                                      class="o_wb_voip_plakette badge rounded-pill text-bg-danger ms-1"
+                                      t-att-aria-label="plakette(r) + ' ungesehen'"
+                                      t-esc="plakette(r) > 99 ? '99+' : plakette(r)"/>
+                            </button>
                         </t>
                     </div>
                     <div class="p-2" role="tabpanel">

@@ -8,6 +8,9 @@
                     t-on-click="umschalten">
                 <i class="fa fa-lg fa-phone" t-att-class="{'text-success': state.anruf}" aria-hidden="true"/>
                 <i class="fa fa-circle o_wb_voip_punkt" t-att-class="info.farbe" aria-hidden="true"/>
+                <span t-if="verpasst.zaehler > 0"
+                      class="o_wb_voip_plakette badge rounded-pill text-bg-danger"
+                      t-esc="verpasst.zaehler > 99 ? '99+' : verpasst.zaehler"/>
             </button>
         </div>
     </t>

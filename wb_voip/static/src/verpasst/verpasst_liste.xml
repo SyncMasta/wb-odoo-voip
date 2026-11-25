@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="wb_voip.Verpasstliste">
+        <div class="o_wb_voip_verpasstliste">
+            <div t-if="lokal.fehler" class="alert alert-warning small" role="alert" t-esc="lokal.fehler"/>
+            <div t-elif="lokal.geladen and !lokal.zeilen.length" class="text-muted small p-2">
+                Keine offenen verpassten Anrufe.
+            </div>
+            <ul class="list-group list-group-flush">
+                <li t-foreach="lokal.zeilen" t-as="zeile" t-key="zeile.schluessel"
+                    class="o_wb_voip_eintrag list-group-item px-1">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fa fa-long-arrow-down text-danger" title="Verpasst"
+                           aria-label="Verpasst" role="img"/>
+                        <div class="flex-grow-1 text-truncate">
+                            <div class="text-truncate fw-bold">
+                                <span t-esc="name(zeile)"/>
+                                <span t-if="zeile.anzahl > 1" class="o_wb_voip_anzahl text-muted fw-normal">
+                                    ×<t t-esc="zeile.anzahl"/></span>
+                            </div>
+                            <div class="small text-muted text-truncate">
+                                <span t-esc="zeit(zeile)"/>
+                                <t t-if="zeile.partner and zeile.nummer"> · <span t-esc="zeile.nummer"/></t>
+                            </div>
+                        </div>
+                        <button t-if="anrufbar(zeile)" type="button"
+                                class="o_wb_voip_jetzt_anrufen btn btn-sm btn-outline-success"
+                                title="Jetzt anrufen" aria-label="Jetzt anrufen"
+                                t-on-click="() => this.jetztAnrufen(zeile)">
+                            <i class="fa fa-phone" aria-hidden="true"/>
+                        </button>
+                        <button t-if="zeile.art === 'anderswo' and zeile.kollege and zeile.kollege.notiz"
+                                type="button" class="o_wb_voip_kollegen_notiz_knopf btn btn-sm btn-outline-secondary"
+                                title="Notiz des Kollegen" aria-label="Notiz des Kollegen"
+                                t-att-aria-expanded="lokal.notizen[zeile.schluessel] ? 'true' : 'false'"
+                                t-on-click="() => this.notizUmschalten(zeile)">
+                            <i class="fa fa-clipboard" aria-hidden="true"/>
+                        </button>
+                        <button type="button" class="o_wb_voip_erledigen btn btn-sm btn-outline-primary"
+                                title="Erledigt" aria-label="Erledigt"
+                                t-on-click="() => this.erledigenOeffnen(zeile)">
+                            <i class="fa fa-check" aria-hidden="true"/>
+                        </button>
+                    </div>
+                    <div t-if="hinweis(zeile)" class="o_wb_voip_anderswo small text-muted mt-1"
+                         t-esc="hinweis(zeile)"/>
+                    <div t-if="lokal.notizen[zeile.schluessel] and zeile.kollege and zeile.kollege.notiz"
+                         class="o_wb_voip_kollegen_notiz small border rounded p-2 mt-1"
+                         t-esc="zeile.kollege.notiz"/>
+                    <div t-if="lokal.erledigen === zeile.schluessel" class="o_wb_voip_erledigen_feld mt-2">
+                        <textarea class="o_wb_voip_erledigen_text form-control form-control-sm"
+                                  rows="2" t-att-maxlength="maxText"
+                                  placeholder="Wie erledigt?" aria-label="Wie erledigt?"
+                                  t-model="lokal.text"/>
+                        <div class="d-flex gap-2 mt-1">
+                            <button type="button" class="o_wb_voip_erledigen_speichern btn btn-sm btn-primary"
+                                    title="Speichern" aria-label="Speichern"
+                                    t-on-click="() => this.erledigenSpeichern(zeile)">Speichern</button>
+                            <button type="button" class="o_wb_voip_erledigen_abbrechen btn btn-sm btn-secondary"
+                                    title="Abbrechen" aria-label="Abbrechen"
+                                    t-on-click="() => this.erledigenAbbrechen()">Abbrechen</button>
+                        </div>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </t>
+</templates>
