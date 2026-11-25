@@ -4,7 +4,7 @@ import re
 from odoo.tests import HttpCase, tagged
 
 # Mindestzahl der HOOT-Tests in @wb_voip_crm; schützt vor einem Lauf, der nichts findet
-MIN_TESTS = 11
+MIN_TESTS = 15
 
 
 def _hoot_hash(text):

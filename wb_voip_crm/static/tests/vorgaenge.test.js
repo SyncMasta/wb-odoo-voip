@@ -3,7 +3,7 @@ import { click, queryAll } from "@odoo/hoot-dom";
 import { Deferred, animationFrame } from "@odoo/hoot-mock";
 import { Component, reactive, xml } from "@odoo/owl";
 import { defineMailModels } from "@mail/../tests/mail_test_helpers";
-import { mockService, mountWithCleanup, onRpc } from "@web/../tests/web_test_helpers";
+import { makeMockEnv, mockService, mountWithCleanup, onRpc } from "@web/../tests/web_test_helpers";
 
 import { LayoutBloecke, artLabel } from "@wb_voip/layout/bloecke";
 import "@wb_voip_crm/bloecke_vorgaenge";
@@ -49,6 +49,8 @@ async function zeigen(daten, { anruf = { id: 10 }, extra = {} } = {}) {
 }
 
 test("Block ist registriert und heißt Vorgänge", async () => {
+    // die Test-Umgebung lädt die Übersetzungen
+    await makeMockEnv();
     expect(artLabel("vorgaenge")).toBe("Vorgänge");
 });
 
@@ -82,6 +84,57 @@ test("Zuordnen ruft wb_voip_vorgang_setzen am Anruf und markiert den Vorgang", a
     expect(".o_wb_voip_lb_vorgang_aktiv").toHaveCount(1);
     expect(".o_wb_voip_lb_vorgang_aktiv .o_wb_voip_lb_vorgang_name").toHaveText("Zweiter Vorgang");
     expect(".o_wb_voip_lb_vorgang_zuordnen").toHaveCount(2);
+});
+
+test("Lösen nur an der zugeordneten Zeile, ruft setzen mit false und leert die Auswahl", async () => {
+    const aufrufe = [];
+    onRpc("wb.voip.anruf", "wb_voip_vorgang_setzen", ({ args }) => {
+        aufrufe.push(args);
+        return true;
+    });
+    await zeigen(VORGAENGE);
+    expect(".o_wb_voip_lb_vorgang_loesen").toHaveCount(1);
+    expect(".o_wb_voip_lb_vorgang_aktiv .o_wb_voip_lb_vorgang_loesen").toHaveCount(1);
+    expect(".o_wb_voip_lb_vorgang_loesen").toHaveAttribute(
+        "aria-label",
+        "Zuordnung zu Angebot <b>Dach</b> lösen"
+    );
+    await click(".o_wb_voip_lb_vorgang_loesen");
+    await animationFrame();
+    expect(aufrufe).toEqual([[[10], false]]);
+    // keiner mehr zugeordnet: alle drei zuordenbar, kein Lösen-Knopf
+    expect(".o_wb_voip_lb_vorgang_aktiv").toHaveCount(0);
+    expect(".o_wb_voip_lb_vorgang_marke").toHaveCount(0);
+    expect(".o_wb_voip_lb_vorgang_zuordnen").toHaveCount(3);
+    expect(".o_wb_voip_lb_vorgang_loesen").toHaveCount(0);
+});
+
+test("Fehler beim Lösen: Meldung als Text, Zuordnung bleibt", async () => {
+    onRpc("wb.voip.anruf", "wb_voip_vorgang_setzen", () => {
+        throw new Error("kaputt");
+    });
+    await zeigen(VORGAENGE);
+    await click(".o_wb_voip_lb_vorgang_loesen");
+    await animationFrame();
+    expect(".o_wb_voip_lb_vorgang_fehler").toHaveCount(1);
+    expect(".o_wb_voip_lb_vorgang_aktiv .o_wb_voip_lb_vorgang_name").toHaveText("Angebot <b>Dach</b>");
+    expect(".o_wb_voip_lb_vorgang_loesen").toHaveCount(1);
+});
+
+test("Vorschau ohne Anruf: auch kein Lösen-Knopf", async () => {
+    await zeigen(VORGAENGE, { anruf: false });
+    expect(".o_wb_voip_lb_vorgang_loesen").toHaveCount(0);
+});
+
+test("Knöpfe nennen den Vorgang, gekürzter Name hat einen Titel", async () => {
+    await zeigen(VORGAENGE);
+    const zuordnen = queryAll(".o_wb_voip_lb_vorgang_zuordnen")[0];
+    expect(zuordnen).toHaveAttribute("aria-label", "Vorgang Zweiter Vorgang dem Anruf zuordnen");
+    expect(queryAll(".o_wb_voip_lb_vorgang_oeffnen")[1]).toHaveAttribute(
+        "aria-label",
+        "Vorgang Zweiter Vorgang öffnen"
+    );
+    expect(queryAll(".o_wb_voip_lb_vorgang_name")[1]).toHaveAttribute("title", "Zweiter Vorgang");
 });
 
 test("Zuordnen läuft nur einmal gleichzeitig", async () => {

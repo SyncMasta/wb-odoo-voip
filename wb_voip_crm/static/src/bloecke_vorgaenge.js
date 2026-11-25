@@ -7,8 +7,8 @@ import { blockRegistry, neueId } from "@wb_voip/layout/bloecke";
 /**
  * Block „Vorgänge“ (Anrufer-Fenster): offene Vorgänge des Kontakts aus ``block.daten``
  * (Server: ``_wb_voip_block_daten_vorgaenge``, nur Lesbares). Alle Serverwerte nur als Text.
- * „Zuordnen“ setzt den Vorgang am eigenen Anruf; den Rest meldet der Server per Bus, das
- * Fenster lädt neu. Ohne laufenden Anruf (Vorschau im Designer) gibt es keinen Zuordnen-Knopf.
+ * „Zuordnen“ setzt den Vorgang am eigenen Anruf, „Lösen“ nimmt die Zuordnung wieder weg; den
+ * Rest meldet der Server per Bus, das Fenster lädt neu. Ohne laufenden Anruf (Vorschau im Designer) gibt es keinen Zuordnen-Knopf.
  */
 export class VorgaengeBlock extends Component {
     static template = "wb_voip_crm.LayoutBlockVorgaenge";
@@ -53,7 +53,20 @@ export class VorgaengeBlock extends Component {
             }));
     }
 
-    async zuordnen(vorgang) {
+    zuordnenLabel(vorgang) {
+        return _t("Vorgang %s dem Anruf zuordnen", vorgang.name);
+    }
+
+    loesenLabel(vorgang) {
+        return _t("Zuordnung zu %s lösen", vorgang.name);
+    }
+
+    oeffnenLabel(vorgang) {
+        return _t("Vorgang %s öffnen", vorgang.name);
+    }
+
+    /** Setzt (``vorgangId``) oder löst (``false``) die Zuordnung am eigenen Anruf. */
+    async setzen(vorgangId, fehlertext) {
         if (!this.anrufId || this.state.arbeitet) {
             return;
         }
@@ -62,17 +75,24 @@ export class VorgaengeBlock extends Component {
         try {
             await this.orm.call("wb.voip.anruf", "wb_voip_vorgang_setzen", [
                 [this.anrufId],
-                vorgang.id,
+                vorgangId,
             ]);
-            this.state.gewaehlt = vorgang.id;
+            // false = keiner zugeordnet (passt zu keiner Vorgangs-ID)
+            this.state.gewaehlt = vorgangId;
         } catch (fehler) {
             this.state.fehler =
-                typeof fehler?.data?.message === "string"
-                    ? fehler.data.message
-                    : _t("Der Vorgang konnte nicht zugeordnet werden.");
+                typeof fehler?.data?.message === "string" ? fehler.data.message : fehlertext;
         } finally {
             this.state.arbeitet = false;
         }
+    }
+
+    zuordnen(vorgang) {
+        return this.setzen(vorgang.id, _t("Der Vorgang konnte nicht zugeordnet werden."));
+    }
+
+    loesen() {
+        return this.setzen(false, _t("Die Zuordnung konnte nicht gelöst werden."));
     }
 
     oeffnen(vorgang) {
@@ -86,5 +106,4 @@ export class VorgaengeBlock extends Component {
     }
 }
 
-// Label als einfacher Text: der Kern prüft ``typeof label === "string"`` (kein _t beim Laden)
-blockRegistry.add("vorgaenge", { component: VorgaengeBlock, label: "Vorgänge" });
+blockRegistry.add("vorgaenge", { component: VorgaengeBlock, label: _t("Vorgänge") });

@@ -10,7 +10,7 @@
                     class="o_wb_voip_lb_vorgang border-top py-2 d-flex flex-wrap align-items-center gap-2"
                     t-att-class="{ 'o_wb_voip_lb_vorgang_aktiv fw-bold': vorgang.zugeordnet }">
                     <div class="flex-grow-1 text-truncate">
-                        <span class="o_wb_voip_lb_vorgang_name" t-esc="vorgang.name"/>
+                        <span class="o_wb_voip_lb_vorgang_name" t-att-title="vorgang.name" t-esc="vorgang.name"/>
                         <span t-if="vorgang.stufe" class="o_wb_voip_lb_vorgang_stufe badge text-bg-light ms-2" t-esc="vorgang.stufe"/>
                         <span t-if="vorgang.umsatz" class="o_wb_voip_lb_vorgang_umsatz small text-muted ms-2" t-esc="vorgang.umsatz"/>
                         <span t-if="vorgang.zugeordnet" class="o_wb_voip_lb_vorgang_marke small text-success ms-2">
@@ -19,8 +19,14 @@
                     </div>
                     <button t-if="anrufId and !vorgang.zugeordnet" type="button"
                             class="o_wb_voip_lb_vorgang_zuordnen btn btn-sm btn-secondary"
+                            t-att-aria-label="zuordnenLabel(vorgang)"
                             t-att-disabled="state.arbeitet" t-on-click="() => this.zuordnen(vorgang)">Zuordnen</button>
+                    <button t-if="anrufId and vorgang.zugeordnet" type="button"
+                            class="o_wb_voip_lb_vorgang_loesen btn btn-sm btn-outline-secondary"
+                            t-att-aria-label="loesenLabel(vorgang)"
+                            t-att-disabled="state.arbeitet" t-on-click="() => this.loesen()">Lösen</button>
                     <button type="button" class="o_wb_voip_lb_vorgang_oeffnen btn btn-sm btn-link p-0"
+                            t-att-aria-label="oeffnenLabel(vorgang)"
                             t-on-click="() => this.oeffnen(vorgang)">
                         <i class="fa fa-external-link me-1" aria-hidden="true"/>Öffnen
                     </button>
