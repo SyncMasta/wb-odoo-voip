@@ -1,10 +1,21 @@
-import { describe, expect, test } from "@odoo/hoot";
+import { afterEach, beforeEach, describe, expect, test } from "@odoo/hoot";
+import { translatedTerms, translationLoaded } from "@web/core/l10n/translation";
 
 import { SipJsSitzung, sipfragStatus } from "@wb_voip/dienste/sip_agent";
 
 import { FakeUhr } from "./sip_fake";
 
 describe.current.tags("desktop");
+
+// Fehlermeldungen laufen über _t: dafür gelten die Übersetzungen im Test als geladen
+let uebersetzungVorher;
+beforeEach(() => {
+    uebersetzungVorher = translatedTerms[translationLoaded];
+    translatedTerms[translationLoaded] = true;
+});
+afterEach(() => {
+    translatedTerms[translationLoaded] = uebersetzungVorher;
+});
 
 /** Minimale SIP.js-Sitzung: stateChange und Delegate wie in SIP.js 0.21.2. */
 function fakeSitzung() {
