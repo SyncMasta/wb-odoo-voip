@@ -150,8 +150,11 @@ Zielart „Interne Nebenstelle“: Die Taste leitet auf eine Nebenstelle oder Ru
 * Die Geräteliste (``getpeer``) wird je Anlage einmal gelesen und bis zu 10 Minuten zwischengespeichert; eine neue
   oder gelöschte Nebenstelle wirkt also mit bis zu 10 Minuten Verzögerung. Rufgruppen aus der Liste lösen keinen
   eigenen Abruf aus.
-* Rufgruppe ohne eigene Nebenstelle wählen (Schleife): Leitet ein Benutzer auf eine Rufgruppe um, in der er selbst
-  klingelt, prüft das Modul das nicht.
+* Rufgruppe ohne eigene Nebenstelle wählen (Schleife): Das Modul erkennt keine Schleife, wenn ein Benutzer auf eine
+  Rufgruppe umleitet, deren Mitglied er selbst ist (die Mitglieder einer Rufgruppe kennt es nicht). Rufgruppen aus
+  „Weitere interne Ziele“ werden nur mit dem eingetragenen Wert der eigenen Nebenstelle verglichen.
+* Unverständliche Einträge der Geräteliste werden übersprungen (Hinweis im Log, ohne Werte); nur eine Antwort, die
+  keine Liste ist, gilt als Fehler.
 * Geprüft wird bei jedem Lesen und Schalten. Unbekannt: Taste grau mit „Interne Nebenstelle unbekannt – bitte
   Systemverwaltung fragen.“; die eigene Nebenstelle (eingetragener Wert oder ihre interne Nummer) ist als Ziel
   gesperrt (Schleife).

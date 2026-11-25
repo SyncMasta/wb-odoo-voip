@@ -233,14 +233,24 @@ class TestPeerId(AnsitelCase):
         self.assertTrue(all(k[0] == self.env.cr.dbname for k in ansitel_api._PEER_CACHE))
 
     def test_unerwartete_antwort(self):
-        for daten in ({'status': 200, 'data': 'x'}, {'status': 200, 'data': [{'peerName': '100'}]},
-                      {'status': 200, 'data': [{'pk_peerId': 'abc', 'peerName': '100'}]},
-                      {'status': 200, 'data': ['text']}):
+        for daten in ({'status': 200, 'data': 'x'}, {'status': 200, 'data': {'peerName': '100'}}):
             with self.subTest(daten=daten):
                 ansitel_api.cache_leeren()
                 self._post(antwort(daten))
                 with self.assertRaises(AnsitelFehler):
                     self.api._peer_id(self.anlage, '100')
+
+    def test_kaputte_eintraege_werden_uebersprungen(self):
+        for kaputt in ({'peerName': '100'}, {'pk_peerId': 'abc', 'peerName': '100'}, 'text',
+                       {'pk_peerId': None, 'peerInternalCallerId': '100'}, {'pk_peerId': True, 'peerName': '100'}):
+            with self.subTest(kaputt=kaputt):
+                ansitel_api.cache_leeren()
+                self._post(antwort({'status': 200, 'data': [kaputt] + PEERS['data']}))
+                with self.assertLogs('odoo.addons.wb_voip_ansitel.models.ansitel_api', 'WARNING') as log:
+                    self.assertEqual(self.api._peer_id(self.anlage, '100'), 7)
+                self.assertEqual(self.api._peer_intern(self.anlage, '101'), 8)
+                self.assertEqual(len(log.output), 1)
+                self.assertNotIn('100', log.output[0])
 
     def test_fehler_wird_nicht_gecacht(self):
         post = self._post(requests.ConnectionError('x'), antwort(PEERS))

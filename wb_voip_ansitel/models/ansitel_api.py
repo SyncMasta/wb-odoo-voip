@@ -217,15 +217,26 @@ class WbVoipAnsitel(models.AbstractModel):
             return treffer[1]
         try:
             liste = self._aufruf(anlage, 'getpeer').get('data') or []
-            if not isinstance(liste, list):
-                raise TypeError('getpeer')
-            peers = tuple(
-                (int(peer['pk_peerId']), str(peer.get('peerName') or '').strip(),
-                 str(peer.get('peerInternalCallerId') or '').strip())
-                for peer in liste)
-        except (KeyError, ValueError, TypeError, AttributeError):
+        except AttributeError:
+            liste = None
+        if not isinstance(liste, list):
             _logger.warning("[wb_voip_ansitel] getpeer: unerwartete Antwort")
-            raise AnsitelFehler(self.env._("Ansitel hat unverständlich geantwortet.")) from None
+            raise AnsitelFehler(self.env._("Ansitel hat unverständlich geantwortet."))
+        # Kaputte Einträge überspringen, die übrigen Nebenstellen bleiben nutzbar
+        peers = []
+        kaputt = 0
+        for peer in liste:
+            kennung = peer.get('pk_peerId') if isinstance(peer, dict) else None
+            if isinstance(kennung, bool) or not isinstance(kennung, (int, str)) \
+                    or not str(kennung).strip().isdigit() or not str(kennung).isascii():
+                kaputt += 1
+                continue
+            peers.append((int(kennung), str(peer.get('peerName') or '').strip(),
+                          str(peer.get('peerInternalCallerId') or '').strip()))
+        if kaputt:
+            # nur die Anzahl, keine Werte (Nummern, Namen)
+            _logger.warning("[wb_voip_ansitel] getpeer: %s unverständliche Einträge übersprungen", kaputt)
+        peers = tuple(peers)
         _cache_setzen(schluessel, peers)
         return peers
 

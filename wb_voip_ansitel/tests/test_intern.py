@@ -1,6 +1,8 @@
 from odoo.exceptions import AccessError, ValidationError
 from odoo.tests import tagged
 
+from odoo.addons.wb_voip_ansitel.models import ansitel_api
+
 from .common import PEERS
 from .test_tasten import TastenCase
 
@@ -216,10 +218,12 @@ class TestInterneWeiterleitung(TastenCase):
 
     def test_rufgruppe_ohne_getpeer(self):
         self.anlage.write({'ansitel_interne_ziele': '600'})
-        A = self.env['wb.voip.ansitel']
-        A._peer_id(self.anlage, '100')  # eigene Nebenstelle füllt den Cache
-        vorher = self.fake.anzahl('getpeer')
+        ansitel_api.cache_leeren()  # kalter Zwischenspeicher
         Users = self.env['res.users']
         self.assertFalse(Users._wb_voip_intern_pruefen(self.anlage, '100', '600'))
+        self.assertEqual(self.fake.anzahl('getpeer'), 0)
+        self.assertEqual(Users._wb_voip_intern_pruefen(self.anlage, '600', '600'),
+                         'Die eigene Nebenstelle kann nicht Weiterleitungsziel sein.')
+        self.assertEqual(self.fake.anzahl('getpeer'), 0)
         self.assertFalse(Users._wb_voip_intern_pruefen(self.anlage, '100', '101'))
-        self.assertEqual(self.fake.anzahl('getpeer'), vorher)
+        self.assertEqual(self.fake.anzahl('getpeer'), 1)

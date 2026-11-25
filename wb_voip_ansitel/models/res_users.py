@@ -221,8 +221,8 @@ class ResUsers(models.Model):
     def _wb_voip_intern_pruefen(self, anlage, nebenstelle, ziel, eigene_peer_id=None):
         """Return the message why ``ziel`` is no internal target for ``nebenstelle``, or ``False``.
 
-        Allowed are the additional targets the system administration listed at the PBX (ring
-        groups, checked without ``getpeer``) and peers whose internal number
+        Order: own extension as entered (string), the additional targets the system administration
+        listed at the PBX (ring groups, checked without ``getpeer``), then peers whose internal number
         (``peerInternalCallerId``) is ``ziel``; never a peer name, never the own extension
         (loop, also compared with its internal number). One cached peer list per PBX. Raises
         ``AnsitelFehler`` if the peer list cannot be read.
@@ -234,13 +234,14 @@ class ResUsers(models.Model):
         ziel = ziel.strip()
         if ziel == nebenstelle:
             return texte['intern_eigen']
+        # Rufgruppen aus der Liste ohne Anlagenabfrage
+        if ziel in anlage._ansitel_interne_ziele_liste():
+            return False
         A = self.env['wb.voip.ansitel']
         if eigene_peer_id is None:
             eigene_peer_id = A._peer_id(anlage, nebenstelle)
         if eigene_peer_id is not None and ziel == A._peer_interne_nummer(anlage, eigene_peer_id):
             return texte['intern_eigen']
-        if ziel in anlage._ansitel_interne_ziele_liste():
-            return False
         if A._peer_intern(anlage, ziel) is not None:
             return False
         return texte['intern_unbekannt']
