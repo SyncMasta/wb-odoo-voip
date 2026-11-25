@@ -21,6 +21,14 @@ Schnelltasten für Weiterleitung, Nicht stören und Anrufbeantworter je Benutzer
         'views/wb_voip_taste_views.xml',
         'views/res_users_views.xml',
     ],
+    'assets': {
+        'web.assets_backend': [
+            'wb_voip_ansitel/static/src/**/*',
+        ],
+        'web.assets_unit_tests': [
+            'wb_voip_ansitel/static/tests/**/*',
+        ],
+    },
     'installable': True,
     'application': False,
     'auto_install': False,

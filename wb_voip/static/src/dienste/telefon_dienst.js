@@ -140,6 +140,9 @@ export class TelefonDienst {
             // Team-Übersicht der aktiven Firma eingeschaltet (aus wb_voip_status); nur dann
             // Lebenszeichen und Team-Auswahl in der Anrufansicht
             teamAktiv: false,
+            // dieser Tab hält die Telefon-Sperre (nur er ist an der Anlage angemeldet); Erweiterungen
+            // nutzen es, um Abfragen nur in einem Tab laufen zu lassen
+            halter: false,
             fehler: null,
         });
 
@@ -241,6 +244,7 @@ export class TelefonDienst {
             return;
         }
         this._istHalter = true;
+        this.state.halter = true;
         this._halterTabId = this.tabId;
         this._senden({ art: "halter", tabId: this.tabId });
         const freigabe = new Promise((resolve) => {
@@ -264,6 +268,7 @@ export class TelefonDienst {
         this._alleBeenden((kontext) => this._beenden(kontext, "fehler"));
         this._agentBeenden();
         this._istHalter = false;
+        this.state.halter = false;
         this._halterTabId = null;
         this._halterWarten = [];
         this._freigeben?.();

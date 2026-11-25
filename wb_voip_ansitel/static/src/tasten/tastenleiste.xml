@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="wb_voip_ansitel.Tastenleiste">
+        <div t-if="sichtbar" t-attf-class="o_wb_voip_tasten o_wb_voip_tasten_#{props.lage}">
+            <div class="o_wb_voip_tasten_reihe" role="group" aria-label="Schnelltasten">
+                <button t-foreach="state.tasten" t-as="taste" t-key="taste.id" type="button"
+                        t-attf-class="o_wb_voip_taste #{klasse(taste)}"
+                        t-att-data-id="taste.id"
+                        t-att-title="titel(taste)"
+                        t-att-aria-label="taste.name"
+                        t-att-aria-pressed="gedrueckt(taste)"
+                        t-att-aria-describedby="beschreibung(taste)"
+                        t-att-disabled="state.schaltet"
+                        t-on-click="() => this.schalten(taste)">
+                    <i t-att-class="symbol(taste)" aria-hidden="true"/>
+                    <span class="o_wb_voip_taste_name" t-esc="taste.name"/>
+                </button>
+            </div>
+            <div t-if="state.fremde_weiterleitung" class="o_wb_voip_tasten_fremd">
+                <span class="o_wb_voip_tasten_fremd_text">Weiterleitung auf <t t-esc="state.fremde_weiterleitung"/></span>
+                <button type="button" class="o_wb_voip_tasten_fremd_aus"
+                        t-att-title="fremdTitel" t-att-aria-label="fremdTitel"
+                        t-att-disabled="state.schaltet"
+                        t-on-click="weiterleitungAus">aus</button>
+            </div>
+            <div t-if="state.fehler and props.lage === 'softphone'" class="o_wb_voip_tasten_fehler"
+                 role="status" t-att-id="fehlerId" t-esc="state.fehler"/>
+            <i t-if="state.fehler and props.lage === 'rand'"
+               class="fa fa-exclamation-triangle o_wb_voip_tasten_fehler_icon" role="img"
+               t-att-title="state.fehler" t-att-aria-label="state.fehler"/>
+        </div>
+    </t>
+
+    <t t-inherit="wb_voip.Softphone" t-inherit-mode="extension">
+        <xpath expr="//StatusAnzeige" position="after">
+            <WbVoipTastenleiste lage="'softphone'"/>
+        </xpath>
+    </t>
+
+    <t t-inherit="wb_voip.Systray" t-inherit-mode="extension">
+        <xpath expr="//i[hasclass('o_wb_voip_punkt')]" position="after">
+            <span t-if="tasten.umgeleitet" class="o_wb_voip_ansitel_umgeleitet_punkt" aria-hidden="true"/>
+        </xpath>
+    </t>
+</templates>

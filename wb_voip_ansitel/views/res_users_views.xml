@@ -9,6 +9,7 @@
             <xpath expr="//field[@name='wb_voip_sip_passwort']/.." position="after">
                 <group string="Schnelltasten">
                     <field name="wb_voip_handy" readonly="0" placeholder="+49 170 1234567"/>
+                    <field name="wb_voip_ansitel_tastenleiste" readonly="0"/>
                 </group>
             </xpath>
         </field>

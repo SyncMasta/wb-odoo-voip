@@ -93,6 +93,23 @@ test("nur Halter registriert", async () => {
     welt.aufraeumen();
 });
 
+test("state.halter zeigt, welcher Tab das Telefon hält (für Erweiterungen)", async () => {
+    const welt = umgebung();
+    const eins = welt.dienst("tab-1");
+    const zwei = welt.dienst("tab-2");
+    expect(eins.state.halter).toBe(false);
+    eins.start();
+    zwei.start();
+    await welt.uhr.vorspulen(0);
+    expect(eins.state.halter).toBe(true);
+    expect(zwei.state.halter).toBe(false);
+    eins.stop();
+    expect(eins.state.halter).toBe(false);
+    await welt.uhr.vorspulen(5000);
+    expect(zwei.state.halter).toBe(true);
+    welt.aufraeumen();
+});
+
 test("Übernahme nach Schließen", async () => {
     const welt = umgebung();
     const eins = welt.dienst("tab-1");

@@ -46,6 +46,13 @@ class ResUsers(models.Model):
         string='Mein Handy', copy=False, groups='base.group_system',
         help="Ziel der Weiterleitungstaste „Eigenes Handy“, z. B. +49 170 1234567.")
 
+    # Wo die Tastenleiste erscheint; der Benutzer stellt sie selbst ein (wirkt nach dem Neuladen)
+    wb_voip_ansitel_tastenleiste = fields.Selection(
+        [('softphone', 'Im Softphone'), ('rand', 'Am rechten Rand'), ('beide', 'Softphone und Rand')],
+        string='Schnelltasten anzeigen', default='softphone', required=True, copy=False,
+        help="Wo die Schnelltasten für Weiterleitung, Nicht stören und Anrufbeantworter erscheinen. "
+             "Die Änderung gilt nach dem Neuladen der Seite.")
+
     _wb_voip_ansitel_nebenstelle_eindeutig = models.UniqueIndex(
         '(wb_voip_anlage_id, wb_voip_ansitel_nebenstelle) '
         'WHERE wb_voip_anlage_id IS NOT NULL AND wb_voip_ansitel_nebenstelle IS NOT NULL',
@@ -53,11 +60,21 @@ class ResUsers(models.Model):
 
     @property
     def SELF_READABLE_FIELDS(self):
-        return super().SELF_READABLE_FIELDS + ['wb_voip_handy']
+        return super().SELF_READABLE_FIELDS + ['wb_voip_handy', 'wb_voip_ansitel_tastenleiste']
 
     @property
     def SELF_WRITEABLE_FIELDS(self):
-        return super().SELF_WRITEABLE_FIELDS + ['wb_voip_handy']
+        return super().SELF_WRITEABLE_FIELDS + ['wb_voip_handy', 'wb_voip_ansitel_tastenleiste']
+
+    def _wb_voip_ansitel_session_wert(self):
+        """Return the bar placement for the browser session, or False without a phone setup.
+
+        Only the placement string (no credentials); False keeps the bar away for users
+        without WB VoIP.
+        """
+        if len(self) != 1 or not self._wb_voip_session_aktiv():
+            return False
+        return self.sudo().wb_voip_ansitel_tastenleiste or 'softphone'
 
     def _compute_wb_voip_ansitel_token(self):
         for benutzer in self:
@@ -149,6 +166,8 @@ class ResUsers(models.Model):
             "UPDATE res_users SET wb_voip_ansitel_nebenstelle = NULL, wb_voip_ansitel_token_enc = NULL"
             " WHERE id IN %s", tuple(benutzer.ids)))
         benutzer.invalidate_recordset(felder)
+        # Das nicht gespeicherte Feld hängt am gelöschten Chiffrat; der Cache wüsste davon nichts
+        benutzer.invalidate_recordset(['wb_voip_ansitel_token_gesetzt'])
         if mit_nebenstelle:
             _logger.info("[wb_voip_ansitel] Anlagenwechsel ohne Systemrecht: Ansitel-Nebenstelle von Benutzer %s "
                          "gelöscht (durch Benutzer %s)", mit_nebenstelle.ids, self.env.uid)
