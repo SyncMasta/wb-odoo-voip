@@ -8,11 +8,12 @@ Notizen und findet später nicht mehr, wer wann mit wem gesprochen hat. WB VoIP 
 Klick aus jedem Telefonfeld, eingehende Anrufe mit Namen des Kontakts, und nach jedem Gespräch ein Protokolleintrag
 am richtigen Datensatz.
 
-> **Stand:** Phase 4 (Version 19.0.4.x). Verpasste Anrufe mit Rückruf-Liste, Softphone, Anrufprotokoll, Anrufer-Fenster mit Layout-Designer, eigene
-> Anruf-Buttons mit Assistent, Rufnummer zuordnen und Lizenzanbindung sind fertig und mit automatischen Tests
-> abgesichert. Gegen eine echte Telefonanlage getestet ist die Signalisierung aus Phase 1 und 2 (Anmelden,
-> Anrufe, Annehmen, Auflegen); das Weiterleiten von Gesprächen noch nicht. Bis dahin gilt das Modul als
-> Vorabversion.
+> **Stand:** Phase 4 (Version 19.0.4.1.0), Phase 4b abgeschlossen. Team-Übersicht, zweite Leitung, Übergeben mit
+> Rückfrage, Konferenz im Browser, verpasste Anrufe mit Rückruf-Liste, Softphone, Anrufprotokoll, Anrufer-Fenster
+> mit Layout-Designer, eigene Anruf-Buttons mit Assistent, Rufnummer zuordnen und Lizenzanbindung sind fertig und mit
+> automatischen Tests abgesichert. Gegen eine echte Telefonanlage getestet ist die Signalisierung aus Phase 1 und 2
+> (Anmelden, Anrufe, Annehmen, Auflegen); Übergeben, Heranholen und Konferenz noch nicht. Bis dahin gilt das Modul
+> als Vorabversion.
 
 ---
 
@@ -20,12 +21,28 @@ am richtigen Datensatz.
 
 **Softphone in der Odoo-Kopfzeile**
 - Telefonsymbol mit Statuspunkt: verbunden, aus, in anderem Tab, getrennt, ohne Lizenz, nicht eingerichtet
-- Reiter „Wählen“, „Anrufe“, „Kontakte“ und „Aufgaben“; weitere Reiter können Zusatzmodule einhängen
-- Im Gespräch: Stumm, Halten, Tastatur (DTMF), Weiterleiten, Notiz, Auflegen
+- Reiter „Wählen“, „Anrufe“, „Verpasst“, „Team“, „Kontakte“ und „Aufgaben“; weitere Reiter können Zusatzmodule einhängen
+- Im Gespräch: Stumm, Halten, Tastatur (DTMF), Weiterleiten, Rückfrage, Konferenz, Notiz, Auflegen
 - Eingehend: Annehmen oder Ablehnen, auf Wunsch mit Desktop-Benachrichtigung
 - Telefonsymbol neben jedem Odoo-Telefonfeld; der Anruf wird mit dem Datensatz verknüpft
 - Mehrere Odoo-Tabs: Nur ein Tab meldet sich an der Anlage an (eine Registrierung je Nebenstelle), die anderen
   reichen Wählen an ihn weiter. Schließt der Tab, übernimmt der nächste.
+
+**Team, zweite Leitung, Übergeben, Konferenz**
+- Reiter „Team“: Kollegen mit Status frei, telefoniert (mit Dauer), klingelt oder abgemeldet. Angezeigt werden
+  aktive interne Benutzer mit VoIP-Recht, SIP-Benutzer, derselben Firma und derselben Anlage, nicht man selbst
+- Datenschutz: nur Name, Nebenstelle, Status und Dauer; nie Gegennummer, Kontakt oder Notiz. Als Anwesenheit
+  steht nur der Zeitpunkt des letzten Lebenszeichens des Telefon-Tabs in Odoo (nach 150 s ohne Meldung
+  „abgemeldet“, beim Abmelden gelöscht)
+- Heranholen eines klingelnden Kollegen per Wahlpräfix der Anlage (Beispiel `**` bei Anlagen auf Asterisk-Basis);
+  leeres Präfix blendet den Knopf aus
+- Zweite Leitung: wartender Anruf mit Annehmen/Ablehnen; ein dritter Anruf wird mit 480 abgewiesen und zählt als
+  verpasst (bisher 486)
+- Übergeben direkt (blind) oder mit Rückfrage (attended, REFER mit Replaces); bestätigt die Anlage nicht binnen
+  15 s, kommt der Kunde zurück
+- Konferenz im Browser mit höchstens drei Teilnehmern; braucht eine stabile Verbindung und ausreichend Bandbreite
+  am Gastgeber, Stumm gilt in beide Richtungen
+- Je Kundengespräch ein Protokoll-Popup, bei mehreren nacheinander
 
 **Anrufprotokoll**
 - Nach jedem Anruf genau ein Protokolleintrag (erreicht, nicht erreicht, Mailbox, besetzt) mit Dauer und Notiz
@@ -137,6 +154,7 @@ Details stehen in [`wb_voip/README.rst`](wb_voip/README.rst).
 ## Geplant
 
 - CRM-Anbindung (Anrufe am Vorgang)
+- Live-Test von Übergeben, Heranholen und Konferenz gegen verschiedene Telefonanlagen
 - Adapter für Telefonanlagen, beginnend mit Ansitel (Rufumleitung, Anrufbeantworter, Anrufliste)
 - Englische Oberfläche
 

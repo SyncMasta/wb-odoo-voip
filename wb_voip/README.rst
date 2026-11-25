@@ -4,7 +4,7 @@ WB VoIP
 
 Softphone im Browser, Anrufprotokoll und Anbindung an SIP-Telefonanlagen für Odoo 19.
 
-Stand Phase 2: Softphone, Anrufprotokoll mit Popup nach dem Anruf, Anrufer-Fenster, eigene Anruf-Buttons,
+Stand Phase 4 (Version 19.0.4.1.0): Team-Übersicht, zweite Leitung, Übergeben, Konferenz, Softphone, Anrufprotokoll mit Popup nach dem Anruf, Anrufer-Fenster, eigene Anruf-Buttons,
 Rufnummer zuordnen, Löschfrist und Lizenzanbindung (Produktcode ``VOIP``).
 
 Einrichtung
@@ -221,6 +221,69 @@ offen, erfährt Odoo vom Anruf nichts. Schlägt das Abschließen einer Aktivitä
 gilt der Eintrag trotzdem als erledigt (wird protokolliert). Bei der Deinstallation hängt das Modul vorhandene
 Rückruf-Aktivitäten auf den Odoo-Typ „Anruf“ um, damit Aufgaben erhalten bleiben.
 
+Team, zweite Leitung, Übergeben und Konferenz
+---------------------------------------------
+
+Team
+~~~~
+
+Der Reiter „Team“ im Softphone zeigt die Kollegen mit ihrem Status:
+
+* **frei**: angemeldet, kein Gespräch.
+* **telefoniert**: im Gespräch, mit der Dauer seit der Annahme.
+* **klingelt**: ein Anruf klingelt gerade.
+* **abgemeldet**: Telefon nicht angemeldet oder kein Lebenszeichen mehr.
+
+Wer erscheint: aktive interne Benutzer mit Recht „WB VoIP: Benutzer“, mit Anlage und SIP-Benutzer, die mit
+dem Betrachter dieselbe Firma und dieselbe Telefonanlage haben. Der Betrachter selbst erscheint nicht.
+
+Datenschutz: Je Kollege sehen die anderen nur Name, Nebenstelle, Status und bei „telefoniert“ die Dauer. Nie
+die Gegennummer, den Kontakt oder die Notiz eines Gesprächs. Als Anwesenheit speichert Odoo nur den Zeitpunkt
+des letzten Lebenszeichens des Telefon-Tabs (alle 60 Sekunden gemeldet, nach 150 Sekunden ohne Meldung gilt
+der Kollege als „abgemeldet“); beim Abmelden wird er gelöscht. Der Bus meldet nur „neu laden“.
+
+Knöpfe je Kollege: Anrufen, Heranholen, im Gespräch Übergeben, „Mit Rückfrage“ und „Konferenz“.
+
+Heranholen: Der Knopf erscheint nur bei einem klingelnden Kollegen und nur, wenn an der Anlage ein
+Heranholen-Präfix eingetragen ist (Einstellungen › Technisch › WB VoIP › Telefonanlagen, höchstens 8 Zeichen
+aus Ziffern, ``*`` und ``#``). Heranholen wählt Präfix plus Nebenstelle des Kollegen. Beispiel für Anlagen auf
+Asterisk-Basis: ``**``. Leer heißt: Heranholen ist aus, der Knopf bleibt ausgeblendet. Das Präfix bestimmt
+die Anlage; im Zweifel in deren Dokumentation nachsehen.
+
+Zweite Leitung
+~~~~~~~~~~~~~~
+
+Pro Tab sind höchstens zwei gleichzeitige Anrufe möglich. Ruft jemand an, während ein Gespräch läuft,
+erscheint ein wartender Anruf („Zweiter Anruf“) mit Annehmen und Ablehnen; Annehmen hält das erste Gespräch.
+Ein dritter Anruf wird abgewiesen (SIP 480) und zählt als verpasst. Früher wurde 486 gesendet; wer die
+Rückmeldecodes auswertet, beachtet die Änderung.
+
+Übergeben
+~~~~~~~~~
+
+* **Direkt** (blind): Der Anrufer wird per REFER an die Zielnummer übergeben, ohne Rückfrage.
+* **Mit Rückfrage** (attended): Das Gespräch wird gehalten, der Kollege angerufen; „Verbinden“ übergibt per
+  REFER mit Replaces, „Zurück“ beendet die Rückfrage. Bestätigt die Anlage die Übergabe nicht innerhalb von
+  15 Sekunden, bleiben beide Leitungen bestehen, der Kunde kommt zurück und es erscheint ein Hinweis. Nimmt der
+  Kollege nicht ab oder legt er auf, kommt der Kunde ebenfalls automatisch zurück.
+
+Jedes Kundengespräch bekommt sein eigenes Protokoll-Popup; laufen mehrere, öffnen sie sich nacheinander.
+
+Konferenz im Browser
+~~~~~~~~~~~~~~~~~~~~
+
+Der Knopf „Konferenz“ (Leiste „Gehalten“) oder „Konferenz“ in der Team-Liste mischt beide Gespräche im
+Browser: höchstens drei Teilnehmer (man selbst und zwei Gegenstellen). Der Ton läuft über den eigenen Rechner,
+das braucht eine stabile Verbindung und ausreichend Bandbreite am Gastgeber (Upload und Download je zweimal
+Sprache). Stumm gilt in beide Richtungen. Legt einer der beiden auf, läuft das Gespräch mit dem anderen
+normal weiter; „Konferenz beenden“ legt beide auf. Tastatur (DTMF), Halten, Weiterleiten und Team sind in
+der Konferenz gesperrt. Scheitert die automatische Konferenz mit einem Kollegen (der Browser hält den Ton
+an), erscheint der Hinweis, im Gespräch „Konferenz“ zu drücken.
+
+Grenzen: Übergeben, Heranholen und Konferenz sind mit automatischen Tests abgesichert, aber noch nicht gegen
+jede Telefonanlage live geprüft. Eine Anlage muss REFER mit Replaces und Ruf-Heranholen per Wahlpräfix
+unterstützen.
+
 SIP-Passwort und Schlüssel
 --------------------------
 
@@ -245,9 +308,9 @@ Softphone
 
 Telefonsymbol in der oberen Leiste mit Statuspunkt (grün verbunden, grau aus, gelb in anderem Tab, rot
 getrennt, ohne Lizenz oder nicht eingerichtet). Ein Klick öffnet das Softphone unten rechts mit den Reitern
-„Wählen“, „Anrufe“ (letzte 50 eigene), „Kontakte“ und „Aufgaben“; weitere Reiter tragen Module in die
+„Wählen“, „Anrufe“ (letzte 50 eigene), „Verpasst“, „Team“, „Kontakte“ und „Aufgaben“; weitere Reiter tragen Module in die
 Registry ``wb_voip_reiter`` ein (``{titel, Component, sequence}``). Während eines Anrufs: Name/Nummer,
-Dauer, Stumm, Halten, Tastatur, Weiterleiten, Notiz und Auflegen; eingehend Annehmen/Ablehnen und eine
+Dauer, Stumm, Halten, Tastatur, Weiterleiten, Rückfrage, Konferenz, Notiz und Auflegen; eingehend Annehmen/Ablehnen und eine
 Desktop-Benachrichtigung (Erlaubnis wird einmal angefragt). Neben jedem Odoo-Telefonfeld wählt ein
 Telefonsymbol über das Softphone und verknüpft den Anruf mit dem Datensatz. Aus einem zweiten Tab wird
 der Anruf an den Telefon-Tab übergeben.
