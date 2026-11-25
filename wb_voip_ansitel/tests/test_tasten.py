@@ -30,6 +30,8 @@ class FakeAnlage:
         self.info = {'peer': {'1': {'peerName': 'Tel100', 'peerId': 7}}}
         self.fehler = None
         self.aufrufe = []
+        # Peer-Liste; None = PEERS aus common
+        self.peers = None
 
     def vm_fuer(self, token):
         return self.vm.setdefault(token, {
@@ -43,7 +45,7 @@ class FakeAnlage:
         self.aufrufe.append(dict(json))
         peer = json.get('pk_peerId')
         if aktion == 'getpeer':
-            return antwort(PEERS)
+            return antwort(PEERS if self.peers is None else {'status': 200, 'data': self.peers})
         if aktion == 'getcallfordwardingonpeer':
             return antwort({'status': 200, 'data': {'destination': self.fw[peer]}})
         if aktion == 'setcallfordwardingonpeer':

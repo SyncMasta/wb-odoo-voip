@@ -53,7 +53,7 @@ Rechte
    * - Geräte ändern, „Geräte aus Anlage laden“
      - nein (lesen ja)
      - ja
-   * - Feste Tastenziele setzen
+   * - Feste und interne Tastenziele setzen, weitere interne Ziele der Anlage
      - nein
      - ja
    * - Tasten (Beschriftung, Art, Reihenfolge) pflegen
@@ -96,8 +96,8 @@ Schnelltasten
   Token gelöscht; ebenso alle persönlichen Token einer Anlage, deren URL ohne Systemrecht geändert wird.
 * „Mein Handy“ (Mein Profil › Telefonie) liest und schreibt nur der Benutzer selbst (und die Systemverwaltung).
   Gewählt wird nur mit Ziffern, „+“ wird zu „00“.
-* Tasten unter Einstellungen › Technisch › WB VoIP › Softphone-Tasten: Arten Weiterleitung (feste Nummer oder
-  eigenes Handy), Anrufschutz und Anrufbeantworter (sofort oder nach Rufzeit). Standardtasten „AB“, „→ Handy“,
+* Tasten unter Einstellungen › Technisch › WB VoIP › Softphone-Tasten: Arten Weiterleitung (feste Nummer,
+  eigenes Handy oder interne Nebenstelle), Anrufschutz und Anrufbeantworter (sofort oder nach Rufzeit). Standardtasten „AB“, „→ Handy“,
   „Nicht stören“ (noupdate).
 * ``res.users.wb_voip_tasten_zustand()`` liest frisch; ohne gültige Lizenz wird die Anlage nicht gefragt und
   alle Tasten bleiben grau. ``wb_voip_taste_schalten(taste_id, an=None)`` und ``wb_voip_weiterleitung_aus()``
@@ -129,11 +129,24 @@ Schalten (ein früher gespeichertes Ziel wird nicht gewählt, die Taste bleibt g
   ``wb_voip_ansitel.ausland_erlaubt`` den Wert ``1`` hat (Standard: gesperrt).
 
 Hinweis: Mit ``wb_voip_ansitel.ausland_erlaubt`` = ``1`` sind Ziele im Ausland erlaubt; die Sperre der
-Mehrwert- und Notrufnummern gilt weiter, fremde Mehrwertnummern sind damit aber nicht ausgeschlossen. Eine interne
-Nebenstelle der Anlage als Ziel ist nicht vorgesehen.
+Mehrwert- und Notrufnummern gilt weiter, fremde Mehrwertnummern sind damit aber nicht ausgeschlossen.
 
-Feste Ziele der Tasten setzt nur die Systemverwaltung; VoIP-Administratoren pflegen Beschriftung, Art und
-Reihenfolge.
+Feste und interne Ziele der Tasten setzt nur die Systemverwaltung (auch der Wechsel in die oder aus der Zielart
+„Interne Nebenstelle“); VoIP-Administratoren pflegen Beschriftung, Art und Reihenfolge.
+
+Interne Nebenstelle oder Rufgruppe (ab 19.0.1.1.0)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Zielart „Interne Nebenstelle“: Die Taste leitet auf eine Nebenstelle oder Rufgruppe der Anlage des Benutzers um.
+
+* Gespeichert werden nur 2 bis 6 Ziffern (0–9), ohne Gebühren-, Länder- oder Längenprüfung (das Ziel verlässt die
+  Anlage nicht); externe Nummern sind in dieser Zielart nicht möglich.
+* Gültig ist das Ziel nur, wenn die Anlage des Benutzers es selbst als Nebenstelle kennt (``getpeer``: interne
+  Nummer oder Gerätename, 10 Minuten zwischengespeichert) oder es unter „Weitere interne Ziele“ an der Anlage steht
+  (Rufgruppen, Warteschlangen; eine Nummer je Zeile, nur Systemverwaltung).
+* Geprüft wird bei jedem Lesen und Schalten. Unbekannt: Taste grau mit „Interne Nebenstelle unbekannt – bitte
+  Systemverwaltung fragen.“; die eigene Nebenstelle (auch über den Gerätenamen) ist als Ziel gesperrt (Schleife).
+* Gewählt wird die Nebenstelle wie eingegeben (keine Umwandlung in ``00…``).
 
 Abgleich mit der Anrufliste
 ---------------------------

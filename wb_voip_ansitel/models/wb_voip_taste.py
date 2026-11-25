@@ -29,6 +29,8 @@ KURZ_PRAEFIXE = ('116', '118')
 BEKANNTE_VORWAHLEN = (49, 43, 41, 881, 882, 883)
 LAENDERVORWAHL_FALLBACK = {'DE': 49, 'AT': 43, 'CH': 41}
 PARAM_AUSLAND = 'wb_voip_ansitel.ausland_erlaubt'
+# Interne Nebenstelle oder Rufgruppe: nur ASCII-Ziffern, 2 bis 6 Stellen (verlässt die Anlage nicht)
+INTERN_MUSTER = re.compile(r'^[0-9]{2,6}$', re.ASCII)
 
 _logger = logging.getLogger(__name__)
 
@@ -83,21 +85,25 @@ class WbVoipTaste(models.Model):
          ('anrufbeantworter', 'Anrufbeantworter')],
         string='Art', required=True)
     ziel_art = fields.Selection(
-        [('fest', 'Feste Nummer'), ('handy', 'Eigenes Handy des Benutzers')],
+        [('fest', 'Feste Nummer'), ('handy', 'Eigenes Handy des Benutzers'),
+         ('intern', 'Interne Nebenstelle')],
         string='Ziel', default='fest', required=True,
         help="Feste Nummer: gilt für alle Benutzer. Eigenes Handy: jeder Benutzer trägt seine "
-             "Nummer unter Mein Profil › Telefonie ein (Feld „Mein Handy“).")
+             "Nummer unter Mein Profil › Telefonie ein (Feld „Mein Handy“). Interne Nebenstelle: "
+             "Nebenstelle oder Rufgruppe der Anlage des Benutzers (2 bis 6 Ziffern).")
     ziel = fields.Char(
         string='Weiterleitungsziel',
-        help="Rufnummer, z. B. +49 152 28817386. Eine Weiterleitungstaste mit fester Nummer "
-             "ohne gültiges Ziel bleibt ausgeblendet.")
+        help="Rufnummer, z. B. +49 152 28817386, bei „Interne Nebenstelle“ die Nebenstelle oder "
+             "Rufgruppe, z. B. 100. Eine Weiterleitungstaste mit fester Nummer oder interner "
+             "Nebenstelle ohne gültiges Ziel bleibt ausgeblendet.")
     ab_modus = fields.Selection(
         [('sofort', 'Sofort'), ('nach_rufzeit', 'Nach Rufzeit')],
         string='Anrufbeantworter greift', default='sofort')
     ab_sekunden = fields.Integer(string='Rufzeit in Sekunden', default=20)
 
     def _ziel_fehler(self):
-        return AccessError(self.env._("Feste Weiterleitungsziele darf nur die Systemverwaltung setzen."))
+        return AccessError(self.env._(
+            "Feste und interne Weiterleitungsziele darf nur die Systemverwaltung setzen."))
 
     @api.model
     def _ziel_laender(self):
@@ -106,8 +112,14 @@ class WbVoipTaste(models.Model):
         return sorted({land for land in Anlage.search([('ansitel_aktiv', '=', True)]).mapped('country_id.code')
                        if land}) or ['DE']
 
-    def _ziel_normalisieren(self, vals):
-        """Store a valid fixed target in E.164 form; an invalid one stays for the constraint message."""
+    def _ziel_normalisieren(self, vals, intern=False):
+        """Store a valid fixed target in E.164 form; an invalid one stays for the constraint message.
+
+        ``intern``: internal extension, stored as entered (only stripped).
+        """
+        if intern and isinstance(vals.get('ziel'), str):
+            vals['ziel'] = vals['ziel'].strip() or False
+            return
         if isinstance(vals.get('ziel'), str) and vals['ziel'].strip():
             for land in self._ziel_laender():
                 if not self._ziel_pruefen(vals['ziel'], land):
@@ -119,22 +131,33 @@ class WbVoipTaste(models.Model):
         if not self.env.user._is_system() and any((vals.get('ziel') or '').strip() for vals in vals_list):
             raise self._ziel_fehler()
         for vals in vals_list:
-            self._ziel_normalisieren(vals)
+            self._ziel_normalisieren(vals, intern=vals.get('ziel_art') == 'intern')
         return super().create(vals_list)
 
     def write(self, vals):
+        system = self.env.user._is_system()
         # Gebührenbetrug: das Ziel einer festen Taste gilt für alle Benutzer
-        if 'ziel' in vals and not self.env.user._is_system():
+        if 'ziel' in vals and not system:
             neu = (vals['ziel'] or '').strip() or False
             if any(((taste.ziel or '').strip() or False) != neu for taste in self.sudo()):
                 raise self._ziel_fehler()
-        self._ziel_normalisieren(vals)
+        # Wechsel in die oder aus der Art „intern“ deutet ein gespeichertes Ziel um: nur Systemverwaltung
+        if 'ziel_art' in vals and not system:
+            if any((taste.ziel_art == 'intern') != (vals['ziel_art'] == 'intern') for taste in self.sudo()):
+                raise self._ziel_fehler()
+        arten = {vals['ziel_art']} if 'ziel_art' in vals else set(self.sudo().mapped('ziel_art'))
+        self._ziel_normalisieren(vals, intern=arten == {'intern'})
         return super().write(vals)
 
-    @api.constrains('ziel')
+    @api.constrains('ziel', 'ziel_art')
     def _check_ziel(self):
         laender = self._ziel_laender()
         for taste in self.filtered(lambda t: (t.ziel or '').strip()):
+            if taste.ziel_art == 'intern':
+                fehler = self._intern_format_fehler(taste.ziel)
+                if fehler:
+                    raise ValidationError(fehler)
+                continue
             fehler = [self._ziel_pruefen(taste.ziel, land) for land in laender]
             if all(fehler):
                 raise ValidationError(fehler[0])
@@ -150,6 +173,18 @@ class WbVoipTaste(models.Model):
         """Return True for a phone number with at least three ASCII digits (``+``, digits, separators)."""
         ziel = (ziel or '').strip() if isinstance(ziel, str) else ''
         return bool(ZIEL_MUSTER.match(ziel)) and len(NICHT_ZIFFER.sub('', ziel)) >= ZIEL_MIN_ZIFFERN
+
+    @api.model
+    def _intern_gueltig(self, ziel):
+        """Return True for an internal extension or ring group: 2 to 6 ASCII digits, nothing else."""
+        return isinstance(ziel, str) and bool(INTERN_MUSTER.match(ziel.strip()))
+
+    @api.model
+    def _intern_format_fehler(self, ziel):
+        """Return the user message if ``ziel`` is no internal extension (format only), or ``False``."""
+        if self._intern_gueltig(ziel):
+            return False
+        return self.env._("Eine interne Nebenstelle hat 2 bis 6 Ziffern (nur 0–9), z. B. 100.")
 
     @api.model
     def _ziel_e164(self, ziel, land_code=None):
@@ -227,7 +262,7 @@ class WbVoipTaste(models.Model):
         return '00' + ziel[1:] if ziel.startswith('+') else ziel
 
     def _ziel_fuer(self, benutzer):
-        """Return the forwarding target of this key for ``benutzer`` (own mobile or fixed number)."""
+        """Return the forwarding target of this key for ``benutzer`` (own mobile, fixed number or extension)."""
         self.ensure_one()
         if self.ziel_art == 'handy':
             return (benutzer.sudo().wb_voip_handy or '').strip()

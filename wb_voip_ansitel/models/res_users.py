@@ -213,7 +213,34 @@ class ResUsers(models.Model):
             'wunsch': _("Ungültiger Wunschzustand."),
             'nebenstelle': _("Die Nebenstelle gibt es in der Telefonanlage nicht."),
             'ziel': _("Für diese Taste ist kein gültiges Weiterleitungsziel eingetragen."),
+            'intern_unbekannt': _("Interne Nebenstelle unbekannt – bitte Systemverwaltung fragen."),
+            'intern_eigen': _("Die eigene Nebenstelle kann nicht Weiterleitungsziel sein."),
         }
+
+    @api.model
+    def _wb_voip_intern_pruefen(self, anlage, nebenstelle, ziel, eigene_peer_id=None):
+        """Return the message why ``ziel`` is no internal target for ``nebenstelle``, or ``False``.
+
+        Allowed are extensions the PBX itself knows as peer (``getpeer``, cached) and the
+        additional targets the system administration listed at the PBX; never the own extension
+        (loop). Raises ``AnsitelFehler`` if the peer list cannot be read.
+        """
+        texte = self._wb_voip_tasten_texte()
+        fehler = self.env['wb.voip.taste']._intern_format_fehler(ziel)
+        if fehler:
+            return fehler
+        ziel = ziel.strip()
+        if ziel == nebenstelle:
+            return texte['intern_eigen']
+        A = self.env['wb.voip.ansitel']
+        ziel_peer = A._peer_id(anlage, ziel)
+        if ziel_peer is not None:
+            if eigene_peer_id is None:
+                eigene_peer_id = A._peer_id(anlage, nebenstelle)
+            return texte['intern_eigen'] if ziel_peer == eigene_peer_id else False
+        if ziel in anlage._ansitel_interne_ziele_liste():
+            return False
+        return texte['intern_unbekannt']
 
     @api.model
     def _wb_voip_tasten_leer(self, fehler=False):
@@ -238,7 +265,8 @@ class ResUsers(models.Model):
         """Return the active keys; forwarding keys with a fixed number need a valid target."""
         Taste = self.env['wb.voip.taste'].sudo()
         return Taste.search([]).filtered(
-            lambda t: t.art != 'weiterleitung' or t.ziel_art == 'handy' or Taste._ziel_gueltig(t.ziel))
+            lambda t: t.art != 'weiterleitung' or t.ziel_art == 'handy'
+            or (Taste._intern_gueltig(t.ziel) if t.ziel_art == 'intern' else Taste._ziel_gueltig(t.ziel)))
 
     @api.model
     def _wb_voip_tasten_grau(self, fehler):
@@ -319,16 +347,25 @@ class ResUsers(models.Model):
         for taste in tasten:
             if taste.art == 'weiterleitung':
                 ziel = taste._ziel_fuer(benutzer)
-                ziel_fehler = (texte['handy'] if taste.ziel_art == 'handy' and not ziel
-                               else Taste._ziel_pruefen(ziel, land))
+                intern = taste.ziel_art == 'intern'
+                if intern:
+                    # Nebenstelle der eigenen Anlage oder gepflegte Rufgruppe, nie die eigene
+                    pruef_ok, ziel_fehler = (versuch(self._wb_voip_intern_pruefen, anlage, nebenstelle, ziel,
+                                                     peer_id) if peer_ok else (False, None))
+                else:
+                    pruef_ok = True
+                    ziel_fehler = (texte['handy'] if taste.ziel_art == 'handy' and not ziel
+                                   else Taste._ziel_pruefen(ziel, land))
                 if ziel_fehler:
                     aktiv = None  # grau: kein Handy eingetragen oder Ziel nicht (mehr) erlaubt
                     if ziel_fehler not in fehler:
                         fehler.append(ziel_fehler)
-                elif not fw_ok:
+                elif not (fw_ok and pruef_ok):
                     aktiv = None
                 else:
-                    aktiv = bool(ziel_ist and not passt and Taste._ziel_gleich(ziel, ziel_ist, land))
+                    gleich = (ziel_ist and (ziel_ist.strip() == ziel.strip() if intern
+                                            else Taste._ziel_gleich(ziel, ziel_ist, land)))
+                    aktiv = bool(ziel_ist and not passt and gleich)
                     passt = passt or aktiv
             elif taste.art == 'anrufschutz':
                 aktiv = dnd if dnd_ok else None
@@ -455,16 +492,25 @@ class ResUsers(models.Model):
         if not ziel:
             raise AnsitelFehler(texte['handy'] if taste.ziel_art == 'handy' else texte['ziel'])
         # Jedes Mal prüfen: ein vor der Regel gespeichertes Ziel darf nicht gewählt werden
-        ziel_fehler = taste._ziel_pruefen(ziel, land)
+        if taste.ziel_art == 'intern':
+            ziel_fehler = self._wb_voip_intern_pruefen(anlage, nebenstelle, ziel, peer_id)
+        else:
+            ziel_fehler = taste._ziel_pruefen(ziel, land)
         if ziel_fehler:
             raise AnsitelFehler(ziel_fehler)
         aktuell = A._weiterleitung_lesen(anlage, peer_id)
-        ist = bool(aktuell and taste._ziel_gleich(ziel, aktuell, land))
+        if taste.ziel_art == 'intern':
+            # Nebenstelle wie eingegeben wählen (geprüft: nur Ziffern), keine 00-/E.164-Umwandlung
+            senden = ziel.strip()
+            ist = bool(aktuell and aktuell.strip() == senden)
+        else:
+            # Nur die geprüfte Normalform wählen
+            senden = taste._ziel_senden(taste._ziel_e164(ziel, land))
+            ist = bool(aktuell and taste._ziel_gleich(ziel, aktuell, land))
         wunsch = (not ist) if an is None else an
         if wunsch and not ist:
             self._wb_voip_andere_aus(benutzer, anlage, nebenstelle, 'weiterleitung', peer_id)
-            # Nur die geprüfte Normalform wählen
-            A._weiterleitung_setzen(anlage, peer_id, taste._ziel_senden(taste._ziel_e164(ziel, land)))
+            A._weiterleitung_setzen(anlage, peer_id, senden)
         elif ist and not wunsch:
             A._weiterleitung_setzen(anlage, peer_id, None)
 

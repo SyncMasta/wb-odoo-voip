@@ -66,6 +66,13 @@ class WbVoipAnlage(models.Model):
         groups='base.group_system',
         help="Beginn des ersten Abgleichs; kein Lauf liest weiter zurück.")
     ansitel_geraet_ids = fields.One2many('wb.voip.geraet', 'anlage_id', string='Geräte')
+    # Zusätzliche interne Weiterleitungsziele (Rufgruppen, Warteschlangen), die ``getpeer`` nicht
+    # kennt: nur Systemverwaltung, weil jede Weiterleitungstaste „intern“ darauf schalten kann
+    ansitel_interne_ziele = fields.Text(
+        string='Weitere interne Ziele', copy=False, groups='base.group_system',
+        help="Rufgruppen oder Warteschlangen dieser Anlage, die als interne Weiterleitungsziele "
+             "erlaubt sind: eine Nummer je Zeile, 2 bis 6 Ziffern. Nebenstellen der Anlage sind "
+             "ohne Eintrag erlaubt.")
 
     def _ansitel_tz_pruefen(self, vals):
         """Raise ``AccessError`` if a user without system right changes the time zone.
@@ -115,6 +122,21 @@ class WbVoipAnlage(models.Model):
             if anlage.ansitel_aktiv and not anlage.ansitel_api_url:
                 raise ValidationError(self.env._(
                     "Für die Ansitel-Schnittstelle fehlt die REST-URL."))
+
+    def _ansitel_interne_ziele_liste(self):
+        """Return the additional internal targets of this PBX as a set of strings (sudo)."""
+        self.ensure_one()
+        return {zeile.strip() for zeile in (self.sudo().ansitel_interne_ziele or '').splitlines()
+                if zeile.strip()}
+
+    @api.constrains('ansitel_interne_ziele')
+    def _check_ansitel_interne_ziele(self):
+        Taste = self.env['wb.voip.taste']
+        for anlage in self.sudo():
+            for ziel in anlage._ansitel_interne_ziele_liste():
+                if not Taste._intern_gueltig(ziel):
+                    raise ValidationError(self.env._(
+                        "Weitere interne Ziele: eine Nummer je Zeile, 2 bis 6 Ziffern (nur 0–9)."))
 
     def _compute_ansitel_token(self):
         for anlage in self:

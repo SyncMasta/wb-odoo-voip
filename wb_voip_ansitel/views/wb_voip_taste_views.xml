@@ -9,7 +9,7 @@
                 <field name="name"/>
                 <field name="art"/>
                 <field name="ziel_art" invisible="art != 'weiterleitung'"/>
-                <field name="ziel" invisible="art != 'weiterleitung' or ziel_art != 'fest'"/>
+                <field name="ziel" invisible="art != 'weiterleitung' or ziel_art not in ('fest', 'intern')"/>
                 <field name="ab_modus" invisible="art != 'anrufbeantworter'"/>
                 <field name="active" column_invisible="1"/>
             </list>
@@ -34,11 +34,12 @@
                         </group>
                         <group invisible="art != 'weiterleitung'">
                             <field name="ziel_art"/>
-                            <!-- Feste Ziele setzt nur die Systemverwaltung (Gebührenbetrug) -->
-                            <field name="ziel" invisible="ziel_art != 'fest'" groups="base.group_system"
-                                   required="art == 'weiterleitung' and ziel_art == 'fest'"
-                                   placeholder="+49 152 28817386"/>
-                            <field name="ziel" invisible="ziel_art != 'fest'" readonly="1"
+                            <!-- Feste und interne Ziele setzt nur die Systemverwaltung (Gebührenbetrug) -->
+                            <field name="ziel" invisible="ziel_art not in ('fest', 'intern')"
+                                   groups="base.group_system"
+                                   required="art == 'weiterleitung' and ziel_art in ('fest', 'intern')"
+                                   placeholder="+49 152 28817386 bzw. 100"/>
+                            <field name="ziel" invisible="ziel_art not in ('fest', 'intern')" readonly="1"
                                    groups="!base.group_system"/>
                         </group>
                         <group invisible="art != 'anrufbeantworter'">

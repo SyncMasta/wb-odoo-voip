@@ -1,6 +1,6 @@
 {
     'name': 'WB VoIP Ansitel',
-    'version': '19.0.1.0.0',
+    'version': '19.0.1.1.0',
     'category': 'Productivity/VoIP',
     'summary': 'Anbindung der Ansitel-Telefonanlage an WB VoIP',
     'description': """
