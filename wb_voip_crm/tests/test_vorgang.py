@@ -227,7 +227,7 @@ class TestVorgang(WbVoipCrmCase):
     def test_aktion_anrufe(self):
         aktion = self.lead.with_user(self.vertrieb_eigene).action_wb_voip_anrufe()
         self.assertEqual(aktion['res_model'], 'wb.voip.anruf')
-        self.assertEqual(aktion['domain'], [('lead_id', '=', self.lead.id)])
+        self.assertEqual(aktion['domain'], [('res_model', '=', 'crm.lead'), ('res_id', '=', self.lead.id)])
         a1 = self._anruf(res_model='crm.lead', res_id=self.lead.id)
         self._anruf(benutzer=self.vertrieb_alle, res_model='crm.lead', res_id=self.lead.id)
         gefunden = self.Anruf.with_user(self.vertrieb_eigene).search(aktion['domain'])
@@ -256,3 +256,44 @@ class TestVorgang(WbVoipCrmCase):
         self.assertEqual(self.lead.with_user(self.vertrieb_eigene).wb_voip_protokoll_ids, p1)
         self.assertEqual(self.lead.with_user(self.vertrieb_alle).wb_voip_protokoll_ids, p2)
         self.assertEqual(self.lead.with_user(self.vertrieb_eigene).sudo().wb_voip_protokoll_ids, p1)
+
+    # --- lead_id nur für Systemverwaltung ---
+
+    def _manager_crm(self):
+        return self.env['res.users'].with_context(no_reset_password=True).create({
+            'name': 'VoIP Manager CRM 2', 'login': 'wb_voip_crm_mgr2',
+            'group_ids': [(6, 0, [self.env.ref('wb_voip.group_wb_voip_manager').id,
+                                  self.env.ref('sales_team.group_sale_salesman').id])]})
+
+    def test_lead_id_fuer_benutzer_gesperrt(self):
+        anruf = self._anruf(res_model='crm.lead', res_id=self.lead.id)
+        for benutzer in (self.vertrieb_eigene, self._manager_crm()):
+            modell = self.Anruf.with_user(benutzer)
+            self.assertNotIn('lead_id', modell.fields_get())
+            with self.assertRaises(AccessError):
+                anruf.with_user(benutzer).read(['lead_id'])
+            with self.assertRaises(AccessError):
+                modell.search_read([], ['lead_id'])
+            with self.assertRaises(AccessError):
+                anruf.with_user(benutzer).web_read({'lead_id': {'fields': {'display_name': {}}}})
+            with self.assertRaises(AccessError):
+                modell._read_group([], ['lead_id'], ['__count'])
+            with self.assertRaises(AccessError):
+                modell.search([('lead_id', '=', self.lead.id)])
+        # Systemverwaltung darf
+        self.assertIn('lead_id', self.Anruf.with_user(self.env.ref('base.user_admin')).fields_get())
+
+    def test_zaehler_und_aktion_ohne_lead_id(self):
+        manager = self._manager_crm()
+        self._anruf(res_model='crm.lead', res_id=self.lead.id)
+        self._anruf(benutzer=self.vertrieb_alle, res_model='crm.lead', res_id=self.lead.id)
+        eigen = self.lead.with_user(self.vertrieb_eigene)
+        self.assertEqual(len(eigen.wb_voip_anruf_ids), 1)
+        self.assertEqual(eigen.wb_voip_anruf_anzahl, 1)
+        self.lead.user_id = manager  # Manager darf den Vorgang lesen (Regel „eigene“)
+        self.env.invalidate_all()
+        lead = self.lead.with_user(manager)
+        self.assertEqual(lead.wb_voip_anruf_anzahl, 2)
+        self.assertEqual(len(lead.wb_voip_anruf_ids), 2)
+        self.assertEqual(len(self.Anruf.with_user(manager).search(
+            lead.action_wb_voip_anrufe()['domain'])), 2)

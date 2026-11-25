@@ -15,9 +15,13 @@ class WbVoipAnruf(models.Model):
     # lead_id wird nur aus res_model/res_id berechnet und ist für Clients nie schreibbar
     _WB_VOIP_NUR_SERVER = KernAnruf._WB_VOIP_NUR_SERVER + ('lead_id',)
 
+    # Nur Systemverwaltung: Many2one-Anzeigenamen werden per sudo gelesen und würden den
+    # Vorgangsnamen ohne Leserecht preisgeben; Benutzer nutzen res_model/res_id und das
+    # Feld wb_voip_lead_lesbar_id.
     lead_id = fields.Many2one(
         'crm.lead', string='Vorgang', compute='_compute_lead_id', store=True, readonly=True,
-        copy=False, index='btree_not_null', ondelete='set null')
+        copy=False, index='btree_not_null', ondelete='set null',
+        groups='base.group_system')
 
     wb_voip_lead_lesbar_id = fields.Many2one(
         'crm.lead', string='Vorgang', compute='_compute_wb_voip_lead_lesbar_id')
