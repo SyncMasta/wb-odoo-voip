@@ -3,9 +3,8 @@
 WB VoIP für Odoo 19 (Modul `wb_voip`) von WISSEN BERATUNG, Lizenz OPL-1, Lizenzprodukt `VOIP`.
 
 **Dieses Repo ist öffentlich.** Hier nur Quellcode, README und LICENSE. Nie ablegen: Server-, Coolify- oder
-Kundendaten, Pläne, Pfade zu Zugangsdaten, interne Arbeitsregeln. Diese liegen im privaten Repo
-`SyncMasta/wb-odoo-voip-intern` (lokal `../wb-odoo-voip-intern`, dort `CLAUDE.md`, Plan und Testlauf
-`tools/test.sh wb_voip`). Vor jedem Push den Diff auf solche Angaben prüfen.
+Kundendaten, Pläne, Pfade zu Zugangsdaten, interne Arbeitsregeln. Vor jedem Push den Diff auf
+solche Angaben prüfen.
 
 ## Regeln
 
