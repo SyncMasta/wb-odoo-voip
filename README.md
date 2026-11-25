@@ -8,7 +8,8 @@ Notizen und findet später nicht mehr, wer wann mit wem gesprochen hat. WB VoIP 
 Klick aus jedem Telefonfeld, eingehende Anrufe mit Namen des Kontakts, und nach jedem Gespräch ein Protokolleintrag
 am richtigen Datensatz.
 
-> **Stand:** Phase 5 (`wb_voip` 19.0.4.2.0, `wb_voip_crm` 19.0.1.0.0), CRM-Anbindung abgeschlossen. Phase 4b
+> **Stand:** Phase 6 (`wb_voip` 19.0.4.4.0, `wb_voip_crm` 19.0.1.0.0, `wb_voip_ansitel` 19.0.1.0.0), Ansitel-Anbindung
+> fertig, Live-Test gegen eine echte Anlage steht aus. Phase 5 (CRM-Anbindung) und Phase 4b
 > abgeschlossen. Team-Übersicht, zweite Leitung, Übergeben mit
 > Rückfrage, Konferenz im Browser, verpasste Anrufe mit Rückruf-Liste, Softphone, Anrufprotokoll, Anrufer-Fenster
 > mit Layout-Designer, eigene Anruf-Buttons mit Assistent, Rufnummer zuordnen und Lizenzanbindung sind fertig und mit
@@ -108,6 +109,17 @@ am richtigen Datensatz.
   angelegt mit den Rechten des Benutzers
 - Vorgangsnamen nur bei Leserecht am Vorgang; das technische Feld Anruf → Vorgang nur für Systemadministratoren
 
+**Ansitel-Anbindung (Modul `wb_voip_ansitel`, optional)**
+- Schnelltasten für Weiterleitung („→ Handy“ oder feste Nummer), „Nicht stören“ und Anrufbeantworter, im Softphone und/oder
+  als schmale Leiste am rechten Rand; Zustand wird frisch gelesen und per Bus an alle Tabs gemeldet
+- Weiterleitungsziele werden gegen Mehrwert-, Notruf- und Auslandsnummern geprüft (Schutz vor Gebührenbetrug); Ziele im
+  Ausland nur nach Freischaltung durch die Systemverwaltung
+- Abgleich mit der Anrufliste der Anlage alle 5 Minuten: Anrufe, die Odoo nicht gesehen hat, und Anrufe, die am Tischtelefon
+  oder über eine Weiterleitung angenommen wurden, erscheinen als „anderswo angenommen“ mit Gerät und Dauer
+- Zugangsdaten nur als Fernet-Chiffrat, nur für die Systemverwaltung; Einrichtung, Rechte und Datenschutz in
+  [`wb_voip_ansitel/README.rst`](wb_voip_ansitel/README.rst)
+- Nicht enthalten: Team-Status von der Anlage (Tischtelefone im Team bleiben unsichtbar)
+
 **Rufnummer zuordnen**
 - Unbekannte Nummer einem Kontakt zuordnen und auf Wunsch in dessen Telefonfeld speichern; danach erkennt
   WB VoIP die Nummer selbst
@@ -170,12 +182,14 @@ Details stehen in [`wb_voip/README.rst`](wb_voip/README.rst) und [`wb_voip_crm/R
 | Modul | Inhalt |
 |---|---|
 | `wb_voip` | Softphone, Anrufprotokoll, Anrufer-Fenster, Layout-Designer, Anruf-Buttons, Lizenzanbindung |
+| `wb_voip_ansitel` | Anbindung einer Ansitel-Anlage: Schnelltasten, Geräte, Abgleich mit der Anrufliste |
 | `wb_voip_crm` | CRM-Anbindung: Anrufe und Protokolle am Vorgang, Rückruf-Aufgabe, Button „Vorgang anlegen“, Block „Vorgänge“ |
 
 ## Geplant
 
 - Live-Test von Übergeben, Heranholen und Konferenz gegen verschiedene Telefonanlagen
-- Adapter für Telefonanlagen, beginnend mit Ansitel (Rufumleitung, Anrufbeantworter, Anrufliste)
+- Live-Test der Ansitel-Anbindung gegen eine echte Anlage (Phase 6 ist umgesetzt, bisher nur mit simulierter Anlage getestet);
+  Team-Status von der Anlage; Adapter für weitere Telefonanlagen
 - Englische Oberfläche
 
 ## Lizenz

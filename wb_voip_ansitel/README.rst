@@ -13,6 +13,72 @@ Anbindung einer Ansitel-Telefonanlage an WB VoIP über deren REST-Schnittstelle.
   ändert jemand ohne Systemrecht die URL (auch über sudo), wird der gespeicherte Token gelöscht.
 * HTTP über eine eigene Sitzung ohne Umgebungs-Proxys, mit Zertifikatsprüfung.
 
+Einrichtung
+-----------
+
+1. Modul ``wb_voip_ansitel`` installieren (setzt ``wb_voip`` voraus, installiert sich nicht von selbst).
+2. Systemverwaltung: an der Telefonanlage (Einstellungen › Technisch › WB VoIP › Telefonanlagen) „Ansitel-Schnittstelle
+   aktiv“ setzen, die REST-URL (nur ``https``) und den zentralen Token eintragen, die Zeitzone der Anrufliste prüfen.
+   Danach „Verbindung testen“.
+3. Systemverwaltung: am Benutzer (Reiter Telefonie) die Ansitel-Nebenstelle setzen. Wer den Anrufbeantworter über
+   einen eigenen Zugang schalten soll, bekommt zusätzlich einen persönlichen Token.
+4. Systemverwaltung: an der Anlage „Geräte aus Anlage laden“, Zuordnung der Geräte zu Benutzern prüfen
+   (Amtsleitung nie als Gerät führen).
+5. Tasten unter Einstellungen › Technisch › WB VoIP › Softphone-Tasten prüfen (feste Ziele setzt nur die
+   Systemverwaltung). Jeder Benutzer trägt unter „Mein Profil“ › Telefonie „Mein Handy“ ein.
+6. Anzeige der Tastenleiste je Benutzer (Einstellung „Schnelltasten“: Softphone, Rand oder beide); die Änderung
+   wirkt nach dem Neuladen der Seite. Die Rand-Leiste ist 2,75 rem breit; die Seite rückt dafür nach links.
+
+Rechte
+------
+
+.. list-table::
+   :header-rows: 1
+
+   * - Aktion
+     - VoIP-Administrator
+     - Systemverwaltung
+   * - Anlage anlegen, löschen
+     - nein
+     - ja
+   * - API-URL, Schalter, zentraler Token
+     - nein
+     - ja
+   * - Nebenstelle, persönlicher Token, AB-Freigabe
+     - nein (lesen: Nebenstelle)
+     - ja
+   * - Geräte ändern, „Geräte aus Anlage laden“
+     - nein (lesen ja)
+     - ja
+   * - Feste Tastenziele setzen
+     - nein
+     - ja
+   * - Tasten (Beschriftung, Art, Reihenfolge) pflegen
+     - ja
+     - ja
+   * - Verbindung testen
+     - ja
+     - ja
+   * - Eigene Tasten schalten, „Mein Handy“ setzen
+     - jeder Benutzer mit Lizenz bzw. für sich
+     - ebenso
+
+Hinweis: Wer die URL oder die Anlage eines Benutzers ohne Systemrecht ändert, löscht damit Token und Nebenstelle; die
+Kette ist so ausgelegt, dass kein Token an einen fremden Host geschickt wird.
+
+Datenschutz
+-----------
+
+* Der Abgleich importiert die Anrufliste der Anlage in Odoo: Zeitpunkt, Dauer, Gerät und Gegennummer. Nummern, die
+  keinem Kontakt gehören, werden ebenfalls gespeichert (ohne Zuordnung).
+* Es gilt die Löschfrist von WB VoIP (Einstellungen › WB VoIP, Standard 12 Monate); importierte Anrufe werden wie
+  Softphone-Anrufe gelöscht, Protokolle bleiben erhalten.
+* Die „Bemerkung“ zu einem anderswo angenommenen Anruf sieht der Besitzer; der Kollege, an den der Anruf ging, sieht
+  Name, Gerät und Dauer, die Bemerkung nur als Notiz seines eigenen Anrufs.
+* Der Abgleich zeigt jedem Benutzer nur eigene Anrufe (und beim Kollegen-Hinweis die genannten Angaben); der
+  Anlagenbetreiber sollte Beschäftigte über die Auswertung der Anrufliste informieren (§ 26 BDSG, ggf. Betriebsrat).
+* Zugangsdaten stehen nie in Logs, Bus oder Browser; Cache-Schlüssel enthalten nur einen Hash.
+
 Schnelltasten
 -------------
 
@@ -55,6 +121,10 @@ Schalten (ein früher gespeichertes Ziel wird nicht gewählt, die Taste bleibt g
 * Satelliten- und globale Dienste (+881, +882, +883) immer gesperrt;
 * Ziele mit anderer Ländervorwahl als das Land der Anlage nur, wenn der Systemparameter
   ``wb_voip_ansitel.ausland_erlaubt`` den Wert ``1`` hat (Standard: gesperrt).
+
+Hinweis: Mit ``wb_voip_ansitel.ausland_erlaubt`` = ``1`` sind Ziele im Ausland erlaubt; die Sperre der
+Mehrwert- und Notrufnummern gilt weiter, fremde Mehrwertnummern sind damit aber nicht ausgeschlossen. Eine interne
+Nebenstelle der Anlage als Ziel ist nicht vorgesehen.
 
 Feste Ziele der Tasten setzt nur die Systemverwaltung; VoIP-Administratoren pflegen Beschriftung, Art und
 Reihenfolge.
@@ -110,6 +180,10 @@ Bekannte Grenzen des Abgleichs:
 * Hat der Benutzer das Protokoll „nicht erreicht“ eines verpassten Anrufs bearbeitet und zeigt die Anrufliste später,
   dass er mit seinem Softphone-Konto angenommen hat, bleibt dieses Protokoll erhalten (es wird nicht durch „erreicht“
   ersetzt).
+* Bei wiederholtem Überlauf (mehr als 50 Seiten je Abruf) werden Fenster halbiert und, wenn auch das nicht reicht,
+  übersprungen; die Ruhe-Regel (eine Gruppe wird erst verarbeitet, wenn ihr Ende vor „bis“ liegt) verschiebt sehr
+  lange Gespräche in den nächsten Lauf. Ein Hinweis an Administratoren über ein übersprungenes Fenster fehlt; das
+  Log nennt es.
 * Die doppelte Stunde im Herbst wird nur beim Zuordnen zu Softphone-Anrufen berücksichtigt; Beginn, Ende und Ruhe einer
   Gruppe rechnen mit dem ersten Vorkommen.
 * Die Amtsleitung nie in die Geräte-Tabelle eintragen; eine Handy-Mailbox hinter einer Weiterleitung zählt als
