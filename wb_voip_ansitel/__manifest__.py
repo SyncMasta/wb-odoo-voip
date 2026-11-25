@@ -1,6 +1,6 @@
 {
     'name': 'WB VoIP Ansitel',
-    'version': '19.0.1.1.3',
+    'version': '19.0.1.1.4',
     'category': 'Productivity/VoIP',
     'summary': 'Schnelltasten und Anrufabgleich für Ansitel-Telefonanlagen',
     'description': """
@@ -11,7 +11,7 @@ Zugangsdaten an der Anlage (Token nur verschlüsselt), ein gemeinsamer API-Clien
 Schnelltasten für Weiterleitung, Nicht stören und Anrufbeantworter je Benutzer sowie der
 Abgleich mit der Anrufliste der Anlage (verpasste und anderswo angenommene Anrufe, Geräte).
 """,
-    'images': ['static/description/banner.png','static/description/tastenleiste.png'],
+    'images': ['static/description/banner.png', 'static/description/tastenleiste.png'],
     'author': 'WISSEN BERATUNG (Tobias Wissen)',
     'website': 'https://www.wissen-beratung.de',
     'license': 'OPL-1',
