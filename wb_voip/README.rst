@@ -20,6 +20,9 @@ Einrichtung
    Benutzer selbst (Mein Profil) oder der Administrator; es ist nur schreibbar, nie lesbar.
 3. **Rechte**: Gruppe „WB VoIP: Benutzer“ erlaubt Softphone und eigene Protokolle (jeder sieht nur seine
    eigenen); „WB VoIP: Administrator“ sieht alle Anrufe und Protokolle und pflegt Anlagen und Nebenstellen.
+   Systemadministratoren (Gruppe „Administration: Einstellungen“) bekommen die VoIP-Gruppen nicht automatisch: Für
+   die VoIP-Menüs brauchen auch sie „WB VoIP: Administrator“. Voraussetzung: Python-Paket ``phonenumbers`` (Rufnummernprüfung
+   und Gebührensperre; ohne es werden alle Zielnummern abgelehnt).
 4. **Schlüssel**: ``WB_VOIP_FERNET_KEY`` setzen (siehe nächster Abschnitt).
 5. **Lizenz**: Das Modul braucht eine gültige Lizenz für den Produktcode ``VOIP`` (Modul
    ``wb_license_client``). Ohne Lizenz zeigt das Softphone „Lizenz fehlt oder abgelaufen“; Anrufen und

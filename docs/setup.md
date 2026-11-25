@@ -12,7 +12,7 @@ Example addresses in this guide (`pbx.example.com`, numbers in the range `+49 30
 |---|---|
 | Odoo | 19.0, Community or Enterprise. On Enterprise the Odoo module `voip` must not be installed (`wb_voip` excludes it). |
 | Odoo modules | `mail`, `phone_validation`, `bus`, `web` (standard), `wb_license_client` (license client); `wb_voip_crm` also needs `crm` |
-| Python | `cryptography` (included in the official Odoo image); `phonenumbers` for phone number validation (used by `phone_validation`, recommended) |
+| Python | `cryptography` (included in the official Odoo image); `phonenumbers` (**required**: phone number validation and the toll-fraud check; without it every target number is refused, the manifests require it) |
 | Odoo address | **HTTPS with a valid certificate.** Browsers only grant microphone and WebRTC access in a secure context. |
 | PBX | SIP over WebSocket with TLS (`wss://`, RFC 7118) and WebRTC-capable extensions, one extension per user |
 | Network | Every user's browser can reach the PBX `wss://` address and its media ports. |
@@ -95,7 +95,8 @@ after the users are set up.
 ## 6. Set up users
 
 1. **Assign the group:** user form › access rights: "WB VoIP: User" for everyone who phones, "WB VoIP: Administrator" for
-   managing PBXs, extensions and settings. The administrator group includes the user group.
+   managing PBXs, extensions and settings. The administrator group includes the user group. **System administrators do not get the VoIP groups
+   automatically:** for the VoIP menus and settings they need the group "WB VoIP: Administrator" as well.
 2. **Extension:** user form, tab "Telephony" (only VoIP administrators may change it; everyone else sees the fields
    read-only): choose the PBX and the SIP user (the extension on the PBX). Each extension belongs to exactly one user and
    one PBX.

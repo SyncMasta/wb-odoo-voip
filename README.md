@@ -143,7 +143,7 @@ am richtigen Datensatz.
 |---|---|
 | Odoo | 19.0 (Community oder Enterprise ohne das Enterprise-Modul `voip`) |
 | Odoo-Module | `mail`, `phone_validation`, `bus`, `web` (Standard) und `wb_license_client` (Lizenz-Client von WISSEN BERATUNG); für die CRM-Anbindung zusätzlich `crm` |
-| Python | `cryptography` (im offiziellen Odoo-Image enthalten) |
+| Python | `cryptography` (im offiziellen Odoo-Image enthalten); `phonenumbers` (Pflicht: Rufnummernprüfung und Gebührensperre, ohne das Paket werden alle Zielnummern abgelehnt) |
 | Telefonanlage | SIP über WebSocket mit TLS (`wss://`, RFC 7118), eine Nebenstelle je Benutzer |
 | Browser | aktueller Chrome, Edge oder Firefox; Odoo über HTTPS |
 | Lizenz | gültiger Lizenzschlüssel für den Produktcode `VOIP` |
@@ -170,7 +170,8 @@ am richtigen Datensatz.
 2. **Nebenstellen** (Benutzerformular, Reiter „Telefonie“): Anlage und SIP-Benutzer je Benutzer; jede Nebenstelle
    gehört genau einem Benutzer. Das SIP-Passwort setzt der Benutzer unter „Mein Profil“ oder der Administrator.
 3. **Rechte**: „WB VoIP: Benutzer“ für alle, die telefonieren; „WB VoIP: Administrator“ für die Pflege von Anlagen
-   und Nebenstellen. Anlagen anlegen, löschen und ihre Verbindungsdaten ändern (WebSocket-URL, SIP-Domain,
+   und Nebenstellen. Systemadministratoren (Gruppe „Administration: Einstellungen“) bekommen die VoIP-Gruppen nicht
+   automatisch: Für die VoIP-Menüs brauchen auch sie „WB VoIP: Administrator“. Anlagen anlegen, löschen und ihre Verbindungsdaten ändern (WebSocket-URL, SIP-Domain,
    ICE-Server und Land) darf nur die Systemverwaltung: Der Browser meldet sich an der URL an, und das Land der
    Anlage gilt bei der Zielprüfung als Inland. Name, Modus und Heranholen-Präfix pflegt auch der Administrator.
 4. **Löschfrist** (Einstellungen › WB VoIP): Monate bis zur Löschung beendeter Anrufe, `0` = nie.

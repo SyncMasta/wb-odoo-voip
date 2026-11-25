@@ -33,6 +33,9 @@ Einrichtung
 Rechte
 ------
 
+Systemadministratoren bekommen die WB-VoIP-Gruppen nicht automatisch: Für die VoIP-Menüs brauchen auch sie die Gruppe
+„WB VoIP: Administrator“. Voraussetzung ist das Python-Paket ``phonenumbers`` (Gebührensperre der Schnelltasten).
+
 .. list-table::
    :header-rows: 1
 

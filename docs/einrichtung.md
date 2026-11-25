@@ -12,7 +12,7 @@ Beispieladressen in dieser Anleitung (`pbx.example.com`, Nummern im Bereich `+49
 |---|---|
 | Odoo | 19.0, Community oder Enterprise. In Enterprise darf das Odoo-Modul `voip` nicht installiert sein (`wb_voip` schließt es aus). |
 | Odoo-Module | `mail`, `phone_validation`, `bus`, `web` (Standard), `wb_license_client` (Lizenz-Client); für `wb_voip_crm` zusätzlich `crm` |
-| Python | `cryptography` (im offiziellen Odoo-Image enthalten); `phonenumbers` für die Rufnummernprüfung (von `phone_validation` genutzt, empfohlen) |
+| Python | `cryptography` (im offiziellen Odoo-Image enthalten); `phonenumbers` (**Pflicht**: Rufnummernprüfung und Gebührensperre; ohne das Paket werden alle Zielnummern abgelehnt, die Manifeste fordern es) |
 | Odoo-Adresse | **HTTPS mit gültigem Zertifikat.** Der Browser gibt Mikrofon und WebRTC nur in einem sicheren Kontext frei. |
 | Telefonanlage | SIP über WebSocket mit TLS (`wss://`, RFC 7118) und WebRTC-fähigen Nebenstellen, eine Nebenstelle je Benutzer |
 | Netzwerk | Der Browser jedes Benutzers erreicht die `wss://`-Adresse der Anlage und deren Medienports. |
@@ -102,7 +102,8 @@ erst nach der Einrichtung der Benutzer auf „Produktiv“ stellen.
 
 1. **Gruppe zuweisen:** Benutzerformular › Zugriffsrechte: „WB VoIP: Benutzer“ für alle, die telefonieren, „WB VoIP:
    Administrator“ für die Pflege von Anlagen, Nebenstellen und Einstellungen. Der Administrator schließt die
-   Benutzergruppe ein.
+   Benutzergruppe ein. **Systemadministratoren (Gruppe „Administration: Einstellungen“) bekommen die VoIP-Gruppen nicht
+   automatisch:** Für die VoIP-Menüs und -Einstellungen brauchen auch sie die Gruppe „WB VoIP: Administrator“.
 2. **Nebenstelle:** Benutzerformular, Reiter „Telefonie“ (ändern dürfen nur VoIP-Administratoren, alle anderen sehen die Felder nur schreibgeschützt): Telefonanlage und SIP-Benutzer (die Nebenstelle auf
    der Anlage) wählen. Jede Nebenstelle gehört genau einem Benutzer und einer Anlage.
 3. **SIP-Passwort:** setzt der Benutzer selbst unter Mein Profil › **Telefonie** (Feld „SIP-Passwort“) oder ein
