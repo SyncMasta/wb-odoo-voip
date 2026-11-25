@@ -20,3 +20,4 @@ from . import test_layout_kontext
 from . import test_aktion_assistent
 from . import test_verpasst
 from . import test_verpasst_logik
+from . import test_verpasst_rueckruf

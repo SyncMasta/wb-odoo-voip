@@ -451,6 +451,10 @@ class WbVoipAnruf(models.Model):
             anruf._wb_voip_verpasst_melden()
         elif neu_angenommen and anruf.richtung == 'eingehend':
             anruf._wb_voip_nach_annahme()
+        elif anruf.richtung == 'ausgehend' and anruf.zustand == 'beendet' \
+                and anruf.protokoll_id.ergebnis == 'erreicht':
+            # Rückruf angenommen: offene Verpasst-Einträge der Nummer sind erledigt
+            anruf._wb_voip_nummer_erreicht(anruf.protokoll_id)
 
     def _wb_voip_anderswo_offen(self):
         """Return True for an ``anderswo`` call that was never answered on this device."""
@@ -612,8 +616,8 @@ class WbVoipAnruf(models.Model):
         else:
             text = self.env._("Angenommen von %s", name)
         werte = {'erledigt': True, 'erledigt_am': fields.Datetime.now(), 'erledigt_text': text}
-        if protokoll:
-            werte['erledigt_durch_protokoll_id'] = protokoll.id
+        # Verknüpfung stets neu setzen, damit ein früheres Protokoll den Eintrag nicht mehr berührt
+        werte['erledigt_durch_protokoll_id'] = protokoll.id if protokoll else False
         typ = self.env.ref(RUECKRUF_TYP, raise_if_not_found=False)
         aktivitaeten = offen.rueckruf_aktivitaet_id.exists().filtered(
             lambda a: a.active and a.activity_type_id == typ)
@@ -631,6 +635,32 @@ class WbVoipAnruf(models.Model):
                 _logger.exception("[wb_voip] Rückruf-Aktivität %s nicht abschließbar", aktivitaet.id)
         offen._wb_voip_verpasst_melden()
         return offen
+
+    def _wb_voip_wieder_oeffnen(self):
+        """Reopen done missed entries (the result of the callback log changed).
+
+        Each entry is open again (no text, no date) and its owner gets a callback activity
+        again (``_wb_voip_rueckruf_aktivitaet``: an active one is reused, an archived one never).
+        The link to the log stays, so the entries close again when the result returns to reached.
+        """
+        eintraege = self.sudo().filtered(lambda a: a.zustand == 'verpasst' and a.erledigt)
+        if not eintraege:
+            return eintraege
+        eintraege.write({'erledigt': False, 'erledigt_am': False, 'erledigt_text': False})
+        for eintrag in eintraege:
+            eintrag._wb_voip_rueckruf_aktivitaet()
+        eintraege._wb_voip_verpasst_melden()
+        return eintraege
+
+    def _wb_voip_durch_aktivitaet_erledigt(self, text):
+        """Close open missed entries because their callback activity was marked done."""
+        eintraege = self.sudo().filtered(lambda a: a.zustand == 'verpasst' and not a.erledigt)
+        if eintraege:
+            eintraege.write({
+                'erledigt': True, 'erledigt_am': fields.Datetime.now(), 'erledigt_text': text,
+                'erledigt_durch_protokoll_id': False})
+            eintraege._wb_voip_verpasst_melden()
+        return eintraege
 
     def _wb_voip_verpasst_melden(self):
         """Tell the owners' browser tabs that their missed-call list changed (empty payload)."""

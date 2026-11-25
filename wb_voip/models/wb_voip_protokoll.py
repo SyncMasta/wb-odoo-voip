@@ -1,8 +1,13 @@
+import logging
+
 from odoo import api, fields, models
 from odoo.exceptions import AccessError
 
 from ..tools import serverfelder
 from ..tools.rechte import nur_voip_benutzer
+from .wb_voip_anruf import FINALE_ZUSTAENDE
+
+_logger = logging.getLogger(__name__)
 
 
 class WbVoipProtokoll(models.Model):
@@ -50,7 +55,38 @@ class WbVoipProtokoll(models.Model):
     def write(self, vals):
         if not self.env.su:
             serverfelder.pruefen(self.env, vals, self._WB_VOIP_NUR_SERVER)
-        return super().write(vals)
+        alt = {p.id: p.ergebnis for p in self} if 'ergebnis' in vals else None
+        ergebnis = super().write(vals)
+        if alt:
+            self._wb_voip_ergebnis_gewechselt(alt)
+        return ergebnis
+
+    def _wb_voip_ergebnis_gewechselt(self, alt):
+        """Follow-up of a changed result (after the user's own write succeeded).
+
+        Away from ``erreicht``: the missed entries this log closed are open again (with a new
+        callback activity). To ``erreicht`` on an outgoing call: the open missed entries of the
+        number are closed (again). Runs with sudo, only on entries linked to this log or the
+        number of the user's own outgoing call; a failure never undoes the user's change.
+        """
+        for protokoll in self.sudo():
+            vorher = alt.get(protokoll.id)
+            if vorher == protokoll.ergebnis:
+                continue
+            anruf = protokoll.anruf_id
+            try:
+                with self.env.cr.savepoint():
+                    if vorher == 'erreicht':
+                        self.env['wb.voip.anruf'].sudo().search([
+                            ('erledigt_durch_protokoll_id', '=', protokoll.id),
+                            ('erledigt', '=', True)])._wb_voip_wieder_oeffnen()
+                    elif protokoll.ergebnis == 'erreicht' and anruf \
+                            and anruf.richtung == 'ausgehend' and anruf.user_id == protokoll.user_id \
+                            and anruf.zustand in FINALE_ZUSTAENDE:
+                        anruf._wb_voip_nummer_erreicht(protokoll)
+            except Exception:  # noqa: BLE001 - die Änderung des Benutzers bleibt bestehen
+                _logger.exception("[wb_voip] Folgen des Ergebniswechsels (Protokoll %s) fehlgeschlagen",
+                                  protokoll.id)
 
     def _wb_voip_text(self):
         """Return the chatter text, e.g. ``Anruf eingehend · erreicht · 1:05``.

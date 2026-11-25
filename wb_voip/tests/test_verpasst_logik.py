@@ -437,13 +437,13 @@ class TestVerpasstLogik(WbVoipCase):
         self.assertFalse(a.sudo().erledigt)
 
     def test_ausgehend_erledigt_nichts(self):
+        # nicht angenommen (besetzt): kein Rückruf-Erfolg; angenommen siehe test_verpasst_rueckruf
         with freeze_time(START) as zeit:
             alt = self._verpasst(self.user_a)
             zeit.tick(timedelta(minutes=5))
             raus = self._anruf(self.user_b, richtung='ausgehend')
-            raus.wb_voip_angenommen()
             zeit.tick(timedelta(seconds=30))
-            raus.wb_voip_beendet(False, False)
+            raus.wb_voip_beendet(False, '486')
         self.assertFalse(alt.sudo().erledigt)
         self.assertTrue(alt.sudo().rueckruf_aktivitaet_id.active)
 

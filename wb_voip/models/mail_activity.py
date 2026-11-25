@@ -1,4 +1,5 @@
 from odoo import api, models
+from odoo.tools import html2plaintext
 
 from ..tools.eingaben import limit_pruefen
 from ..tools.rechte import nur_voip_benutzer
@@ -7,10 +8,29 @@ from ..tools.rechte import nur_voip_benutzer
 AUFGABEN_MAX_STAPEL = 10
 AUFGABEN_MAX_GELESEN = 2000
 AUFGABEN_MIN_STAPEL = 50
+# Obergrenze des Erledigt-Texts am Verpasst-Eintrag (wie ✓ „Wie erledigt?“)
+ERLEDIGT_TEXT_MAX = 2000
 
 
 class MailActivity(models.Model):
     _inherit = 'mail.activity'
+
+    def _action_done(self, feedback=False, attachment_ids=None):
+        """Marking a callback activity done also closes the missed entries that use it.
+
+        The open entries are collected before (the activity is archived by the standard
+        method); text = feedback of the activity as plain text, else "Aufgabe erledigt".
+        Entries closed by ``_wb_voip_nummer_erreicht`` are already done and not touched again.
+        """
+        offen = self.env['wb.voip.anruf'].sudo().search([
+            ('rueckruf_aktivitaet_id', 'in', self.ids), ('erledigt', '=', False),
+            ('zustand', '=', 'verpasst')]) if self.ids else self.env['wb.voip.anruf']
+        ergebnis = super()._action_done(feedback=feedback, attachment_ids=attachment_ids)
+        if offen:
+            text = html2plaintext(feedback or '').strip()[:ERLEDIGT_TEXT_MAX] \
+                or self.env._("Aufgabe erledigt")
+            offen._wb_voip_durch_aktivitaet_erledigt(text)
+        return ergebnis
 
     @api.model
     @nur_voip_benutzer
