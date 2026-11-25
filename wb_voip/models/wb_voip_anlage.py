@@ -63,12 +63,23 @@ class WbVoipAnlage(models.Model):
         if VERBINDUNGSFELDER & set(vals) and not (self.env.su or self.env.user._is_system()):
             raise AccessError(self.env._("Verbindungsdaten der Anlage darf nur die Systemverwaltung ändern."))
 
+    def _nur_system(self, text):
+        """Raise ``AccessError`` with ``text`` unless the caller is a system user (or superuser code)."""
+        if not (self.env.su or self.env.user._is_system()):
+            raise AccessError(text)
+
     @api.model_create_multi
     def create(self, vals_list):
+        # Auch Vorgabewerte (Kontext default_*, ir.default) könnten eine fremde Adresse einsetzen
+        self._nur_system(self.env._("Anlagen darf nur die Systemverwaltung anlegen."))
         for vals in vals_list:
             self._verbindung_pruefen(vals)
             self._ws_url_bereinigen(vals)
         return super().create(vals_list)
+
+    def unlink(self):
+        self._nur_system(self.env._("Anlagen darf nur die Systemverwaltung löschen."))
+        return super().unlink()
 
     def write(self, vals):
         self._verbindung_pruefen(vals)

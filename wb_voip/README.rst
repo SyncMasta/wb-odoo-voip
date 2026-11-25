@@ -32,7 +32,8 @@ Verbindungsdaten der Anlage
 ---------------------------
 
 WebSocket-URL, SIP-Domain und ICE-Server einer Anlage dürfen nur Systemadministratoren ändern (Prüfung in
-``create``/``write``, im Formular für andere schreibgeschützt). Benutzer von WB VoIP lesen sie weiter, der
+``write``, im Formular für andere schreibgeschützt); Anlagen anlegen, duplizieren und löschen ist ebenfalls der
+Systemverwaltung vorbehalten (Zugriffsrechte plus Prüfung im Code, auch gegen Vorgabewerte). Benutzer von WB VoIP lesen sie weiter, der
 Browser braucht sie zur Anmeldung. VoIP-Administratoren ohne Systemrecht können sie nicht auf einen fremden
 Server umbiegen.
 
