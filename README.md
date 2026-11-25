@@ -184,6 +184,12 @@ aktivieren“).
 
 Details stehen in [`wb_voip/README.rst`](wb_voip/README.rst) und [`wb_voip_crm/README.rst`](wb_voip_crm/README.rst).
 
+## Dokumentation
+
+- [Einrichtungsanleitung](docs/einrichtung.md) (Deutsch): Installation, Lizenz, Server-Schlüssel, Anlage, Benutzer, Rechte,
+  Datenschutz, Ansitel, Fehlersuche
+- [Setup guide](docs/setup.md) (English): same content
+
 ## Module
 
 | Modul | Inhalt |
