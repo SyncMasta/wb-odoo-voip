@@ -8,7 +8,8 @@ Notizen und findet später nicht mehr, wer wann mit wem gesprochen hat. WB VoIP 
 Klick aus jedem Telefonfeld, eingehende Anrufe mit Namen des Kontakts, und nach jedem Gespräch ein Protokolleintrag
 am richtigen Datensatz.
 
-> **Stand:** Phase 4 (Version 19.0.4.1.0), Phase 4b abgeschlossen. Team-Übersicht, zweite Leitung, Übergeben mit
+> **Stand:** Phase 5 (`wb_voip` 19.0.4.2.0, `wb_voip_crm` 19.0.1.0.0), CRM-Anbindung abgeschlossen. Phase 4b
+> abgeschlossen. Team-Übersicht, zweite Leitung, Übergeben mit
 > Rückfrage, Konferenz im Browser, verpasste Anrufe mit Rückruf-Liste, Softphone, Anrufprotokoll, Anrufer-Fenster
 > mit Layout-Designer, eigene Anruf-Buttons mit Assistent, Rufnummer zuordnen und Lizenzanbindung sind fertig und mit
 > automatischen Tests abgesichert. Gegen eine echte Telefonanlage getestet ist die Signalisierung aus Phase 1 und 2
@@ -98,6 +99,15 @@ am richtigen Datensatz.
   oder Python-Code (nur Systemadministratoren)
 - Erzeugte Serveraktionen laufen nur aus WB VoIP heraus; Bearbeiten über „Mit Assistent bearbeiten“
 
+**CRM-Anbindung (Modul `wb_voip_crm`, installiert sich mit CRM selbst)**
+- Anrufe werden dem offenen Vorgang des Kontakts oder seiner Firma zugeordnet (aktiv, Wahrscheinlichkeit unter
+  100 %); bei mehreren zählt der zuletzt geänderte eigene, sonst keiner. Manuell zuordnen und lösen im Block „Vorgänge“
+- Smart-Button „Anrufe“ und Reiter „Anrufprotokolle“ am Vorgang, nur mit den Rechten des Benutzers
+- Rückruf-Aktivität bei verpassten Anrufen am offenen Vorgang, sonst am Kontakt
+- Anruf-Button „Vorgang anlegen“ mit Titel-Vorlage (`{kontakt}`, `{nummer}`, `{datum}`) und Verkaufsteam;
+  angelegt mit den Rechten des Benutzers
+- Vorgangsnamen nur bei Leserecht am Vorgang; das technische Feld Anruf → Vorgang nur für Systemadministratoren
+
 **Rufnummer zuordnen**
 - Unbekannte Nummer einem Kontakt zuordnen und auf Wunsch in dessen Telefonfeld speichern; danach erkennt
   WB VoIP die Nummer selbst
@@ -115,7 +125,7 @@ am richtigen Datensatz.
 | | |
 |---|---|
 | Odoo | 19.0 (Community oder Enterprise ohne das Enterprise-Modul `voip`) |
-| Odoo-Module | `mail`, `phone_validation`, `bus`, `web` (Standard) und `wb_license_client` (Lizenz-Client von WISSEN BERATUNG) |
+| Odoo-Module | `mail`, `phone_validation`, `bus`, `web` (Standard) und `wb_license_client` (Lizenz-Client von WISSEN BERATUNG); für die CRM-Anbindung zusätzlich `crm` |
 | Python | `cryptography` (im offiziellen Odoo-Image enthalten) |
 | Telefonanlage | SIP über WebSocket mit TLS (`wss://`, RFC 7118), eine Nebenstelle je Benutzer |
 | Browser | aktueller Chrome, Edge oder Firefox; Odoo über HTTPS |
@@ -123,7 +133,8 @@ am richtigen Datensatz.
 
 ## Installation
 
-1. `wb_voip` und `wb_license_client` in den Addons-Pfad legen.
+1. `wb_voip` und `wb_license_client` in den Addons-Pfad legen; für die CRM-Anbindung auch `wb_voip_crm`
+   (installiert sich selbst, sobald `crm` und `wb_voip` installiert sind).
 2. Schlüssel für die Passwort-Verschlüsselung erzeugen und als Umgebungsvariable des Odoo-Prozesses setzen:
 
    ```bash
@@ -152,11 +163,17 @@ am richtigen Datensatz.
 Das Menü Einstellungen › Technisch erscheint nur im Entwicklermodus (Einstellungen › „Entwicklermodus
 aktivieren“).
 
-Details stehen in [`wb_voip/README.rst`](wb_voip/README.rst).
+Details stehen in [`wb_voip/README.rst`](wb_voip/README.rst) und [`wb_voip_crm/README.rst`](wb_voip_crm/README.rst).
+
+## Module
+
+| Modul | Inhalt |
+|---|---|
+| `wb_voip` | Softphone, Anrufprotokoll, Anrufer-Fenster, Layout-Designer, Anruf-Buttons, Lizenzanbindung |
+| `wb_voip_crm` | CRM-Anbindung: Anrufe und Protokolle am Vorgang, Rückruf-Aufgabe, Button „Vorgang anlegen“, Block „Vorgänge“ |
 
 ## Geplant
 
-- CRM-Anbindung (Anrufe am Vorgang)
 - Live-Test von Übergeben, Heranholen und Konferenz gegen verschiedene Telefonanlagen
 - Adapter für Telefonanlagen, beginnend mit Ansitel (Rufumleitung, Anrufbeantworter, Anrufliste)
 - Englische Oberfläche
