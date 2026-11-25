@@ -2,7 +2,7 @@
 <templates xml:space="preserve">
     <t t-name="wb_voip_ansitel.Tastenleiste">
         <div t-if="sichtbar" t-attf-class="o_wb_voip_tasten o_wb_voip_tasten_#{props.lage}">
-            <div class="o_wb_voip_tasten_reihe" role="group" aria-label="Schnelltasten">
+            <div class="o_wb_voip_tasten_reihe" role="group" t-att-aria-label="gruppenName">
                 <button t-foreach="state.tasten" t-as="taste" t-key="taste.id" type="button"
                         t-attf-class="o_wb_voip_taste #{klasse(taste)}"
                         t-att-data-id="taste.id"
@@ -10,17 +10,18 @@
                         t-att-aria-label="taste.name"
                         t-att-aria-pressed="gedrueckt(taste)"
                         t-att-aria-describedby="beschreibung(taste)"
-                        t-att-disabled="state.schaltet"
+                        t-att-aria-disabled="beschaeftigt"
                         t-on-click="() => this.schalten(taste)">
                     <i t-att-class="symbol(taste)" aria-hidden="true"/>
                     <span class="o_wb_voip_taste_name" t-esc="taste.name"/>
+                    <i t-if="taste.aktiv === true" class="fa fa-check o_wb_voip_taste_haken" aria-hidden="true"/>
                 </button>
             </div>
             <div t-if="state.fremde_weiterleitung" class="o_wb_voip_tasten_fremd">
                 <span class="o_wb_voip_tasten_fremd_text">Weiterleitung auf <t t-esc="state.fremde_weiterleitung"/></span>
                 <button type="button" class="o_wb_voip_tasten_fremd_aus"
                         t-att-title="fremdTitel" t-att-aria-label="fremdTitel"
-                        t-att-disabled="state.schaltet"
+                        t-att-aria-disabled="beschaeftigt"
                         t-on-click="weiterleitungAus">aus</button>
             </div>
             <div t-if="state.fehler and props.lage === 'softphone'" class="o_wb_voip_tasten_fehler"

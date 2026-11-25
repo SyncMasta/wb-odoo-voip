@@ -17,18 +17,24 @@
         font-size: 0.8125rem;
         padding: 0.25rem 0.5rem;
 
+        position: relative;
+
+        // aktiv: Farbe und zusätzlich Haken und Innenrahmen (nicht nur Farbe als Hinweis)
         &.o_wb_voip_taste_aktiv {
             background-color: var(--bs-primary, #0d6efd);
             border-color: var(--bs-primary, #0d6efd);
             color: var(--bs-white, #fff);
+            box-shadow: inset 0 0 0 2px var(--bs-white, #fff);
+            font-weight: 600;
         }
         &.o_wb_voip_taste_unbekannt {
             border-style: dashed;
             background-color: var(--bs-tertiary-bg, #f8f9fa);
             color: var(--bs-secondary-color, #6c757d);
         }
-        &:disabled {
+        &[aria-disabled="true"] {
             opacity: 0.75;
+            cursor: progress;
         }
     }
 
@@ -83,6 +89,12 @@
     .o_wb_voip_taste {
         justify-content: center;
         padding: 0.5rem 0;
+    }
+    .o_wb_voip_taste_haken {
+        position: absolute;
+        top: 1px;
+        right: 3px;
+        font-size: 0.5625rem;
     }
     .o_wb_voip_taste_name,
     .o_wb_voip_tasten_fremd_text {

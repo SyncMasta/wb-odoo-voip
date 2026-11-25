@@ -10,6 +10,8 @@ export const BUS_TASTEN = "wb_voip/tasten";
 export const TAKT_MS = 60_000;
 /** Ohne Schnelltasten (geladen, nicht verfügbar, kein Fehler) genügt eine seltene Abfrage. */
 export const TAKT_RUHE_MS = 600_000;
+/** So kurz nach einem Lesen zählt der Wechsel zum Telefon-Tab nicht als Anlass für ein weiteres. */
+export const KURZ_MS = 10_000;
 
 /** Soll die Leiste in dieser Lage („softphone“ oder „rand“) gezeigt werden? */
 export function tastenSichtbar(zustand, ort, lage) {
@@ -70,6 +72,7 @@ export class TastenDienst {
         this._zuletzt = 0;
         this._timer = null;
         this._angefordert = false;
+        this._laedt = false;
         if (aktiv) {
             busService.subscribe(BUS_TASTEN, (nutzlast) => {
                 this._nr++;
@@ -87,13 +90,21 @@ export class TastenDienst {
         }
         if (haelt) {
             this._angefordert = true;
-            this.laden();
+            // beim Start kommt der Halter kurz nach dem ersten Lesen: nicht noch einmal fragen
+            if (!this._kuerzlichGelesen()) {
+                this.laden();
+            }
             this._timer = setInterval(() => this._takt(), TAKT_MS);
         } else if (!this._angefordert) {
             // Nebentab: einmal beim Start, danach nur über den Bus
             this._angefordert = true;
             this.laden();
         }
+    }
+
+    /** Wurde gerade eben (oder läuft noch) gelesen, ist ein zweites Lesen beim Start überflüssig. */
+    _kuerzlichGelesen() {
+        return this._laedt || (this._zuletzt > 0 && Date.now() - this._zuletzt < KURZ_MS);
     }
 
     _takt() {
@@ -114,6 +125,10 @@ export class TastenDienst {
 
     /** Liest den Zustand vom Server; eine ältere Antwort überholt keine neuere. */
     async laden() {
+        if (this._laedt) {
+            return; // ein Lesen ist unterwegs, dessen Antwort gilt
+        }
+        this._laedt = true;
         this._zuletzt = Date.now();
         const nr = ++this._nr;
         try {
@@ -123,6 +138,8 @@ export class TastenDienst {
             }
         } catch {
             // der alte Zustand bleibt; der nächste Takt versucht es erneut
+        } finally {
+            this._laedt = false;
         }
     }
 

@@ -180,6 +180,27 @@ test("Ohne Schnelltasten (nicht verfügbar, kein Fehler) fragt der Takt nur alle
     expect(w.aufrufe.length).toBe(start + 1);
 });
 
+test("Start: der Halter-Wechsel gleich nach dem ersten Lesen liest nicht ein zweites Mal", async () => {
+    const w = vorbereiten({ halter: false });
+    await dienstStarten();
+    expect(w.aufrufe.length).toBe(1);
+    w.telefon.state.halter = true;
+    await animationFrame();
+    expect(w.aufrufe.length).toBe(1);
+    // der Takt läuft danach im Halter-Tab weiter
+    await advanceTime(60_000);
+    expect(w.aufrufe.length).toBe(2);
+});
+
+test("Wird der Tab später Halter, liest er neu", async () => {
+    const w = vorbereiten({ halter: false });
+    await dienstStarten();
+    await advanceTime(30_000);
+    w.telefon.state.halter = true;
+    await animationFrame();
+    expect(w.aufrufe.length).toBe(2);
+});
+
 test("Lesefehler: Zustand bleibt, Dienst läuft weiter", async () => {
     const w = vorbereiten({
         halter: true,
@@ -361,10 +382,64 @@ test("Tasten sind gesperrt, solange der Server schaltet", async () => {
     await animationFrame();
     await click(".o_wb_voip_taste[data-id='1']");
     await animationFrame();
-    expect(".o_wb_voip_taste[data-id='2']").toHaveAttribute("disabled");
+    expect(".o_wb_voip_taste[data-id='2']").toHaveAttribute("aria-disabled", "true");
+    expect(".o_wb_voip_taste[data-id='2']").not.toHaveAttribute("disabled");
     freigabe();
     await animationFrame();
-    expect(".o_wb_voip_taste[data-id='2']").not.toHaveAttribute("disabled");
+    expect(".o_wb_voip_taste[data-id='2']").not.toHaveAttribute("aria-disabled");
+});
+
+test("Beim Schalten bleibt der Fokus erhalten und weitere Klicks werden ignoriert", async () => {
+    let freigabe;
+    const gate = new Promise((r) => (freigabe = r));
+    const w = vorbereiten({
+        antworten: {
+            wb_voip_taste_schalten: async () => {
+                await gate;
+                return zustand();
+            },
+        },
+    });
+    await mountWithCleanup(WbVoipTastenleiste, { props: { lage: "softphone" } });
+    await animationFrame();
+    queryOne(".o_wb_voip_taste[data-id='1']").focus();
+    await click(".o_wb_voip_taste[data-id='1']");
+    await animationFrame();
+    expect(document.activeElement).toBe(queryOne(".o_wb_voip_taste[data-id='1']"));
+    await click(".o_wb_voip_taste[data-id='2']");
+    await animationFrame();
+    freigabe();
+    await animationFrame();
+    expect(w.aufrufe.filter(([m]) => m === "wb_voip_taste_schalten").length).toBe(1);
+});
+
+test("Aktive Taste hat zusätzlich zur Farbe einen Haken", async () => {
+    vorbereiten();
+    await mountWithCleanup(WbVoipTastenleiste, { props: { lage: "softphone" } });
+    await animationFrame();
+    expect(".o_wb_voip_taste[data-id='2'] .o_wb_voip_taste_haken").toHaveCount(1);
+    expect(".o_wb_voip_taste[data-id='1'] .o_wb_voip_taste_haken").toHaveCount(0);
+    expect(".o_wb_voip_taste[data-id='3'] .o_wb_voip_taste_haken").toHaveCount(0);
+});
+
+test("Bei „beide“ trägt die Rand-Leiste einen eigenen Namen", async () => {
+    vorbereiten({ ort: "beide" });
+    await mountWithCleanup(WbVoipTastenleiste, { props: { lage: "rand" } });
+    await animationFrame();
+    expect(".o_wb_voip_tasten_rand [role='group']:first").toHaveAttribute(
+        "aria-label",
+        "Schnelltasten am Rand"
+    );
+});
+
+test("Im Softphone heißt die Gruppe „Schnelltasten“", async () => {
+    vorbereiten({ ort: "beide" });
+    await mountWithCleanup(WbVoipTastenleiste, { props: { lage: "softphone" } });
+    await animationFrame();
+    expect(".o_wb_voip_tasten_softphone [role='group']:first").toHaveAttribute(
+        "aria-label",
+        "Schnelltasten"
+    );
 });
 
 test("Fremde Weiterleitung: Zeile mit Knopf „aus“", async () => {

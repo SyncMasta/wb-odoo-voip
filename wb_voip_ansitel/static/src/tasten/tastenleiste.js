@@ -36,6 +36,13 @@ export class WbVoipTastenleiste extends Component {
         return tastenSichtbar(this.state, this.state.ort, this.props.lage);
     }
 
+    /** Bei „beide“ gibt es zwei Gruppen mit gleichem Zweck: die am Rand bekommt einen eigenen Namen. */
+    get gruppenName() {
+        return this.props.lage === "rand" && this.state.ort === "beide"
+            ? _t("Schnelltasten am Rand")
+            : _t("Schnelltasten");
+    }
+
     get fehlerId() {
         return `o_wb_voip_tasten_fehler_${this.props.lage}`;
     }
@@ -58,6 +65,11 @@ export class WbVoipTastenleiste extends Component {
             : taste.name;
     }
 
+    /** ``aria-disabled`` statt ``disabled``, damit der Fokus beim Schalten nicht verloren geht. */
+    get beschaeftigt() {
+        return this.state.schaltet ? "true" : undefined;
+    }
+
     gedrueckt(taste) {
         return taste.aktiv === null ? "mixed" : taste.aktiv ? "true" : "false";
     }
@@ -70,10 +82,16 @@ export class WbVoipTastenleiste extends Component {
     }
 
     schalten(taste) {
+        if (this.state.schaltet) {
+            return; // aria-disabled lässt den Fokus stehen, der Klick wird hier ignoriert
+        }
         return this.dienst.schalten(taste.id, this.dienst.wunschzustand(taste));
     }
 
     weiterleitungAus() {
+        if (this.state.schaltet) {
+            return;
+        }
         return this.dienst.weiterleitungAus();
     }
 
