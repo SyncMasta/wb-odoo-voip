@@ -1,6 +1,8 @@
 // Test-Doubles für den Telefon-Dienst: Uhr, Web-Sperren, BroadcastChannel, ORM, SIP-Agent, Klänge.
 // Alle Fakes sind deterministisch; Zeit läuft nur über FakeUhr.vorspulen().
 
+import { Mikrofon } from "@wb_voip/dienste/sip_agent";
+
 /** Leert die Microtask-Warteschlange (mehrere Runden für verkettete Promises). */
 export async function leeren(runden = 30) {
     for (let i = 0; i < runden; i++) {
@@ -345,6 +347,8 @@ export class FakeSitzung extends Sender {
             empfang: { name: `empfang-${n}` },
             sender: new FakeSender(new FakeSpur(`mik-spur-${n}`)),
         };
+        // dieselbe Regel wie SipJsSitzung: gesendet wird nur, wenn weder stumm noch gehalten
+        this.mikrofon = new Mikrofon(() => [this.medien?.sender?.track]);
     }
     konferenzMedien() {
         return this.medien;
@@ -375,18 +379,20 @@ export class FakeSitzung extends Sender {
     }
     hold() {
         this._merke("hold");
-        return Promise.resolve();
+        return this.mikrofon.halten(true, () => this.reInvite("hold"));
     }
     unhold() {
         this._merke("unhold");
+        return this.mikrofon.halten(false, () => this.reInvite("unhold"));
+    }
+    /** Antwort der Anlage auf das Re-INVITE (Tests überschreiben es für Ablehnungen). */
+    reInvite() {
         return Promise.resolve();
     }
     mute(an) {
         this._merke("mute", an);
         // wie SipJsSitzung: schaltet die gerade gesendete Spur
-        if (this.medien?.sender?.track) {
-            this.medien.sender.track.enabled = !an;
-        }
+        this.mikrofon.stummSchalten(an);
     }
     dtmf(ziffer) {
         this._merke("dtmf", ziffer);

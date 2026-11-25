@@ -122,12 +122,63 @@ export function cancelGrund(nachricht) {
     return eintraege.some(anderswoEintrag) ? "anderswo" : "487";
 }
 
+/**
+ * Mikrofon einer Leitung: gesendet wird nur, wenn sie weder stumm noch gehalten ist. Alle
+ * Spuren werden nur hier gesetzt (``enabled = !stumm && !gehalten``).
+ *
+ * Halten ist bei SIP.js 0.21.2 nur ein Re-INVITE mit ``sendonly``: Der Browser schickt das
+ * Mikrofon weiter, die Anlage spielt es dem gehaltenen Anrufer vor. Deshalb geht das Mikrofon
+ * vor dem Halte-Re-INVITE aus und erst nach angenommenem Fortsetzen wieder an; scheitert das
+ * Re-INVITE, gilt der Zustand davor.
+ */
+export class Mikrofon {
+    /** @param {() => Iterable<MediaStreamTrack>} spuren gerade gesendete Spuren */
+    constructor(spuren) {
+        this._spuren = spuren;
+        this.stumm = false;
+        this.gehalten = false;
+    }
+    setzen() {
+        const an = !this.stumm && !this.gehalten;
+        for (const spur of this._spuren() || []) {
+            if (spur) {
+                spur.enabled = an;
+            }
+        }
+    }
+    /** Stumm an/aus; eine gehaltene Leitung bleibt trotzdem aus. */
+    stummSchalten(an) {
+        this.stumm = Boolean(an);
+        this.setzen();
+    }
+    /** Halten/Fortsetzen über ``reInvite()`` (Promise); bei Ablehnung der Zustand davor. */
+    async halten(an, reInvite) {
+        const vorher = this.gehalten;
+        if (an) {
+            this.gehalten = true;
+            this.setzen();
+        }
+        try {
+            await reInvite();
+        } catch (fehler) {
+            this.gehalten = vorher;
+            this.setzen();
+            throw fehler;
+        }
+        this.gehalten = Boolean(an);
+        this.setzen();
+    }
+}
+
 export class SipJsSitzung extends Sender {
     constructor(agent, session, { ausgehend }) {
         super();
         this._agent = agent;
         this._session = session;
         this._ausgehend = ausgehend;
+        this._mikrofon = new Mikrofon(() =>
+            (this._sdh?.peerConnection?.getSenders?.() || []).map((sender) => sender.track)
+        );
         this._grund = "";
         this._angenommen = false;
         this._vorbei = false; // SIP-Dialog beendet (z. B. BYE der Anlage)
@@ -210,18 +261,22 @@ export class SipJsSitzung extends Sender {
         return this._session.bye();
     }
     _halten(an) {
-        const optionen = this._session.sessionDescriptionHandlerOptionsReInvite || {};
-        this._session.sessionDescriptionHandlerOptionsReInvite = { ...optionen, hold: an };
-        return new Promise((resolve, reject) => {
-            this._session
-                .invite({
-                    requestDelegate: {
-                        onAccept: () => resolve(),
-                        onReject: (antwort) =>
-                            reject(new Error(`Re-INVITE abgelehnt (${antwort.message.statusCode})`)),
-                    },
-                })
-                .catch(reject);
+        return this._mikrofon.halten(an, () => {
+            const optionen = this._session.sessionDescriptionHandlerOptionsReInvite || {};
+            this._session.sessionDescriptionHandlerOptionsReInvite = { ...optionen, hold: an };
+            return new Promise((resolve, reject) => {
+                this._session
+                    .invite({
+                        requestDelegate: {
+                            onAccept: () => resolve(),
+                            onReject: (antwort) =>
+                                reject(
+                                    new Error(`Re-INVITE abgelehnt (${antwort.message.statusCode})`)
+                                ),
+                        },
+                    })
+                    .catch(reject);
+            });
         });
     }
     hold() {
@@ -230,13 +285,9 @@ export class SipJsSitzung extends Sender {
     unhold() {
         return this._halten(false);
     }
+    /** Stumm an/aus; schaltet das Mikrofon einer gehaltenen Leitung nie ein. */
     mute(an) {
-        const verbindung = this._sdh?.peerConnection;
-        for (const sender of verbindung?.getSenders() || []) {
-            if (sender.track) {
-                sender.track.enabled = !an;
-            }
-        }
+        this._mikrofon.stummSchalten(an);
     }
     /**
      * Audio of this session for the browser conference: the audio RTCRtpSender, the remote
@@ -494,6 +545,7 @@ class TestSitzung extends Sender {
         this._timer = [];
         this._vorbei = false;
         this.simuliert = true; // Konferenz ohne Ton (kein WebRTC)
+        this._mikrofon = new Mikrofon(() => []); // ohne Spuren, nur der Zustand
     }
     _spaeter(ms, fn) {
         this._timer.push(this._uhr.setTimeout(() => !this._vorbei && fn(), ms));
@@ -523,12 +575,14 @@ class TestSitzung extends Sender {
         return Promise.resolve();
     }
     hold() {
-        return Promise.resolve();
+        return this._mikrofon.halten(true, () => Promise.resolve());
     }
     unhold() {
-        return Promise.resolve();
+        return this._mikrofon.halten(false, () => Promise.resolve());
     }
-    mute() {}
+    mute(an) {
+        this._mikrofon.stummSchalten(an);
+    }
     dtmf() {}
     konferenzMedien() {
         return null;

@@ -120,6 +120,46 @@ test("Rückfrage hält das Gespräch und wählt die zweite Leitung", async () =>
     welt.dienst.stop();
 });
 
+test("Rückfrage: gehaltene Leitung sendet kein Mikrofon, auch nicht nach Stumm aus", async () => {
+    const welt = await verbunden();
+    const { erste, zweite } = await mitRueckfrage(welt);
+    expect(erste.medien.sender.track.enabled).toBe(false);
+    // Stumm wirkt auf die aktive Leitung (Rückfrage), nie auf die gehaltene
+    welt.dienst.stumm(true);
+    welt.dienst.stumm(false);
+    expect(zweite.medien.sender.track.enabled).toBe(true);
+    expect(erste.medien.sender.track.enabled).toBe(false);
+    // Zurück: nach dem Fortsetzen wieder Mikrofon
+    await welt.dienst.zurueck();
+    await welt.uhr.vorspulen(0);
+    expect(erste.medien.sender.track.enabled).toBe(true);
+    welt.dienst.stop();
+});
+
+test("Anklopfen annehmen: gehaltenes erstes Gespräch sendet kein Mikrofon", async () => {
+    const welt = await verbunden();
+    const erste = await imGespraech(welt);
+    welt.agent.eingehend("0170 2222");
+    await welt.uhr.vorspulen(0);
+    await welt.dienst.annehmen();
+    await welt.uhr.vorspulen(0);
+    expect(erste.hat("hold").length).toBe(1);
+    expect(erste.medien.sender.track.enabled).toBe(false);
+    welt.dienst.stumm(false);
+    expect(erste.medien.sender.track.enabled).toBe(false);
+    welt.dienst.stop();
+});
+
+test("Halten abgelehnt: Mikrofon wieder an, Gespräch gilt nicht als gehalten", async () => {
+    const welt = await verbunden();
+    const erste = await imGespraech(welt);
+    erste.reInvite = () => Promise.reject(new Error("Re-INVITE abgelehnt (491)"));
+    await welt.dienst.halten(true);
+    expect(welt.dienst.state.anruf.gehalten).toBe(false);
+    expect(erste.medien.sender.track.enabled).toBe(true);
+    welt.dienst.stop();
+});
+
 test("Rückfrage nur im laufenden Gespräch und höchstens zwei Leitungen", async () => {
     const welt = await verbunden();
     expect(await welt.dienst.rueckfrage("102")).toBe(false);

@@ -136,6 +136,99 @@ test("Verbinden: ohne NOTIFY nach 15 s gilt es als gescheitert", async () => {
     expect(await ergebnis).toMatch(/Anlage/);
 });
 
+// --- Halten und Stumm: Mikrofon-Spur (Fake-peerConnection) -----------------------------------
+
+/** Sitzung mit Fake-peerConnection; Re-INVITEs werden gesammelt und von Hand beantwortet. */
+function sitzungMitTon() {
+    const session = fakeSitzung();
+    const spur = { kind: "audio", enabled: true };
+    const reInvites = [];
+    session.sessionDescriptionHandler = {
+        peerConnection: { getSenders: () => [{ track: spur }] },
+    };
+    session.invite = (optionen) => {
+        reInvites.push({
+            hold: session.sessionDescriptionHandlerOptionsReInvite.hold,
+            spurBeimSenden: spur.enabled,
+            annehmen: () => optionen.requestDelegate.onAccept(),
+            ablehnen: (code = 491) => optionen.requestDelegate.onReject({ message: { statusCode: code } }),
+        });
+        return Promise.resolve();
+    };
+    const sitzung = new SipJsSitzung(FAKE_AGENT, session, { ausgehend: true });
+    return { sitzung, spur, reInvites };
+}
+
+test("Halten: Mikrofon aus, schon bevor das Re-INVITE rausgeht", async () => {
+    const { sitzung, spur, reInvites } = sitzungMitTon();
+    const ergebnis = sitzung.hold();
+    expect(reInvites.length).toBe(1);
+    expect(reInvites[0].hold).toBe(true);
+    expect(reInvites[0].spurBeimSenden).toBe(false);
+    reInvites[0].annehmen();
+    await ergebnis;
+    expect(spur.enabled).toBe(false);
+});
+
+test("Halten: Stumm aus schaltet das Mikrofon einer gehaltenen Leitung nicht ein", async () => {
+    const { sitzung, spur, reInvites } = sitzungMitTon();
+    const ergebnis = sitzung.hold();
+    reInvites[0].annehmen();
+    await ergebnis;
+    sitzung.mute(false);
+    expect(spur.enabled).toBe(false);
+    sitzung.mute(true);
+    sitzung.mute(false);
+    expect(spur.enabled).toBe(false);
+});
+
+test("Fortsetzen: Mikrofon erst nach angenommenem Re-INVITE und nur, wenn nicht stumm", async () => {
+    const { sitzung, spur, reInvites } = sitzungMitTon();
+    let ergebnis = sitzung.hold();
+    reInvites[0].annehmen();
+    await ergebnis;
+    ergebnis = sitzung.unhold();
+    expect(reInvites[1].hold).toBe(false);
+    expect(spur.enabled).toBe(false); // noch nicht angenommen
+    reInvites[1].annehmen();
+    await ergebnis;
+    expect(spur.enabled).toBe(true);
+    // stumm gehalten: nach dem Fortsetzen weiter stumm
+    sitzung.mute(true);
+    ergebnis = sitzung.hold();
+    reInvites[2].annehmen();
+    await ergebnis;
+    ergebnis = sitzung.unhold();
+    reInvites[3].annehmen();
+    await ergebnis;
+    expect(spur.enabled).toBe(false);
+    sitzung.mute(false);
+    expect(spur.enabled).toBe(true);
+});
+
+test("Halten abgelehnt: Mikrofon wieder wie vorher; Fortsetzen abgelehnt: bleibt aus", async () => {
+    const { sitzung, spur, reInvites } = sitzungMitTon();
+    let ergebnis = sitzung.hold();
+    expect(spur.enabled).toBe(false);
+    reInvites[0].ablehnen(491);
+    await expect(ergebnis).rejects.toThrow(/491/);
+    expect(spur.enabled).toBe(true);
+    // stumm bleibt stumm, auch nach abgelehntem Halten
+    sitzung.mute(true);
+    ergebnis = sitzung.hold();
+    reInvites[1].ablehnen(500);
+    await expect(ergebnis).rejects.toThrow(/500/);
+    expect(spur.enabled).toBe(false);
+    sitzung.mute(false);
+    ergebnis = sitzung.hold();
+    reInvites[2].annehmen();
+    await ergebnis;
+    ergebnis = sitzung.unhold();
+    reInvites[3].ablehnen(488);
+    await expect(ergebnis).rejects.toThrow(/488/);
+    expect(spur.enabled).toBe(false);
+});
+
 test("Verbinden: ohne NOTIFY, aber Anlage hat die gehaltene Leitung beendet – erfolgreich", async () => {
     const { uhr, gehalten, ergebnis, angenommen } = verbindenMitUhr();
     await Promise.resolve();

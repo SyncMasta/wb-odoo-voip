@@ -518,15 +518,32 @@ test("Mischung: fehlender Ton einer Leitung schließt den Kontext", async () => 
     expect(ctx.geschlossen).toBe(true);
 });
 
-/** Ersetzt ``unhold`` der Sitzung durch ein von außen steuerbares Versprechen. */
+/** Macht die Antwort der Anlage auf das nächste Fortsetzen (unhold) von außen steuerbar. */
 function unholdSteuern(sitzung) {
     const steuerung = {};
-    sitzung.unhold = () => {
-        sitzung.aufrufe.push(["unhold"]);
-        return new Promise((resolve, reject) => Object.assign(steuerung, { resolve, reject }));
-    };
+    sitzung.reInvite = (art) =>
+        art === "unhold"
+            ? new Promise((resolve, reject) => Object.assign(steuerung, { resolve, reject }))
+            : Promise.resolve();
     return steuerung;
 }
+
+test("Konferenz: Aufbau scheitert – gehaltene Leitung wieder gehalten und ohne Mikrofon", async () => {
+    const welt = await verbunden();
+    const { erste, zweite } = await zweiLeitungen(welt);
+    erste.medien.sender.fehler = new Error("InvalidStateError");
+    expect(await welt.dienst.konferenz()).toBe(false);
+    await welt.uhr.vorspulen(0);
+    expect(erste.hat("hold").length).toBe(2);
+    expect(welt.dienst.state.gehaltener.gehalten).toBe(true);
+    expect(erste.medien.sender.track.enabled).toBe(false);
+    expect(zweite.medien.sender.track.enabled).toBe(true);
+    // Stumm-Klicks auf der aktiven Leitung schalten das Mikrofon der gehaltenen nicht ein
+    welt.dienst.stumm(true);
+    welt.dienst.stumm(false);
+    expect(erste.medien.sender.track.enabled).toBe(false);
+    welt.dienst.stop();
+});
 
 test("Konferenz: vorher stumm, Aufbau scheitert – Mikrofon bleibt aus, zweite Leitung wieder gehalten", async () => {
     const welt = await verbunden();
@@ -539,7 +556,8 @@ test("Konferenz: vorher stumm, Aufbau scheitert – Mikrofon bleibt aus, zweite 
     await welt.uhr.vorspulen(0);
     expect(zweite.medien.sender.track).toBe(mikZweite);
     expect(mikZweite.enabled).toBe(false);
-    expect(erste.medien.sender.track.enabled).toBe(true);
+    // wieder gehalten: der Kunde hört das Mikrofon nicht
+    expect(erste.medien.sender.track.enabled).toBe(false);
     expect(welt.dienst.state.anruf.stumm).toBe(true);
     expect(welt.dienst.state.konferenz).toBe(false);
     expect(welt.dienst.state.gehaltener.gehalten).toBe(true);
