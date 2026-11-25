@@ -18,7 +18,8 @@ Das Modul hängt an ``wb_voip`` und ``crm`` und installiert sich selbst, sobald 
 Zuordnung zum Vorgang
 ---------------------
 
-Beginnt oder endet ein Anruf (auch ein abgewiesener), sucht WB VoIP den passenden Vorgang:
+Beginnt ein Anruf oder wird er abgewiesen, sucht WB VoIP den passenden Vorgang (nicht erst am Ende des
+Anrufs):
 
 * Gesucht wird mit den Rechten des angemeldeten Benutzers (Record Rules des CRM gelten).
 * **Offen** heißt: aktiv und Wahrscheinlichkeit unter 100 %. Gewonnene, verlorene und archivierte Vorgänge
@@ -72,7 +73,8 @@ Block „Vorgänge“
 
 Im Layout-Designer (nur Anrufer-Fenster) steht der Block „Vorgänge“. Er zeigt die offenen Vorgänge des
 Kontakts und seiner Firma (zuletzt geändert zuerst, Anzahl 1 bis 20, Standard 5) mit Stufe und erwartetem
-Umsatz. „Zuordnen“ ordnet den Vorgang dem laufenden Anruf zu, „Öffnen“ öffnet das Formular. Der erwartete
+Umsatz. „Zuordnen“ ordnet den Vorgang dem laufenden Anruf zu, „Lösen“ (an der zugeordneten Zeile) nimmt die
+Zuordnung wieder weg, „Öffnen“ öffnet das Formular. Der erwartete
 Umsatz erscheint nur, wenn der Benutzer das Feld lesen darf. Im Protokoll-Popup gibt es den Block nicht.
 
 Datenschutz und Rechte
