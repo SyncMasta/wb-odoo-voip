@@ -860,14 +860,18 @@ class WbVoipAnruf(models.Model):
         offen._wb_voip_verpasst_melden()
         return offen
 
-    @api.model
     def _wb_voip_sprache(self, benutzer=None):
-        """Return the language for texts that are stored (not shown): user, else company, else English.
+        """Return the language for texts that are stored (not shown).
 
-        Server jobs (cron) have no language in the context, so ``env._`` would return the English
-        source for everybody.
+        Order: language of ``benutzer``, else of the call's company (one record with a
+        company), else of the current company, else English. Server jobs (cron) have no
+        language in the context and run in the main company, so ``env._`` would return the
+        English source for everybody and ``env.company`` is not the company of the call.
         """
         sprache = benutzer.sudo().lang if benutzer else False
+        if not sprache and len(self) == 1:
+            # Firma des Anrufs vor der aktuellen Firma: ein Serverlauf läuft in der Hauptfirma
+            sprache = self.sudo().company_id.partner_id.lang
         return sprache or self.env.company.sudo().partner_id.lang or 'en_US'
 
     def _wb_voip_aktivitaeten_abschliessen(self, aktivitaeten, text):

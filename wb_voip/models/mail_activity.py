@@ -40,11 +40,11 @@ class MailActivity(models.Model):
         ergebnis = super()._action_done(feedback=feedback, attachment_ids=attachment_ids)
         if offen:
             text = _feedback_text(feedback)[:ERLEDIGT_TEXT_MAX]
-            Anruf = self.env['wb.voip.anruf']
             for besitzer in offen.user_id:
-                # gespeicherter Text: in der Sprache des Besitzers (auch aus einem Serverlauf)
+                # gespeicherter Text: in der Sprache des Besitzers (auch aus einem Serverlauf), ohne
+                # Sprache in der Firma des Eintrags (bei genau einem), sonst der aktuellen Firma
                 eintraege = offen.filtered(lambda a: a.user_id == besitzer)
-                sprache = eintraege.with_context(lang=Anruf._wb_voip_sprache(besitzer)).env
+                sprache = eintraege.with_context(lang=eintraege._wb_voip_sprache(besitzer)).env
                 eintraege._wb_voip_durch_aktivitaet_erledigt(text or sprache._("Task done"))
         return ergebnis
 
