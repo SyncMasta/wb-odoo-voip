@@ -45,6 +45,10 @@ def auslieferungstexte_umstellen(cr):
         werte = dict(werte, en_US=neu)
         werte.setdefault('de_DE', alt)
         cr.execute(f'UPDATE "{tabelle}" SET "{feld}" = %s WHERE id = %s', [Json(werte), datensatz_id])
+        if tabelle == 'ir_act_server':
+            # ir_cron.cron_name ist aus dem Namen der Serveraktion berechnet gespeichert und zieht nicht nach
+            cr.execute('UPDATE ir_cron SET cron_name = %s WHERE ir_actions_server_id = %s AND cron_name = %s',
+                       [neu, datensatz_id, alt])
         geaendert += 1
     return geaendert
 

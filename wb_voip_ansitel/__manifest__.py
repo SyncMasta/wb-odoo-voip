@@ -1,15 +1,15 @@
 {
     'name': 'WB VoIP Ansitel',
-    'version': '19.0.2.0.0',
+    'version': '19.0.2.0.1',
     'category': 'Productivity/VoIP',
-    'summary': 'Schnelltasten und Anrufabgleich für Ansitel-Telefonanlagen',
+    'summary': 'Quick keys and call list reconciliation for Ansitel PBXs',
     'description': """
 WB VoIP Ansitel
 ===============
-Verbindung von WB VoIP mit der REST-Schnittstelle einer Ansitel-Telefonanlage:
-Zugangsdaten an der Anlage (Token nur verschlüsselt), ein gemeinsamer API-Client und
-Schnelltasten für Weiterleitung, Nicht stören und Anrufbeantworter je Benutzer sowie der
-Abgleich mit der Anrufliste der Anlage (verpasste und anderswo angenommene Anrufe, Geräte).
+Connects WB VoIP to the REST interface of an Ansitel PBX: access data on the PBX
+(token stored encrypted only), a shared API client, quick keys per user for call forwarding,
+do not disturb and voicemail, and the reconciliation with the PBX call list (missed calls,
+calls answered elsewhere, devices).
 """,
     'images': ['static/description/banner.png', 'static/description/tastenleiste.png'],
     'author': 'WISSEN BERATUNG (Tobias Wissen)',

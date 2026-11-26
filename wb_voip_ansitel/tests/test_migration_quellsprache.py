@@ -37,6 +37,8 @@ class TestMigrationAuslieferung(TransactionCase):
         dnd = self._setzen('wb_voip_taste', 'taste_dnd', 'name', {'en_US': 'Ruhe bitte'})
         cron = self._setzen('ir_act_server', 'ir_cron_ansitel_abgleich_ir_actions_server', 'name',
                             {'en_US': 'WB VoIP Ansitel: Abgleich mit der Anrufliste'})
+        self.env.cr.execute('UPDATE ir_cron SET cron_name = %s WHERE ir_actions_server_id = %s',
+                            ['WB VoIP Ansitel: Abgleich mit der Anrufliste', cron])
 
         migration = _migration()
         self.assertEqual(migration.auslieferungstexte_umstellen(self.env.cr), 3)
@@ -51,5 +53,47 @@ class TestMigrationAuslieferung(TransactionCase):
         self.assertEqual(self._lesen('ir_act_server', 'name', cron),
                          {'en_US': 'WB VoIP Ansitel: Call list reconciliation',
                           'de_DE': 'WB VoIP Ansitel: Abgleich mit der Anrufliste'})
+        self.env.cr.execute('SELECT cron_name FROM ir_cron WHERE ir_actions_server_id = %s', [cron])
+        self.assertEqual(self.env.cr.fetchone()[0], 'WB VoIP Ansitel: Call list reconciliation')
         # Ein zweiter Lauf ändert nichts mehr
         self.assertEqual(migration.auslieferungstexte_umstellen(self.env.cr), 0)
+
+
+def _migration_nachzug():
+    """Load the post-migration of 19.0.2.0.1 (the folder name is no valid module name)."""
+    pfad = file_path('wb_voip_ansitel/migrations/19.0.2.0.1/post-migration.py')
+    spec = importlib.util.spec_from_file_location('wb_voip_ansitel_migration_19_0_2_0_1', pfad)
+    modul = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(modul)
+    return modul
+
+
+@tagged('wb_voip_ansitel', 'post_install', '-at_install')
+class TestMigrationCronNamen(TransactionCase):
+    """Migration 19.0.2.0.1: the stored ``ir_cron.cron_name`` follows the English source."""
+
+    def _cron(self, xmlid):
+        return self.env.ref('wb_voip_ansitel.' + xmlid).ir_actions_server_id.id
+
+    def _name(self, cron_id, name=None):
+        if name is not None:
+            self.env.flush_all()
+            self.env.cr.execute('UPDATE ir_cron SET cron_name = %s WHERE ir_actions_server_id = %s',
+                                [name, cron_id])
+        self.env.cr.execute('SELECT cron_name FROM ir_cron WHERE ir_actions_server_id = %s', [cron_id])
+        return self.env.cr.fetchone()[0]
+
+    def test_alter_stand(self):
+        cron = self._cron('ir_cron_ansitel_abgleich')
+        self._name(cron, 'WB VoIP Ansitel: Abgleich mit der Anrufliste')
+        migration = _migration_nachzug()
+        self.assertEqual(migration.cron_namen_nachziehen(self.env.cr), 1)
+        self.assertEqual(self._name(cron), 'WB VoIP Ansitel: Call list reconciliation')
+        # idempotent
+        self.assertEqual(migration.cron_namen_nachziehen(self.env.cr), 0)
+
+    def test_vom_kunden_geaendert(self):
+        cron = self._cron('ir_cron_ansitel_abgleich')
+        self._name(cron, 'Mein eigener Name')
+        self.assertEqual(_migration_nachzug().cron_namen_nachziehen(self.env.cr), 0)
+        self.assertEqual(self._name(cron), 'Mein eigener Name')

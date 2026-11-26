@@ -41,6 +41,8 @@ class TestMigrationAuslieferung(TransactionCase):
                               {'en_US': 'Standard Anrufer-Fenster'})
         cron = self._setzen('ir_act_server', 'ir_cron_voip_aufraeumen_ir_actions_server', 'name',
                             {'en_US': 'WB VoIP: verwaiste Anrufe aufräumen'})
+        self.env.cr.execute('UPDATE ir_cron SET cron_name = %s WHERE ir_actions_server_id = %s',
+                            ['WB VoIP: verwaiste Anrufe aufräumen', cron])
 
         migration = _migration()
         self.assertEqual(migration.auslieferungstexte_umstellen(self.env.cr), 4)
@@ -58,5 +60,45 @@ class TestMigrationAuslieferung(TransactionCase):
         self.assertEqual(self._lesen('ir_act_server', 'name', cron),
                          {'en_US': 'WB VoIP: Clean up orphaned calls',
                           'de_DE': 'WB VoIP: verwaiste Anrufe aufräumen'})
+        self.env.cr.execute('SELECT cron_name FROM ir_cron WHERE ir_actions_server_id = %s', [cron])
+        self.assertEqual(self.env.cr.fetchone()[0], 'WB VoIP: Clean up orphaned calls')
         # Ein zweiter Lauf ändert nichts mehr
         self.assertEqual(migration.auslieferungstexte_umstellen(self.env.cr), 0)
+
+
+def _migration_nachzug():
+    """Load the post-migration of 19.0.5.0.1 (the folder name is no valid module name)."""
+    pfad = file_path('wb_voip/migrations/19.0.5.0.1/post-migration.py')
+    spec = importlib.util.spec_from_file_location('wb_voip_migration_19_0_5_0_1', pfad)
+    modul = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(modul)
+    return modul
+
+
+@tagged('wb_voip', 'post_install', '-at_install')
+class TestMigrationCronNamen(TransactionCase):
+    """Migration 19.0.5.0.1: the stored ``ir_cron.cron_name`` follows the English source."""
+
+    def _cron(self, xmlid):
+        return self.env.ref('wb_voip.' + xmlid).ir_actions_server_id.id
+
+    def _name(self, cron_id, name=None):
+        if name is not None:
+            self.env.flush_all()
+            self.env.cr.execute('UPDATE ir_cron SET cron_name = %s WHERE ir_actions_server_id = %s',
+                                [name, cron_id])
+        self.env.cr.execute('SELECT cron_name FROM ir_cron WHERE ir_actions_server_id = %s', [cron_id])
+        return self.env.cr.fetchone()[0]
+
+    def test_alter_stand(self):
+        aufraeumen = self._cron('ir_cron_voip_aufraeumen')
+        frist = self._cron('ir_cron_voip_loeschfrist')
+        self._name(aufraeumen, 'WB VoIP: verwaiste Anrufe aufräumen')
+        self._name(frist, 'Mein eigener Name')
+        migration = _migration_nachzug()
+        self.assertEqual(migration.cron_namen_nachziehen(self.env.cr), 1)
+        self.assertEqual(self._name(aufraeumen), 'WB VoIP: Clean up orphaned calls')
+        # vom Kunden geändert: unverändert
+        self.assertEqual(self._name(frist), 'Mein eigener Name')
+        # idempotent
+        self.assertEqual(migration.cron_namen_nachziehen(self.env.cr), 0)
