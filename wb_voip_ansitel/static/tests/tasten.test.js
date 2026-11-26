@@ -165,8 +165,7 @@ test("Takt: nur im Telefon-Tab alle 60 s, nicht im Nebentab", async () => {
     expect(w.aufrufe.length).toBe(4);
 });
 
-// mehrfach ausgeführt: das Ergebnis darf nicht von der echten Laufzeit des Tests abhängen
-test.multi(10);
+// Uhr fest (mockDate/freezeTime): das Ergebnis hängt nicht von der echten Laufzeit des Tests ab
 test(
     "Ohne Schnelltasten (nicht verfügbar, kein Fehler) fragt der Takt nur alle 10 Minuten",
     async () => {
