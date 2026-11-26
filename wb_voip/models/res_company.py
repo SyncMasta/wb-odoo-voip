@@ -12,9 +12,9 @@ class ResCompany(models.Model):
     # erst nach dessen Zustimmung, § 87 Abs. 1 Nr. 6 BetrVG). Die Gesprächsdauer ist heikler und
     # bleibt Standard aus.
     wb_voip_team_aktiv = fields.Boolean(
-        string='WB VoIP: Team-Übersicht anzeigen', default=True)
+        string='WB VoIP: Show team overview', default=True)
     wb_voip_team_dauer = fields.Boolean(
-        string='WB VoIP: Gesprächsdauer im Team anzeigen', default=False)
+        string='WB VoIP: Show call duration in the team', default=False)
 
     def write(self, vals):
         ergebnis = super().write(vals)

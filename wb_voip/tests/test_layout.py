@@ -68,7 +68,7 @@ class TestLayout(WbVoipCase):
         for std in (self.std_fenster, self.std_popup):
             with self.assertRaises(UserError) as fang:
                 std.with_user(self.user_manager).write({'group_ids': [(6, 0, [self.gruppe_a.id])]})
-            self.assertIn("Gruppen nur an eigenen Layouts", str(fang.exception))
+            self.assertIn("groups only on custom layouts", str(fang.exception))
             with self.assertRaises(UserError):
                 std.write({'group_ids': [(4, self.gruppe_a.id)]})
             self.assertFalse(std.group_ids)
@@ -96,10 +96,10 @@ class TestLayout(WbVoipCase):
             self.assertIn('ist_standard', gruppen[0].get('invisible', ''))
         baum = ansicht(self.user_manager)
         self.assertFalse(baum.xpath("//field[@name='block_ids']//field[@name='feld_ids']"))
-        self.assertIn('Felder im Designer wählen', etree.tostring(baum, encoding='unicode'))
+        self.assertIn('Choose fields in the designer', etree.tostring(baum, encoding='unicode'))
         baum = ansicht(erp)
         self.assertTrue(baum.xpath("//field[@name='block_ids']//field[@name='feld_ids']"))
-        self.assertNotIn('Felder im Designer wählen', etree.tostring(baum, encoding='unicode'))
+        self.assertNotIn('Choose fields in the designer', etree.tostring(baum, encoding='unicode'))
 
     def test_eigenes_loeschbar_mit_bloecken(self):
         layout = self._layout()
@@ -571,7 +571,7 @@ class TestLayoutDesigner(WbVoipCase):
         vorher = self._bloecke(self.std_fenster)
         with self.assertRaises(UserError) as fang:
             self._als_manager().wb_voip_designer_speichern(self.std_fenster.id, self._daten())
-        self.assertIn("Gruppen nur an eigenen Layouts", str(fang.exception))
+        self.assertIn("groups only on custom layouts", str(fang.exception))
         self.assertFalse(self.std_fenster.group_ids)
         self.assertEqual(self._bloecke(self.std_fenster), vorher)
         self._als_manager().wb_voip_designer_speichern(

@@ -63,54 +63,54 @@ class WbVoipAktion(models.Model):
     """Customer-configurable call button (shown in the caller window, log popup, softphone)."""
 
     _name = 'wb.voip.aktion'
-    _description = 'WB VoIP: Anruf-Button'
+    _description = 'WB VoIP: Call button'
     _order = 'sequence, id'
 
     name = fields.Char(string='Name', required=True, translate=True)
-    sequence = fields.Integer(string='Reihenfolge', default=10)
-    active = fields.Boolean(string='Aktiv', default=True)
-    icon = fields.Char(string='Symbol', help="Font-Awesome-Klasse, z. B. fa-user")
+    sequence = fields.Integer(string='Sequence', default=10)
+    active = fields.Boolean(string='Active', default=True)
+    icon = fields.Char(string='Icon', help="Font Awesome class, e.g. fa-user")
     farbe = fields.Selection(
-        [('primary', 'Primär'), ('secondary', 'Sekundär'), ('success', 'Grün'),
-         ('warning', 'Gelb'), ('danger', 'Rot')],
-        string='Farbe', required=True, default='secondary')
-    ort_anrufer_fenster = fields.Boolean(string='Im Anrufer-Fenster')
-    ort_protokoll_popup = fields.Boolean(string='Im Protokoll-Popup')
-    ort_softphone = fields.Boolean(string='Im Softphone')
+        [('primary', 'Primary'), ('secondary', 'Secondary'), ('success', 'Green'),
+         ('warning', 'Yellow'), ('danger', 'Red')],
+        string='Color', required=True, default='secondary')
+    ort_anrufer_fenster = fields.Boolean(string='In the caller window')
+    ort_protokoll_popup = fields.Boolean(string='In the log popup')
+    ort_softphone = fields.Boolean(string='In the softphone')
     richtung = fields.Selection(
-        [('beide', 'Beide'), ('eingehend', 'Eingehend'), ('ausgehend', 'Ausgehend')],
-        string='Richtung', required=True, default='beide')
+        [('beide', 'Both'), ('eingehend', 'Incoming'), ('ausgehend', 'Outgoing')],
+        string='Direction', required=True, default='beide')
     zustand = fields.Selection(
-        [('immer', 'Immer'), ('klingelt', 'Während es klingelt'),
-         ('laeuft', 'Während des Gesprächs'), ('beendet', 'Nach dem Anruf')],
-        string='Zustand', required=True, default='immer')
+        [('immer', 'Always'), ('klingelt', 'While ringing'),
+         ('laeuft', 'During the call'), ('beendet', 'After the call')],
+        string='State', required=True, default='immer')
     # Ziele und Gruppen nur für Administratoren lesbar; die Laufzeit liest sie nach den
     # Prüfungen per sudo
     group_ids = fields.Many2many(
         'res.groups', 'wb_voip_aktion_res_groups_rel', 'aktion_id', 'group_id',
-        string='Gruppen', groups='wb_voip.group_wb_voip_manager',
-        help="Leer = alle Benutzer von WB VoIP.")
+        string='Groups', groups='wb_voip.group_wb_voip_manager',
+        help="Empty = all WB VoIP users.")
     partner_domain = fields.Char(
-        string='Bedingung für Kontakte', groups='wb_voip.group_wb_voip_manager',
-        help="Domain auf Kontakte, z. B. [('is_company', '=', True)]. Leer = immer; "
-             "ohne Kontakt am Anruf passt eine Bedingung nie.")
+        string='Condition for contacts', groups='wb_voip.group_wb_voip_manager',
+        help="Domain on contacts, e.g. [('is_company', '=', True)]. Empty = always; without a contact on the "
+             "call, a condition never matches.")
     art = fields.Selection(
-        [('fenster', 'Fenster öffnen'), ('serveraktion', 'Serveraktion'),
-         ('url', 'Webadresse öffnen'), ('neuer_kontakt', 'Neuer Kontakt')],
-        string='Art', required=True, default='fenster')
+        [('fenster', 'Open window'), ('serveraktion', 'Server action'),
+         ('url', 'Open web address'), ('neuer_kontakt', 'New contact')],
+        string='Type', required=True, default='fenster')
     act_window_id = fields.Many2one(
-        'ir.actions.act_window', string='Fensteraktion', ondelete='cascade',
+        'ir.actions.act_window', string='Window action', ondelete='cascade',
         groups='wb_voip.group_wb_voip_manager')
     server_action_id = fields.Many2one(
-        'ir.actions.server', string='Serveraktion', ondelete='cascade',
+        'ir.actions.server', string='Server action', ondelete='cascade',
         groups='wb_voip.group_wb_voip_manager')
     url_vorlage = fields.Char(
-        string='Webadresse', groups='wb_voip.group_wb_voip_manager',
-        help="Nur https://. Platzhalter: {nummer}, {nummer_e164}, {partner_id}.")
+        string='Web address', groups='wb_voip.group_wb_voip_manager',
+        help="https:// only. Placeholders: {nummer}, {nummer_e164}, {partner_id}.")
     # Nur der Assistent setzt das Kennzeichen (nach seinen Prüfungen); lesbar ist es für alle,
     # geschrieben wird es nur vom Server (siehe create/write)
     wb_voip_assistent = fields.Boolean(
-        string='Mit Assistent angelegt', readonly=True, copy=False)
+        string='Created with wizard', readonly=True, copy=False)
 
     # --- Schutz der Assistenten-Daten ---
 
@@ -127,13 +127,13 @@ class WbVoipAktion(models.Model):
             serverfelder.pruefen(self.env, vals, _NUR_SERVER)
             if set(vals) & set(_NUR_ASSISTENT) and self.sudo().filtered('wb_voip_assistent'):
                 raise UserError(self.env._(
-                    "Die Aktion dieses Buttons wurde mit dem Assistenten angelegt. "
-                    "Bitte mit „Mit Assistent bearbeiten“ ändern."))
+                    'The action of this button was created with the wizard. '
+                    'Please change it with "Edit with wizard".'))
             if set(vals) & set(_CODE_PUBLIKUM) and not self.env.user.has_group(GRUPPE_SYSTEM) \
                     and self._wb_voip_code_buttons():
                 raise AccessError(self.env._(
-                    "Bei Buttons mit Python-Code dürfen nur Systemadministratoren ändern, "
-                    "wer den Button sieht und wann."))
+                    "For buttons with Python code, only system administrators may change who sees the button "
+                    "and when."))
         return super().write(vals)
 
     def _wb_voip_code_buttons(self):
@@ -144,14 +144,14 @@ class WbVoipAktion(models.Model):
     def copy(self, default=None):
         # Eine Kopie teilte die Serveraktion, ohne Kennzeichen und ohne Schutz des Assistenten
         if self.sudo().filtered('wb_voip_assistent'):
-            raise UserError(self.env._("Bitte mit dem Assistenten neu anlegen."))
+            raise UserError(self.env._("Please create it again with the wizard."))
         return super().copy(default)
 
     def unlink(self):
         if not self.env.su and not self.env.user.has_group(GRUPPE_SYSTEM) \
                 and self._wb_voip_code_buttons():
             raise AccessError(self.env._(
-                "Buttons mit Python-Code dürfen nur Systemadministratoren löschen."))
+                "Only system administrators may delete buttons with Python code."))
         # Serveraktionen aus dem Assistenten merken; gelöscht wird erst nach dem Löschen der
         # Buttons (das prüft die Rechte) und nur, wenn kein anderer Button sie nutzt
         server = self.sudo().server_action_id.filtered(assistenten_aktion)
@@ -177,12 +177,12 @@ class WbVoipAktion(models.Model):
         self.check_access('write')
         aktion = self.sudo()
         if not aktion.wb_voip_assistent:
-            raise UserError(self.env._("Dieser Button wurde nicht mit dem Assistenten angelegt."))
+            raise UserError(self.env._("This button was not created with the wizard."))
         if aktion.server_action_id.state == 'code' and not self.env.user.has_group(GRUPPE_SYSTEM):
-            raise AccessError(self.env._("Python-Code dürfen nur Systemadministratoren bearbeiten."))
+            raise AccessError(self.env._("Only system administrators may edit Python code."))
         return {
             'type': 'ir.actions.act_window',
-            'name': self.env._("Button mit Assistent bearbeiten"),
+            'name': self.env._("Edit button with wizard"),
             'res_model': 'wb.voip.aktion.assistent',
             'view_mode': 'form',
             'views': [[False, 'form']],
@@ -197,11 +197,11 @@ class WbVoipAktion(models.Model):
         # Nur die eigenen Arten; weitere Arten (selection_add) prüfen ihre Felder selbst
         for aktion in self:
             if aktion.art == 'fenster' and not aktion.act_window_id:
-                raise ValidationError(self.env._("Bitte eine Fensteraktion wählen."))
+                raise ValidationError(self.env._("Please choose a window action."))
             if aktion.art == 'serveraktion' and not aktion.server_action_id:
-                raise ValidationError(self.env._("Bitte eine Serveraktion wählen."))
+                raise ValidationError(self.env._("Please choose a server action."))
             if aktion.art == 'url' and not aktion.url_vorlage:
-                raise ValidationError(self.env._("Bitte eine Webadresse angeben."))
+                raise ValidationError(self.env._("Please enter a web address."))
 
     @api.constrains('art', 'server_action_id')
     def _check_serveraktion(self):
@@ -209,20 +209,20 @@ class WbVoipAktion(models.Model):
             if aktion.art == 'serveraktion' and aktion.server_action_id \
                     and not serveraktion_erlaubt(aktion.server_action_id):
                 raise ValidationError(self.env._(
-                    "Diese Art von Serveraktion ist für Anruf-Buttons nicht erlaubt."))
+                    "This type of server action is not allowed for call buttons."))
 
     @api.constrains('icon')
     def _check_icon(self):
         for aktion in self:
             if aktion.icon and not ICON_MUSTER.fullmatch(aktion.icon):
                 raise ValidationError(self.env._(
-                    "Das Symbol muss eine Font-Awesome-Klasse sein, z. B. fa-user."))
+                    "The icon must be a Font Awesome class, e.g. fa-user."))
 
     @api.constrains('ort_anrufer_fenster', 'ort_protokoll_popup', 'ort_softphone')
     def _check_ort(self):
         for aktion in self:
             if not (aktion.ort_anrufer_fenster or aktion.ort_protokoll_popup or aktion.ort_softphone):
-                raise ValidationError(self.env._("Bitte mindestens einen Ort wählen."))
+                raise ValidationError(self.env._("Please choose at least one location."))
 
     @api.constrains('url_vorlage')
     def _check_url_vorlage(self):
@@ -236,8 +236,8 @@ class WbVoipAktion(models.Model):
                     or '}' in URL_PLATZHALTER_MUSTER.sub('', url)
                     or not self._wb_voip_url_ok(url)):
                 raise ValidationError(self.env._(
-                    "Die Webadresse muss mit https:// beginnen, höchstens %(max)s Zeichen lang sein "
-                    "und darf nur {nummer}, {nummer_e164} und {partner_id} als Platzhalter enthalten.",
+                    "The web address must start with https://, be at most %(max)s characters long and may "
+                    "contain only {nummer}, {nummer_e164} and {partner_id} as placeholders.",
                     max=URL_MAX))
 
     @staticmethod
@@ -255,7 +255,7 @@ class WbVoipAktion(models.Model):
     def _check_partner_domain(self):
         for aktion in self:
             if aktion.partner_domain and aktion._wb_voip_domain() is None:
-                raise ValidationError(self.env._("Ungültige Bedingung für Kontakte."))
+                raise ValidationError(self.env._("Invalid condition for contacts."))
 
     def _wb_voip_domain(self):
         """Parse and validate ``partner_domain``; return a ``Domain`` (or None if invalid).
@@ -329,7 +329,7 @@ class WbVoipAktion(models.Model):
         methode = getattr(self, f'_wb_voip_aktion_{art}', None) \
             if isinstance(art, str) and ART_MUSTER.fullmatch(art) else None
         if not callable(methode):
-            raise UserError(self.env._("Dieser Button passt nicht zu diesem Anruf."))
+            raise UserError(self.env._("This button does not match this call."))
         return methode(anruf, partner)
 
     def _wb_voip_aktion_fenster(self, anruf, partner):

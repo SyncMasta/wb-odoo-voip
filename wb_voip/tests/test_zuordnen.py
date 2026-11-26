@@ -150,7 +150,7 @@ class TestZuordnen(WbVoipCase):
             assistent.action_zuordnen()
         self.assertEqual(
             str(fehler.exception),
-            'Das Feld ist schon belegt. „Ersetzen“ anhaken oder ein anderes Feld wählen.')
+            'The field is already in use. Tick "Replace" or choose another field.')
         self.assertEqual(self.kontakt.phone, '+49 30 111')
         self.assertFalse(anruf.partner_id)
 
@@ -188,7 +188,7 @@ class TestZuordnen(WbVoipCase):
         self.assertEqual(ergebnis['params']['type'], 'warning')
         self.assertEqual(
             ergebnis['params']['message'],
-            'Zugeordnet. Die Nummer wurde nicht am Kontakt gespeichert (keine Schreibrechte).')
+            'Assigned. The number was not saved on the contact (no write permission).')
 
     def test_kontakt_nur_lesbar_nicht_speichern(self):
         anruf = self._anruf(self.user_c)

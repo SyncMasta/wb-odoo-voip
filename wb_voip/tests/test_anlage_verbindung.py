@@ -3,7 +3,7 @@ from odoo.tests import tagged
 
 from .common import WbVoipCase
 
-MELDUNG = "Verbindungsdaten der Anlage darf nur die Systemverwaltung ändern."
+MELDUNG = "Only system administrators may change the PBX connection data."
 
 
 @tagged('wb_voip', 'post_install', '-at_install')

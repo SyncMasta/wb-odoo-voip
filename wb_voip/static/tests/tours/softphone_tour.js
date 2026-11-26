@@ -41,7 +41,7 @@ registry.category("web_tour.tours").add("wb_voip_softphone_tour", {
         },
         {
             content: "Ergebnis auf Mailbox ändern",
-            trigger: ".o_select_menu_item:contains(Mailbox)",
+            trigger: ".o_select_menu_item:contains(Voicemail)",
             run: "click",
         },
         {
@@ -104,7 +104,7 @@ registry.category("web_tour.tours").add("wb_voip_softphone_tour", {
         },
         {
             content: "Nummer nicht speichern",
-            trigger: ".o_select_menu_item:contains(Nicht speichern)",
+            trigger: ".o_select_menu_item:contains(Do not save)",
             run: "click",
         },
         {

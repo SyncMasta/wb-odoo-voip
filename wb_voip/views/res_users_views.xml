@@ -7,16 +7,16 @@
         <field name="inherit_id" ref="base.view_users_form_simple_modif"/>
         <field name="arch" type="xml">
             <xpath expr="//page[@name='preferences_page']" position="after">
-                <page string="Telefonie" name="wb_voip" groups="wb_voip.group_wb_voip_user">
+                <page string="Telephony" name="wb_voip" groups="wb_voip.group_wb_voip_user">
                     <group>
                         <field name="wb_voip_anlage_id" readonly="1"/>
                         <field name="wb_voip_sip_benutzer" readonly="1"/>
                         <field name="wb_voip_sip_passwort_gesetzt" invisible="1"/>
                         <field name="wb_voip_sip_passwort" password="True" readonly="0"
-                               placeholder="Neues Passwort eingeben"/>
+                               placeholder="Enter new password"/>
                         <div colspan="2" class="text-muted"
                              invisible="not wb_voip_sip_passwort_gesetzt">
-                            Gespeichert – zum Ändern neu eingeben
+                            Saved – enter again to change
                         </div>
                     </group>
                 </page>
@@ -31,7 +31,7 @@
         <field name="inherit_id" ref="base.view_users_form"/>
         <field name="arch" type="xml">
             <xpath expr="//page[@name='preferences']" position="after">
-                <page string="Telefonie" name="wb_voip">
+                <page string="Telephony" name="wb_voip">
                     <group>
                         <field name="wb_voip_anlage_id"
                                groups="wb_voip.group_wb_voip_manager"/>
@@ -44,12 +44,12 @@
                         <field name="wb_voip_sip_passwort_gesetzt" invisible="1"
                                groups="wb_voip.group_wb_voip_manager"/>
                         <field name="wb_voip_sip_passwort" password="True"
-                               placeholder="Neues Passwort eingeben"
+                               placeholder="Enter new password"
                                groups="wb_voip.group_wb_voip_manager"/>
                         <div colspan="2" class="text-muted"
                              groups="wb_voip.group_wb_voip_manager"
                              invisible="not wb_voip_sip_passwort_gesetzt">
-                            Gespeichert – zum Ändern neu eingeben
+                            Saved – enter again to change
                         </div>
                     </group>
                 </page>

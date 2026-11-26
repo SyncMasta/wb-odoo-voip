@@ -6,7 +6,7 @@ from odoo.tools.misc import format_amount, format_date, format_datetime, formatL
 from ..tools.rechte import GRUPPE_MANAGER, nur_voip_manager
 from .wb_voip_aktion import ART_MUSTER
 
-ORTE = [('anrufer_fenster', 'Anrufer-Fenster'), ('protokoll_popup', 'Protokoll-Popup')]
+ORTE = [('anrufer_fenster', 'Caller window'), ('protokoll_popup', 'Call log popup')]
 TEXT_MAX = 2000
 ANZAHL_MIN, ANZAHL_MAX = 1, 20
 # Ausgabe der Feldwerte: Textfelder gekürzt, Many2many höchstens so viele Namen
@@ -65,33 +65,32 @@ class WbVoipLayout(models.Model):
     """Window layout (blocks and their order) for the caller window or the log popup."""
 
     _name = 'wb.voip.layout'
-    _description = 'WB VoIP: Fenster-Layout'
+    _description = 'WB VoIP: Window layout'
     _order = 'ort, sequence, id'
 
     name = fields.Char(string='Name', required=True, translate=True)
-    ort = fields.Selection(ORTE, string='Fenster', required=True, default='anrufer_fenster')
-    sequence = fields.Integer(string='Reihenfolge', default=20)
-    active = fields.Boolean(string='Aktiv', default=True)
+    ort = fields.Selection(ORTE, string='Window', required=True, default='anrufer_fenster')
+    sequence = fields.Integer(string='Sequence', default=20)
+    active = fields.Boolean(string='Active', default=True)
     # Nur Administratoren sehen die Gruppen; die Laufzeit sucht nach der Prüfung per sudo
     group_ids = fields.Many2many(
         'res.groups', 'wb_voip_layout_res_groups_rel', 'layout_id', 'group_id',
-        string='Gruppen', groups='wb_voip.group_wb_voip_manager',
-        help="Leer = alle Benutzer von WB VoIP. Bei mehreren passenden Layouts gewinnt die "
-             "kleinste Reihenfolge.")
+        string='Groups', groups='wb_voip.group_wb_voip_manager',
+        help="Empty = all WB VoIP users. If several layouts match, the lowest sequence wins.")
     ist_standard = fields.Boolean(
-        string='Standard-Layout', readonly=True, copy=False,
-        help="Wird mit dem Modul ausgeliefert, gilt ohne passendes eigenes Layout. "
-             "Nicht löschbar, nicht archivierbar.")
+        string='Default layout', readonly=True, copy=False,
+        help="Delivered with the module; applies when no matching custom layout exists. Cannot be deleted or "
+             "archived.")
     breite = fields.Selection(
-        [('normal', 'Normal'), ('breit', 'Breit'), ('sehr_breit', 'Sehr breit')],
-        string='Breite', required=True, default='normal',
-        help="Anrufer-Fenster: 720, 960 oder 1200 px (höchstens Bildschirmbreite). "
-             "Popup: Dialoggröße groß, extra groß oder Vollbild.")
-    block_ids = fields.One2many('wb.voip.layout.block', 'layout_id', string='Blöcke', copy=True)
+        [('normal', 'Normal'), ('breit', 'Wide'), ('sehr_breit', 'Very wide')],
+        string='Width', required=True, default='normal',
+        help="Caller window: 720, 960 or 1200 px (at most the screen width). Popup: dialog size large, extra "
+             "large or fullscreen.")
+    block_ids = fields.One2many('wb.voip.layout.block', 'layout_id', string='Blocks', copy=True)
 
     _wb_voip_layout_standard_je_ort = models.UniqueIndex(
         '(ort) WHERE ist_standard IS TRUE',
-        'Je Fenster gibt es genau ein Standard-Layout.')
+        'There is exactly one default layout per window.')
 
     # --- Erweiterungspunkte für Blockarten ---
 
@@ -114,9 +113,9 @@ class WbVoipLayout(models.Model):
         for layout in self.filtered('ist_standard'):
             if self.search_count([('ort', '=', layout.ort), ('ist_standard', '=', True),
                                   ('id', '!=', layout.id)], limit=1):
-                raise ValidationError(self.env._("Je Fenster gibt es genau ein Standard-Layout."))
+                raise ValidationError(self.env._("There is exactly one default layout per window."))
             if not layout.active:
-                raise ValidationError(self.env._("Das Standard-Layout muss aktiv bleiben."))
+                raise ValidationError(self.env._("The default layout must stay active."))
 
     @api.constrains('ort', 'block_ids')
     def _check_bloecke_fuer_ort(self):
@@ -129,10 +128,10 @@ class WbVoipLayout(models.Model):
             for art in arten:
                 if art not in erlaubte_arten.get(layout.ort, ()):
                     raise ValidationError(self.env._(
-                        "Die Blockart „%(art)s“ gibt es im Fenster „%(ort)s“ nicht.",
+                        'The block type "%(art)s" does not exist in the window "%(ort)s".',
                         art=arten_namen.get(art, art), ort=orte.get(layout.ort, layout.ort)))
             if arten.count('notiz') > 1:
-                raise ValidationError(self.env._("Ein Layout hat höchstens einen Notiz-Block."))
+                raise ValidationError(self.env._("A layout has at most one note block."))
 
     def _wb_voip_daten_laden(self):
         """Return True only while the module data loader runs (superuser plus install_mode).
@@ -146,19 +145,19 @@ class WbVoipLayout(models.Model):
         # Standard layouts only come from the module data (install/update)
         if not self._wb_voip_daten_laden() \
                 and any(vals.get('ist_standard') for vals in vals_list):
-            raise UserError(self.env._("Standard-Layouts kommen nur aus den Moduldaten."))
+            raise UserError(self.env._("Default layouts come only from the module data."))
         return super().create(vals_list)
 
     def write(self, vals):
         if self.filtered('ist_standard'):
             if 'active' in vals and not vals['active']:
-                raise UserError(self.env._("Das Standard-Layout kann nicht archiviert werden."))
+                raise UserError(self.env._("The default layout cannot be archived."))
             for feld in ('ist_standard', 'ort'):
                 if feld in vals and any(vals[feld] != layout[feld] for layout in self):
                     raise UserError(self.env._(
-                        "Beim Standard-Layout lassen sich Standard-Kennzeichen und Fenster nicht ändern."))
+                        "For the default layout, the default flag and the window cannot be changed."))
         elif vals.get('ist_standard') and not self._wb_voip_daten_laden():
-            raise UserError(self.env._("Standard-Layouts kommen nur aus den Moduldaten."))
+            raise UserError(self.env._("Default layouts come only from the module data."))
         ergebnis = super().write(vals)
         if 'group_ids' in vals and self.sudo().filtered(lambda l: l.ist_standard and l.group_ids):
             raise self._wb_voip_standard_gruppen_fehler()
@@ -166,20 +165,20 @@ class WbVoipLayout(models.Model):
 
     def _wb_voip_standard_gruppen_fehler(self):
         return UserError(self.env._(
-            "Das Standard-Layout gilt für alle; Gruppen nur an eigenen Layouts."))
+            "The default layout applies to everyone; groups only on custom layouts."))
 
     @api.ondelete(at_uninstall=False)
     def _unlink_nicht_standard(self):
         if self.filtered('ist_standard'):
-            raise UserError(self.env._("Das Standard-Layout kann nicht gelöscht werden."))
+            raise UserError(self.env._("The default layout cannot be deleted."))
 
     def action_auf_standard_zuruecksetzen(self):
         """Reset the blocks of a standard layout to the delivered state (managers only)."""
         if not self.env.user.has_group(GRUPPE_MANAGER):
-            raise AccessError(self.env._("Nur für Administratoren von WB VoIP."))
+            raise AccessError(self.env._("For WB VoIP administrators only."))
         for layout in self:
             if not layout.ist_standard:
-                raise UserError(self.env._("Nur das Standard-Layout lässt sich zurücksetzen."))
+                raise UserError(self.env._("Only the default layout can be reset."))
             layout._wb_voip_bloecke_setzen()
         return True
 
@@ -190,7 +189,7 @@ class WbVoipLayout(models.Model):
         return {
             'type': 'ir.actions.client',
             'tag': 'wb_voip.layout_designer',
-            'name': self.env._("Layout-Designer"),
+            'name': self.env._("Layout designer"),
             'params': {'layout_id': self.id},
         }
 
@@ -312,7 +311,7 @@ class WbVoipLayout(models.Model):
     # --- Designer (nur Administratoren von WB VoIP) ---
 
     def _wb_voip_ungueltig(self, was):
-        return UserError(self.env._("Ungültige Layout-Daten: %s.", was))
+        return UserError(self.env._("Invalid layout data: %s.", was))
 
     @api.model
     def _wb_voip_designer_layout(self, layout_id, leer_erlaubt=True):
@@ -379,20 +378,20 @@ class WbVoipLayout(models.Model):
         gezaehlt = self._wb_voip_gezaehlte_arten()
         ort = daten['ort']
         if not isinstance(ort, str) or ort not in erlaubte_arten:
-            raise ungueltig(self.env._("Fenster"))
+            raise ungueltig(self.env._("Window"))
         breite = daten['breite']
         if not isinstance(breite, str) or breite not in dict(self._fields['breite'].selection):
-            raise ungueltig(self.env._("Breite"))
+            raise ungueltig(self.env._("Width"))
         gruppen = daten['group_ids']
         if (not isinstance(gruppen, list) or len(gruppen) > DESIGNER_MAX_GRUPPEN
                 or any(type(g) is not int or g <= 0 for g in gruppen)
                 or len(self.env['res.groups'].browse(set(gruppen)).exists()) != len(set(gruppen))):
-            raise ungueltig(self.env._("Gruppen"))
+            raise ungueltig(self.env._("Groups"))
         if gruppen and self.ist_standard:
             raise self._wb_voip_standard_gruppen_fehler()
         bloecke = daten['bloecke']
         if not isinstance(bloecke, list) or len(bloecke) > DESIGNER_MAX_BLOECKE:
-            raise ungueltig(self.env._("Blöcke"))
+            raise ungueltig(self.env._("Blocks"))
         erlaubte_felder = set(self._wb_voip_designer_felder().ids)
         block_vals = []
         for nr, block in enumerate(bloecke, start=1):
@@ -401,18 +400,18 @@ class WbVoipLayout(models.Model):
                 raise ungueltig(self.env._("Block"))
             art = block['art']
             if not isinstance(art, str) or art not in erlaubte_arten[ort]:
-                raise ungueltig(self.env._("Blockart"))
+                raise ungueltig(self.env._("Block type"))
             titel = _leer_zu_false(block.get('titel', False))
             if titel is not False and (not isinstance(titel, str) or len(titel) > TITEL_MAX):
-                raise ungueltig(self.env._("Titel"))
+                raise ungueltig(self.env._("Title"))
             spalte = block.get('spalte', '1')
             if spalte not in ('1', '2'):
-                raise ungueltig(self.env._("Spalte"))
+                raise ungueltig(self.env._("Column"))
             anzahl = block.get('anzahl', False)
             if anzahl is None:
                 anzahl = False
             if anzahl is not False and type(anzahl) is not int:
-                raise ungueltig(self.env._("Anzahl"))
+                raise ungueltig(self.env._("Count"))
             text = _leer_zu_false(block.get('text', False))
             if text is not False and (not isinstance(text, str) or len(text) > TEXT_MAX):
                 raise ungueltig(self.env._("Text"))
@@ -420,15 +419,15 @@ class WbVoipLayout(models.Model):
             if (not isinstance(feld_ids, list) or len(feld_ids) > DESIGNER_MAX_FELDER
                     or any(type(f) is not int for f in feld_ids)
                     or not set(feld_ids) <= erlaubte_felder):
-                raise ungueltig(self.env._("Felder"))
+                raise ungueltig(self.env._("Fields"))
             if (art == 'felder') != bool(feld_ids):
-                raise ungueltig(self.env._("Felder"))
+                raise ungueltig(self.env._("Fields"))
             vals = {'sequence': nr * 10, 'art': art, 'titel': titel and titel.strip(),
                     'spalte': spalte}
             if art in gezaehlt:
                 anzahl = 5 if anzahl is False else anzahl
                 if not ANZAHL_MIN <= anzahl <= ANZAHL_MAX:
-                    raise ungueltig(self.env._("Anzahl"))
+                    raise ungueltig(self.env._("Count"))
                 vals['anzahl'] = anzahl
             if art == 'text':
                 vals['text'] = text
@@ -437,7 +436,7 @@ class WbVoipLayout(models.Model):
                 vals['feld_ids'] = [Command.set(list(dict.fromkeys(feld_ids)))]
             block_vals.append(vals)
         if [b['art'] for b in block_vals].count('notiz') > 1:
-            raise ungueltig(self.env._("Notiz"))
+            raise ungueltig(self.env._("Note"))
         layout_vals = {'name': name, 'ort': ort, 'breite': breite,
                        'group_ids': [Command.set(list(dict.fromkeys(gruppen)))]}
         return layout_vals, block_vals
@@ -498,10 +497,10 @@ class WbVoipLayout(models.Model):
         """
         layout = self._wb_voip_designer_layout(layout_id, leer_erlaubt=False)
         if type(partner_id) is not int or partner_id <= 0:
-            raise self._wb_voip_ungueltig(self.env._("Kontakt"))
+            raise self._wb_voip_ungueltig(self.env._("Contact"))
         partner = self.env['res.partner'].browse(partner_id).exists()
         if not partner:
-            raise self._wb_voip_ungueltig(self.env._("Kontakt"))
+            raise self._wb_voip_ungueltig(self.env._("Contact"))
         partner.check_access('read')
         if entwurf is None:
             layout_daten = layout._wb_voip_fuer_client(partner)
@@ -571,7 +570,7 @@ class WbVoipLayout(models.Model):
         env = record.env
         typ = field.type
         if typ == 'boolean':
-            return env._("Ja") if wert else env._("Nein")
+            return env._("Yes") if wert else env._("No")
         if typ in ('many2one', 'many2many'):
             lesbar = wert._filtered_access('read')
             namen = [name for name in lesbar[:M2M_MAX].mapped('display_name') if name]
@@ -617,28 +616,28 @@ class WbVoipLayoutBlock(models.Model):
     """One block of a window layout."""
 
     _name = 'wb.voip.layout.block'
-    _description = 'WB VoIP: Layout-Block'
+    _description = 'WB VoIP: Layout block'
     _order = 'layout_id, sequence, id'
 
     layout_id = fields.Many2one(
         'wb.voip.layout', string='Layout', required=True, ondelete='cascade', index=True)
-    sequence = fields.Integer(string='Reihenfolge', default=10)
+    sequence = fields.Integer(string='Sequence', default=10)
     art = fields.Selection(
-        [('kontaktkopf', 'Kontaktkopf'), ('felder', 'Kontaktfelder'),
-         ('protokolle', 'Letzte Protokolle'), ('aufgaben', 'Offene Aufgaben'),
-         ('notiz', 'Notiz'), ('buttons', 'Buttons'), ('text', 'Text')],
-        string='Art', required=True, default='kontaktkopf')
-    titel = fields.Char(string='Titel', translate=True)
+        [('kontaktkopf', 'Contact header'), ('felder', 'Contact fields'),
+         ('protokolle', 'Recent call logs'), ('aufgaben', 'Open tasks'),
+         ('notiz', 'Note'), ('buttons', 'Buttons'), ('text', 'Text')],
+        string='Type', required=True, default='kontaktkopf')
+    titel = fields.Char(string='Title', translate=True)
     spalte = fields.Selection(
-        [('1', 'Spalte 1'), ('2', 'Spalte 2')], string='Spalte', required=True, default='1',
-        help="Zwei Spalten gibt es ab der Breite „Breit“.")
+        [('1', 'Column 1'), ('2', 'Column 2')], string='Column', required=True, default='1',
+        help='Two columns are available from the width "Wide".')
     feld_ids = fields.Many2many(
         'ir.model.fields', 'wb_voip_layout_block_feld_rel', 'block_id', 'feld_id',
-        string='Felder', ondelete='cascade',
+        string='Fields', ondelete='cascade',
         domain="[('model', '=', 'res.partner'), ('store', '=', True), "
                "('ttype', 'in', %s)]" % (list(FELD_TYPEN),))
-    anzahl = fields.Integer(string='Anzahl', default=5, help="Protokolle/Aufgaben, 1 bis 20.")
-    text = fields.Text(string='Text', translate=True, help="Nur Klartext, höchstens 2000 Zeichen.")
+    anzahl = fields.Integer(string='Count', default=5, help="Call logs/tasks, 1 to 20.")
+    text = fields.Text(string='Text', translate=True, help="Plain text only, at most 2000 characters.")
 
     @api.constrains('art', 'layout_id')
     def _check_art_fuer_ort(self):
@@ -650,7 +649,7 @@ class WbVoipLayoutBlock(models.Model):
         for block in self.filtered(lambda b: b.art in gezaehlt):
             if not ANZAHL_MIN <= block.anzahl <= ANZAHL_MAX:
                 raise ValidationError(self.env._(
-                    "Die Anzahl muss zwischen %(min)s und %(max)s liegen.",
+                    "The count must be between %(min)s and %(max)s.",
                     min=ANZAHL_MIN, max=ANZAHL_MAX))
 
     @api.constrains('text')
@@ -658,14 +657,14 @@ class WbVoipLayoutBlock(models.Model):
         for block in self:
             if block.text and len(block.text) > TEXT_MAX:
                 raise ValidationError(self.env._(
-                    "Der Text darf höchstens %(max)s Zeichen lang sein.", max=TEXT_MAX))
+                    "The text may be at most %(max)s characters long.", max=TEXT_MAX))
 
     @api.constrains('art', 'feld_ids')
     def _check_felder(self):
         Partner = self.env['res.partner']
         for block in self:
             if block.art == 'felder' and not block.feld_ids:
-                raise ValidationError(self.env._("Bitte mindestens ein Feld wählen."))
+                raise ValidationError(self.env._("Please choose at least one field."))
             for feld in block.feld_ids.sudo():
                 name = feld.name or ''
                 ziele = {'many2one': ERLAUBTE_ZIELE, 'many2many': ERLAUBTE_ZIELE_M2M}
@@ -675,5 +674,5 @@ class WbVoipLayoutBlock(models.Model):
                         or any(teil in name.lower() for teil in FELD_NAMENTEILE)
                         or (feld.ttype in ziele and feld.relation not in ziele[feld.ttype])):
                     raise ValidationError(self.env._(
-                        "Das Feld „%(feld)s“ ist in Layouts nicht erlaubt.",
+                        'The field "%(feld)s" is not allowed in layouts.',
                         feld=feld.field_description or name))

@@ -206,7 +206,7 @@ class TestLayoutKontext(WbVoipCase):
         self.assertEqual(werte['ref'], 'K-4711')
         typen = dict(partner._fields['type']._description_selection(env_a))
         self.assertEqual(werte['type'], typen['contact'])
-        self.assertEqual(werte['is_company'], 'Nein')
+        self.assertEqual(werte['is_company'], 'No')
         self.assertEqual(werte['color'], '3')
         self.assertEqual(werte['partner_latitude'], formatLang(env_a, 52.5, digits=7))
         self.assertEqual(werte['create_date'],

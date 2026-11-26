@@ -7,7 +7,7 @@
             <list>
                 <header>
                     <button name="%(wb_voip_aktion_assistent_action)d" type="action"
-                            string="Button mit Assistent anlegen" class="btn-primary"
+                            string="Create button with wizard" class="btn-primary"
                             display="always"/>
                 </header>
                 <field name="sequence" widget="handle"/>
@@ -30,27 +30,27 @@
             <form>
                 <header>
                     <button name="action_wb_voip_assistent_bearbeiten" type="object"
-                            string="Mit Assistent bearbeiten" class="btn-primary"
+                            string="Edit with wizard" class="btn-primary"
                             invisible="not wb_voip_assistent"/>
                 </header>
                 <sheet>
-                    <widget name="web_ribbon" title="Archiviert" bg_color="text-bg-danger"
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger"
                             invisible="active"/>
                     <group>
-                        <group string="Darstellung">
+                        <group string="Appearance">
                             <field name="name"/>
                             <field name="icon" placeholder="fa-user"/>
                             <field name="farbe"/>
                             <field name="sequence"/>
                             <field name="active" invisible="1"/>
                         </group>
-                        <group string="Wo wird der Button gezeigt?">
+                        <group string="Where is the button shown?">
                             <field name="ort_anrufer_fenster"/>
                             <field name="ort_protokoll_popup"/>
                             <field name="ort_softphone"/>
                         </group>
                     </group>
-                    <group string="Wann?">
+                    <group string="When?">
                         <group>
                             <field name="richtung"/>
                             <field name="zustand"/>
@@ -61,10 +61,10 @@
                         </group>
                     </group>
                     <div class="alert alert-info" role="status" invisible="not wb_voip_assistent">
-                        Die Aktion dieses Buttons wurde mit dem Assistenten angelegt und lässt
-                        sich nur dort ändern.
+                        The action of this button was created with the wizard and can only be
+                        changed there.
                     </div>
-                    <group string="Was passiert?">
+                    <group string="What happens?">
                         <field name="wb_voip_assistent" invisible="1"/>
                         <field name="art" readonly="wb_voip_assistent"/>
                         <field name="act_window_id" invisible="art != 'fenster'"
@@ -72,7 +72,7 @@
                         <field name="server_action_id" invisible="art != 'serveraktion'"
                                required="art == 'serveraktion'" readonly="wb_voip_assistent"/>
                         <field name="url_vorlage" invisible="art != 'url'" required="art == 'url'"
-                               placeholder="https://beispiel.example/suche?nr={nummer_e164}"/>
+                               placeholder="https://example.example/search?nr={nummer_e164}"/>
                     </group>
                 </sheet>
             </form>
@@ -80,7 +80,7 @@
     </record>
 
     <record id="wb_voip_aktion_action" model="ir.actions.act_window">
-        <field name="name">Anruf-Buttons</field>
+        <field name="name">Call buttons</field>
         <field name="res_model">wb.voip.aktion</field>
         <field name="view_mode">list,form</field>
     </record>

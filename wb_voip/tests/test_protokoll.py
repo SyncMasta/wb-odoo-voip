@@ -65,16 +65,16 @@ class TestProtokoll(WbVoipCase):
     def test_chatter_am_kontakt(self):
         self._fuehren(self._anruf())
         nachricht = self.kontakt.message_ids[:1]
-        self.assertIn('Anruf eingehend · erreicht · 1:05', nachricht.body)
+        self.assertIn('Call incoming · reached · 1:05', nachricht.body)
         self.assertEqual(nachricht.subtype_id, self.env.ref('mail.mt_note'))
         self.assertEqual(nachricht.author_id, self.user_a.partner_id)
 
     def test_chatter_am_verknuepften_datensatz(self):
         anderer = self.env['res.partner'].create({'name': 'Genannt', 'phone': '089 111111'})
         self._fuehren(self._anruf(res_model='res.partner', res_id=anderer.id))
-        self.assertIn('Anruf eingehend', anderer.message_ids[:1].body)
+        self.assertIn('Call incoming', anderer.message_ids[:1].body)
         self.assertFalse(self.kontakt.message_ids.filtered(
-            lambda m: 'Anruf eingehend' in (m.body or '')))
+            lambda m: 'Call incoming' in (m.body or '')))
 
     def test_kein_chatter_ohne_leserecht_am_kontakt(self):
         # Globale Regel: user_a darf den Kontakt nicht lesen
@@ -87,7 +87,7 @@ class TestProtokoll(WbVoipCase):
         daten = self._fuehren(anruf)
         self.assertTrue(daten['protokoll_id'])
         self.assertFalse(self.kontakt.message_ids.filtered(
-            lambda m: 'Anruf eingehend' in (m.body or '')))
+            lambda m: 'Call incoming' in (m.body or '')))
 
     def test_kein_chatter_ohne_leserecht_am_datensatz(self):
         fremd = self.env['wb.voip.anruf'].with_user(self.user_b)

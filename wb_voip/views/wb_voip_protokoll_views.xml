@@ -34,7 +34,7 @@
                             <field name="anruf_id" readonly="1"/>
                         </group>
                     </group>
-                    <field name="beschreibung" placeholder="Notizen zum Gespräch"/>
+                    <field name="beschreibung" placeholder="Call notes"/>
                 </sheet>
                 <chatter/>
             </form>
@@ -50,7 +50,7 @@
             <form>
                 <header>
                     <button name="action_wb_voip_folgeaktivitaet" type="object"
-                            string="Folgeaktivität planen" class="btn-secondary"/>
+                            string="Schedule follow-up activity" class="btn-secondary"/>
                 </header>
                 <!-- Anruf-Buttons des Popups (Widget lädt sie vom Server) -->
                 <field name="anruf_id" invisible="1"/>
@@ -65,7 +65,7 @@
                                 <field name="datum" readonly="1"/>
                                 <field name="dauer_sek" readonly="1"/>
                             </group>
-                            <field name="beschreibung" placeholder="Notizen zum Gespräch"/>
+                            <field name="beschreibung" placeholder="Call notes"/>
                         </div>
                         <!-- rechte Spalte nach dem Popup-Layout des Benutzers -->
                         <div class="col-12 col-lg-5 o_wb_voip_popup_rechts">
@@ -84,18 +84,18 @@
             <search>
                 <field name="partner_id"/>
                 <field name="user_id"/>
-                <filter name="eingehend" string="Eingehend" domain="[('richtung', '=', 'eingehend')]"/>
-                <filter name="ausgehend" string="Ausgehend" domain="[('richtung', '=', 'ausgehend')]"/>
+                <filter name="eingehend" string="Incoming" domain="[('richtung', '=', 'eingehend')]"/>
+                <filter name="ausgehend" string="Outgoing" domain="[('richtung', '=', 'ausgehend')]"/>
                 <group>
-                    <filter name="gruppe_ergebnis" string="Ergebnis" context="{'group_by': 'ergebnis'}"/>
-                    <filter name="gruppe_user" string="Benutzer" context="{'group_by': 'user_id'}"/>
+                    <filter name="gruppe_ergebnis" string="Result" context="{'group_by': 'ergebnis'}"/>
+                    <filter name="gruppe_user" string="User" context="{'group_by': 'user_id'}"/>
                 </group>
             </search>
         </field>
     </record>
 
     <record id="wb_voip_protokoll_action" model="ir.actions.act_window">
-        <field name="name">Anrufprotokolle</field>
+        <field name="name">Call logs</field>
         <field name="res_model">wb.voip.protokoll</field>
         <field name="view_mode">list,form</field>
     </record>

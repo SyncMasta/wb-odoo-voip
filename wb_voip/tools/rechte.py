@@ -21,7 +21,7 @@ def nur_voip_benutzer(methode):
     @functools.wraps(methode)
     def huelle(self, *args, **kwargs):
         if not ist_voip_benutzer(self.env):
-            raise AccessError(self.env._("Nur für Benutzer von WB VoIP."))
+            raise AccessError(self.env._("For WB VoIP users only."))
         return methode(self, *args, **kwargs)
     return huelle
 
@@ -31,6 +31,6 @@ def nur_voip_manager(methode):
     @functools.wraps(methode)
     def huelle(self, *args, **kwargs):
         if not self.env.user.has_group(GRUPPE_MANAGER):
-            raise AccessError(self.env._("Nur für Administratoren von WB VoIP."))
+            raise AccessError(self.env._("For WB VoIP administrators only."))
         return methode(self, *args, **kwargs)
     return huelle

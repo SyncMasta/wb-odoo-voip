@@ -14,11 +14,11 @@ class ResPartner(models.Model):
     _inherit = 'res.partner'
 
     wb_voip_nummern_e164 = fields.Char(
-        string='Rufnummern (E.164)', compute='_compute_wb_voip_nummern_e164',
+        string='Phone numbers (E.164)', compute='_compute_wb_voip_nummern_e164',
         store=True, index=True, copy=False)
 
     wb_voip_protokoll_anzahl = fields.Integer(
-        string='Anrufe', compute='_compute_wb_voip_protokoll_anzahl',
+        string='Calls', compute='_compute_wb_voip_protokoll_anzahl',
         groups='wb_voip.group_wb_voip_user')
 
     @api.depends_context('uid')
@@ -77,7 +77,7 @@ class ResPartner(models.Model):
         self.ensure_one()
         return {
             'type': 'ir.actions.act_window',
-            'name': self.env._("Anrufe"),
+            'name': self.env._("Calls"),
             'res_model': 'wb.voip.protokoll',
             'view_mode': 'list,form',
             'domain': [('partner_id', '=', self.id)],

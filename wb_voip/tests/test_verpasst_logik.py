@@ -105,7 +105,9 @@ class TestVerpasstLogik(WbVoipCase):
         self.assertEqual(aktivitaet.res_model, 'res.partner')
         self.assertEqual(aktivitaet.res_id, self.kontakt.id)
         self.assertEqual(aktivitaet.user_id, self.user_a)
-        self.assertEqual(aktivitaet.summary, 'Rückruf: verpasster Anruf')
+        # In der Sprache des Empfängers (auf einer Datenbank nur mit Deutsch ist das Deutsch)
+        erwartet = 'Rückruf: verpasster Anruf' if self.user_a.lang == 'de_DE' else 'Callback: missed call'
+        self.assertEqual(aktivitaet.summary, erwartet)
         self.assertTrue(self._verpasst_meldungen(self.user_a))
         self.assertTrue(all(m[2] == {} for m in self._verpasst_meldungen(self.user_a)))
 
@@ -395,14 +397,14 @@ class TestVerpasstLogik(WbVoipCase):
         for alt in (alt_a.sudo(), alt_b.sudo()):
             self.assertTrue(alt.erledigt)
             self.assertTrue(alt.erledigt_am)
-            self.assertEqual(alt.erledigt_text, 'Angenommen von VoIP Benutzer B')
+            self.assertEqual(alt.erledigt_text, 'Answered by VoIP Benutzer B')
             self.assertFalse(alt.erledigt_durch_protokoll_id)
             self.assertEqual(alt.zustand, 'verpasst')
         for akt in (akt_a, akt_b):
             self.assertTrue(akt.exists())
             self.assertFalse(akt.active)
         nachricht = self.kontakt.message_ids.filtered(
-            lambda m: 'Angenommen von VoIP Benutzer B' in (m.body or ''))
+            lambda m: 'Answered by VoIP Benutzer B' in (m.body or ''))
         self.assertTrue(nachricht)
         self.assertTrue(self._verpasst_meldungen(self.user_a))
         self.assertTrue(self._verpasst_meldungen(self.user_b))
@@ -459,7 +461,7 @@ class TestVerpasstLogik(WbVoipCase):
             raus.sudo()._wb_voip_nummer_erreicht(protokoll)
         alt = alt.sudo()
         self.assertTrue(alt.erledigt)
-        self.assertEqual(alt.erledigt_text, 'Zurückgerufen von VoIP Benutzer B')
+        self.assertEqual(alt.erledigt_text, 'Called back by VoIP Benutzer B')
         self.assertEqual(alt.erledigt_durch_protokoll_id, protokoll)
 
     # --- Nachbesserung: echte Annahme nach „anderswo“, später gemeldetes „verpasst“ ---

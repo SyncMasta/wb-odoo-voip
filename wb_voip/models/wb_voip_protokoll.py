@@ -12,7 +12,7 @@ _logger = logging.getLogger(__name__)
 
 class WbVoipProtokoll(models.Model):
     _name = 'wb.voip.protokoll'
-    _description = 'WB VoIP: Anrufprotokoll'
+    _description = 'WB VoIP: Call log'
     _inherit = ['mail.thread', 'mail.activity.mixin']
     _order = 'datum desc, id desc'
     _rec_name = 'anruf_id'
@@ -21,27 +21,27 @@ class WbVoipProtokoll(models.Model):
     # nur Ergebnis und Beschreibung (Popup nach dem Anruf).
     _WB_VOIP_NUR_SERVER = ('anruf_id', 'user_id', 'richtung', 'dauer_sek', 'datum')
 
-    datum = fields.Datetime(string='Datum', default=fields.Datetime.now, index=True)
+    datum = fields.Datetime(string='Date', default=fields.Datetime.now, index=True)
     user_id = fields.Many2one(
-        'res.users', string='Benutzer', required=True, index=True,
+        'res.users', string='User', required=True, index=True,
         default=lambda self: self.env.user, ondelete='cascade')
     partner_id = fields.Many2one(
-        'res.partner', string='Kontakt', index=True, ondelete='set null', tracking=True)
-    res_model = fields.Char(string='Datensatz-Modell')
-    res_id = fields.Many2oneReference(string='Datensatz', model_field='res_model')
+        'res.partner', string='Contact', index=True, ondelete='set null', tracking=True)
+    res_model = fields.Char(string='Record model')
+    res_id = fields.Many2oneReference(string='Record', model_field='res_model')
     richtung = fields.Selection(
-        [('eingehend', 'Eingehend'), ('ausgehend', 'Ausgehend')], string='Richtung')
+        [('eingehend', 'Incoming'), ('ausgehend', 'Outgoing')], string='Direction')
     ergebnis = fields.Selection(
-        [('erreicht', 'Erreicht'), ('nicht_erreicht', 'Nicht erreicht'),
-         ('mailbox', 'Mailbox'), ('besetzt', 'Besetzt')],
-        string='Ergebnis', default='erreicht', tracking=True)
-    dauer_sek = fields.Integer(string='Dauer (s)')
-    beschreibung = fields.Html(string='Beschreibung')
+        [('erreicht', 'Reached'), ('nicht_erreicht', 'Not reached'),
+         ('mailbox', 'Voicemail'), ('besetzt', 'Busy')],
+        string='Result', default='erreicht', tracking=True)
+    dauer_sek = fields.Integer(string='Duration (s)')
+    beschreibung = fields.Html(string='Description')
     anruf_id = fields.Many2one(
-        'wb.voip.anruf', string='Anruf', index=True, ondelete='set null', copy=False)
+        'wb.voip.anruf', string='Call', index=True, ondelete='set null', copy=False)
 
     _anruf_eindeutig = models.Constraint(
-        'unique(anruf_id)', 'Zu diesem Anruf gibt es schon ein Protokoll.')
+        'unique(anruf_id)', 'There is already a call log for this call.')
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -98,7 +98,7 @@ class WbVoipProtokoll(models.Model):
         ergebnisse = dict(self._fields['ergebnis']._description_selection(self.env))
         sek = self.dauer_sek or 0
         return self.env._(
-            'Anruf %(richtung)s · %(ergebnis)s · %(dauer)s',
+            'Call %(richtung)s · %(ergebnis)s · %(dauer)s',
             richtung=(richtungen.get(self.richtung) or '').lower(),
             ergebnis=(ergebnisse.get(self.ergebnis) or '').lower(),
             dauer='%d:%02d' % (sek // 60, sek % 60),
@@ -115,7 +115,7 @@ class WbVoipProtokoll(models.Model):
         self.ensure_one()
         self.check_access('read')
         if self.user_id != self.env.user:
-            raise AccessError(self.env._("Dies ist nicht Ihr Anrufprotokoll."))
+            raise AccessError(self.env._("This is not your call log."))
         anruf = self.sudo().anruf_id
         if not anruf:
             return []
@@ -133,7 +133,7 @@ class WbVoipProtokoll(models.Model):
         self.ensure_one()
         self.check_access('read')
         if self.user_id != self.env.user:
-            raise AccessError(self.env._("Dies ist nicht Ihr Anrufprotokoll."))
+            raise AccessError(self.env._("This is not your call log."))
         partner = self.partner_id
         if partner and not partner.has_access('read'):
             partner = partner.browse()
@@ -164,7 +164,7 @@ class WbVoipProtokoll(models.Model):
             ziel = self
         return {
             'type': 'ir.actions.act_window',
-            'name': self.env._("Folgeaktivität planen"),
+            'name': self.env._("Schedule follow-up activity"),
             'res_model': 'mail.activity.schedule',
             'view_mode': 'form',
             'views': [[False, 'form']],

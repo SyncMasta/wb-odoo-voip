@@ -11,7 +11,7 @@ def pruefen(env, vals, nur_server):
     """Raise if a non-server caller writes server-only fields."""
     gesperrt = gesperrte_felder(vals, nur_server)
     if gesperrt:
-        raise UserError(env._("Diese Felder setzt nur der Server: %s", ', '.join(gesperrt)))
+        raise UserError(env._("Only the server sets these fields: %s", ', '.join(gesperrt)))
 
 
 def kontext_ohne_defaults(env, nur_server):

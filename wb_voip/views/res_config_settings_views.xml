@@ -9,16 +9,16 @@
                 <app data-string="WB VoIP" string="WB VoIP" name="wb_voip"
                      groups="wb_voip.group_wb_voip_manager">
                     <block title="WB VoIP" name="wb_voip_block">
-                        <setting string="Löschfrist für Anrufdaten"
-                                 help="Beendete Anrufe nach dieser Zahl von Monaten löschen (0 = nie). Anrufprotokolle bleiben erhalten.">
+                        <setting string="Retention period for call data"
+                                 help="Delete ended calls after this number of months (0 = never). Call logs are kept.">
                             <field name="wb_voip_aufbewahrung_monate"/>
                         </setting>
-                        <setting string="Team-Übersicht anzeigen"
-                                 help="Reiter „Team“ im Softphone: Anwesenheit und Telefonstatus der Kollegen. Vor dem Einschalten die Beschäftigten informieren und ggf. den Betriebsrat beteiligen.">
+                        <setting string="Show team overview"
+                                 help="&quot;Team&quot; tab in the softphone: presence and phone status of colleagues. Before switching it on, inform the employees and, where applicable, involve the works council.">
                             <field name="wb_voip_team_aktiv"/>
                         </setting>
-                        <setting string="Gesprächsdauer im Team anzeigen" invisible="not wb_voip_team_aktiv"
-                                 help="Zeigt in der Team-Übersicht, seit wann ein Kollege telefoniert.">
+                        <setting string="Show call duration in the team" invisible="not wb_voip_team_aktiv"
+                                 help="Shows in the team overview since when a colleague has been on a call.">
                             <field name="wb_voip_team_dauer"/>
                         </setting>
                     </block>

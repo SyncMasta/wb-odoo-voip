@@ -78,7 +78,7 @@ class TestVerpasstRueckruf(WbVoipCase):
         self.assertEqual(protokoll.ergebnis, 'erreicht')
         alt = alt.sudo()
         self.assertTrue(alt.erledigt)
-        self.assertEqual(alt.erledigt_text, 'Zurückgerufen von VoIP Benutzer B')
+        self.assertEqual(alt.erledigt_text, 'Called back by VoIP Benutzer B')
         self.assertEqual(alt.erledigt_durch_protokoll_id, protokoll)
         self.assertFalse(aktivitaet.exists() and aktivitaet.active)
 
@@ -118,7 +118,7 @@ class TestVerpasstRueckruf(WbVoipCase):
             # zurück auf „erreicht“: wieder erledigt, neue Aktivität abgeschlossen
             protokoll.with_user(self.user_b).write({'ergebnis': 'erreicht'})
         self.assertTrue(alt.erledigt)
-        self.assertEqual(alt.erledigt_text, 'Zurückgerufen von VoIP Benutzer B')
+        self.assertEqual(alt.erledigt_text, 'Called back by VoIP Benutzer B')
         self.assertEqual(alt.erledigt_durch_protokoll_id, protokoll)
         self.assertFalse(neu.active)
         self.assertEqual(len(self._aktivitaeten(self.user_a)), 2)
@@ -161,7 +161,7 @@ class TestVerpasstRueckruf(WbVoipCase):
             protokoll.with_user(self.user_b).write({'ergebnis': 'erreicht'})
         alt = alt.sudo()
         self.assertTrue(alt.erledigt)
-        self.assertEqual(alt.erledigt_text, 'Zurückgerufen von VoIP Benutzer B')
+        self.assertEqual(alt.erledigt_text, 'Called back by VoIP Benutzer B')
         self.assertEqual(alt.erledigt_durch_protokoll_id, protokoll)
         self.assertFalse(alt.rueckruf_aktivitaet_id.active)
 
@@ -235,7 +235,7 @@ class TestVerpasstRueckruf(WbVoipCase):
         with freeze_time(START):
             alt = self._verpasst(self.user_a)
             alt.sudo().rueckruf_aktivitaet_id.with_user(self.user_a).action_feedback()
-        self.assertEqual(alt.sudo().erledigt_text, 'Aufgabe erledigt')
+        self.assertEqual(alt.sudo().erledigt_text, 'Task done')
 
     def test_aktivitaet_erledigt_html_wird_klartext(self):
         with freeze_time(START):

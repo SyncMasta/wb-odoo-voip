@@ -6,13 +6,13 @@ field holds the chosen value. Templates never create anything but ``object_write
 
 VORLAGEN = {
     'kategorie_hinzufuegen': {
-        'name': 'Kategorie am Kontakt hinzufügen',
+        'name': 'Add category to contact',
         'modell': 'res.partner',
         'feld': 'category_id',
         'wert': 'wert_kategorie_id',
     },
     'sprache_setzen': {
-        'name': 'Sprache des Kontakts setzen',
+        'name': 'Set contact language',
         'modell': 'res.partner',
         'feld': 'lang',
         'wert': 'wert_sprache',

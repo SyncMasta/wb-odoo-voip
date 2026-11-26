@@ -35,98 +35,98 @@ class WbVoipAktionAssistentOption(models.TransientModel):
     """
 
     _name = 'wb.voip.aktion.assistent.option'
-    _description = 'WB VoIP: Auswahl im Button-Assistenten'
+    _description = 'WB VoIP: Selection in the button wizard'
     _rec_name = 'label'
     _order = 'label, id'
 
     assistent_id = fields.Many2one(
-        'wb.voip.aktion.assistent', string='Assistent', required=True, ondelete='cascade')
-    art = fields.Selection([('feld', 'Feld'), ('auswahl', 'Auswahlwert')], required=True)
-    name = fields.Char(string='Technischer Name', required=True)
-    label = fields.Char(string='Bezeichnung', required=True)
-    feld_name = fields.Char(string='Feld')
+        'wb.voip.aktion.assistent', string='Wizard', required=True, ondelete='cascade')
+    art = fields.Selection([('feld', 'Field'), ('auswahl', 'Selection value')], string='Type',
+                           required=True)
+    name = fields.Char(string='Technical name', required=True)
+    label = fields.Char(string='Label', required=True)
+    feld_name = fields.Char(string='Field')
 
 
 class WbVoipAktionAssistent(models.TransientModel):
     """Wizard that creates a call button together with an allowed server action."""
 
     _name = 'wb.voip.aktion.assistent'
-    _description = 'WB VoIP: Button-Assistent'
+    _description = 'WB VoIP: Button wizard'
 
     aktion_id = fields.Many2one('wb.voip.aktion', string='Button', ondelete='cascade')
     schritt = fields.Selection(
-        [('button', 'Button'), ('aktion', 'Aktion'), ('feld', 'Feld')], string='Schritt',
+        [('button', 'Button'), ('aktion', 'Action'), ('feld', 'Field')], string='Step',
         default='button', required=True)
 
     # --- Schritt 1: Button ---
-    name = fields.Char(string='Bezeichnung')
-    icon = fields.Char(string='Symbol', help="Font-Awesome-Klasse, z. B. fa-user")
+    name = fields.Char(string='Label')
+    icon = fields.Char(string='Icon', help="Font Awesome class, e.g. fa-user")
     farbe = fields.Selection(
-        [('primary', 'Primär'), ('secondary', 'Sekundär'), ('success', 'Grün'),
-         ('warning', 'Gelb'), ('danger', 'Rot')],
-        string='Farbe', required=True, default='secondary')
-    ort_anrufer_fenster = fields.Boolean(string='Im Anrufer-Fenster', default=True)
-    ort_protokoll_popup = fields.Boolean(string='Im Protokoll-Popup')
-    ort_softphone = fields.Boolean(string='Im Softphone')
+        [('primary', 'Primary'), ('secondary', 'Secondary'), ('success', 'Green'),
+         ('warning', 'Yellow'), ('danger', 'Red')],
+        string='Color', required=True, default='secondary')
+    ort_anrufer_fenster = fields.Boolean(string='In the caller window', default=True)
+    ort_protokoll_popup = fields.Boolean(string='In the log popup')
+    ort_softphone = fields.Boolean(string='In the softphone')
     richtung = fields.Selection(
-        [('beide', 'Beide'), ('eingehend', 'Eingehend'), ('ausgehend', 'Ausgehend')],
-        string='Richtung', required=True, default='beide')
+        [('beide', 'Both'), ('eingehend', 'Incoming'), ('ausgehend', 'Outgoing')],
+        string='Direction', required=True, default='beide')
     zustand = fields.Selection(
-        [('immer', 'Immer'), ('klingelt', 'Während es klingelt'),
-         ('laeuft', 'Während des Gesprächs'), ('beendet', 'Nach dem Anruf')],
-        string='Zustand', required=True, default='immer')
+        [('immer', 'Always'), ('klingelt', 'While ringing'),
+         ('laeuft', 'During the call'), ('beendet', 'After the call')],
+        string='State', required=True, default='immer')
     group_ids = fields.Many2many(
         'res.groups', 'wb_voip_aktion_assistent_res_groups_rel', 'assistent_id', 'group_id',
-        string='Gruppen', help="Leer = alle Benutzer von WB VoIP.")
+        string='Groups', help="Empty = all WB VoIP users.")
 
     # --- Schritt 2: Aktion ---
-    art = fields.Selection(selection='_selection_art', string='Was soll passieren?',
+    art = fields.Selection(selection='_selection_art', string='What should happen?',
                            required=True, default='feld')
-    vorlage = fields.Selection(selection='_selection_vorlage', string='Vorlage')
+    vorlage = fields.Selection(selection='_selection_vorlage', string='Template')
     ziel = fields.Selection(
-        [('kontakt', 'Kontakt des Anrufs'), ('datensatz', 'Datensatz des Anrufs'),
-         ('anruf', 'Anruf')],
-        string='Ziel', required=True, default='kontakt',
-        help="„Datensatz des Anrufs“ ist der Datensatz, aus dem heraus angerufen wurde. "
-             "„Anruf“ nur für Python-Code.")
-    modell = fields.Selection(selection='_selection_modell', string='Modell')
+        [('kontakt', 'Call contact'), ('datensatz', 'Call record'),
+         ('anruf', 'Call')],
+        string='Target', required=True, default='kontakt',
+        help='"Call record" is the record the call was made from. "Call" is for Python code only.')
+    modell = fields.Selection(selection='_selection_modell', string='Model')
     option_ids = fields.One2many('wb.voip.aktion.assistent.option', 'assistent_id')
     feld_option_id = fields.Many2one(
-        'wb.voip.aktion.assistent.option', string='Feld', ondelete='set null',
+        'wb.voip.aktion.assistent.option', string='Field', ondelete='set null',
         domain="[('assistent_id', '=', id), ('art', '=', 'feld')]")
-    feld_name = fields.Char(string='Technischer Feldname')
-    feld_typ = fields.Char(string='Feldtyp', compute='_compute_feld_typ')
-    wert_char = fields.Char(string='Wert')
+    feld_name = fields.Char(string='Technical field name')
+    feld_typ = fields.Char(string='Field type', compute='_compute_feld_typ')
+    wert_char = fields.Char(string='Value')
     wert_text = fields.Text(string='Text')
-    wert_integer = fields.Integer(string='Zahl')
-    wert_float = fields.Float(string='Dezimalzahl')
-    wert_boolean = fields.Boolean(string='Ja/Nein')
-    wert_date = fields.Date(string='Datum')
+    wert_integer = fields.Integer(string='Integer')
+    wert_float = fields.Float(string='Decimal number')
+    wert_boolean = fields.Boolean(string='Yes/No')
+    wert_date = fields.Date(string='Date')
     wert_auswahl_option_id = fields.Many2one(
-        'wb.voip.aktion.assistent.option', string='Auswahl', ondelete='set null',
+        'wb.voip.aktion.assistent.option', string='Selection', ondelete='set null',
         domain="[('assistent_id', '=', id), ('art', '=', 'auswahl'), ('feld_name', '=', feld_name)]")
-    wert_auswahl = fields.Char(string='Technischer Auswahlwert')
-    wert_res_model = fields.Char(compute='_compute_feld_typ')
-    wert_res_id = fields.Many2oneReference(string='Datensatz', model_field='wert_res_model')
-    wert_kategorie_id = fields.Many2one('res.partner.category', string='Kategorie')
-    wert_sprache = fields.Selection(selection='_selection_sprache', string='Sprache')
-    code = fields.Text(string='Python-Code', groups='base.group_system')
+    wert_auswahl = fields.Char(string='Technical selection value')
+    wert_res_model = fields.Char(string='Value model', compute='_compute_feld_typ')
+    wert_res_id = fields.Many2oneReference(string='Record', model_field='wert_res_model')
+    wert_kategorie_id = fields.Many2one('res.partner.category', string='Category')
+    wert_sprache = fields.Selection(selection='_selection_sprache', string='Language')
+    code = fields.Text(string='Python code', groups='base.group_system')
 
     # --- Auswahllisten ---
 
     @api.model
     def _selection_art(self):
         """Return the action types; Python code only for system administrators."""
-        arten = [('feld', self.env._("Feld setzen")), ('vorlage', self.env._("Vorlage"))]
+        arten = [('feld', self.env._("Set field")), ('vorlage', self.env._("Template"))]
         if self.env.user.has_group(GRUPPE_SYSTEM):
-            arten.append(('code', self.env._("Python-Code")))
+            arten.append(('code', self.env._("Python code")))
         return arten
 
     @api.model
     def _selection_vorlage(self):
         namen = {
-            'kategorie_hinzufuegen': self.env._("Kategorie am Kontakt hinzufügen"),
-            'sprache_setzen': self.env._("Sprache des Kontakts setzen"),
+            'kategorie_hinzufuegen': self.env._("Add category to contact"),
+            'sprache_setzen': self.env._("Set contact language"),
         }
         return [(schluessel, namen.get(schluessel, vorlage['name']))
                 for schluessel, vorlage in VORLAGEN.items()]
@@ -272,12 +272,12 @@ class WbVoipAktionAssistent(models.TransientModel):
         if typ == 'char':
             wert = self.wert_char or ''
             if len(wert) > CHAR_MAX:
-                raise UserError(self.env._("Der Wert ist zu lang."))
+                raise UserError(self.env._("The value is too long."))
             return {'value': wert}
         if typ == 'text':
             wert = self.wert_text or ''
             if len(wert) > TEXT_MAX:
-                raise UserError(self.env._("Der Text ist zu lang."))
+                raise UserError(self.env._("The text is too long."))
             return {'value': wert}
         if typ == 'integer':
             return {'value': str(int(self.wert_integer))}
@@ -290,7 +290,7 @@ class WbVoipAktionAssistent(models.TransientModel):
         if typ == 'selection':
             werte = [wert for wert, _label in field._description_selection(self.env)]
             if not self.wert_auswahl or self.wert_auswahl not in werte:
-                raise UserError(self.env._("Bitte einen Wert der Auswahl wählen."))
+                raise UserError(self.env._("Please choose a value from the selection."))
             return {'value': self.wert_auswahl}
         # many2one / many2many: ein Datensatz des Zielmodells, den der Benutzer lesen darf
         res_id = self.wert_res_id
@@ -301,11 +301,11 @@ class WbVoipAktionAssistent(models.TransientModel):
     def _wb_voip_datensatz_wert(self, field, datensatz):
         """Return the values for a relation value ``datensatz`` (must be readable by the caller)."""
         if not datensatz or datensatz._name != field.comodel_name:
-            raise UserError(self.env._("Bitte einen Datensatz aus „%s“ wählen.",
+            raise UserError(self.env._('Please choose a record from "%s".',
                                        field._description_string(self.env)))
         datensatz = datensatz.with_env(self.env).exists()
         if not datensatz or not datensatz.has_access('read'):
-            raise UserError(self.env._("Bitte einen Datensatz wählen, den Sie lesen dürfen."))
+            raise UserError(self.env._("Please choose a record you are allowed to read."))
         werte = {'value': str(datensatz.id)}
         if field.type == 'many2many':
             werte['update_m2m_operation'] = 'add'
@@ -316,22 +316,22 @@ class WbVoipAktionAssistent(models.TransientModel):
         self.ensure_one()
         name = (self.name or '').strip()
         if not name or len(name) > NAME_MAX:
-            raise UserError(self.env._("Bitte eine Bezeichnung (höchstens %s Zeichen) angeben.",
+            raise UserError(self.env._("Please enter a name (at most %s characters).",
                                        NAME_MAX))
         if self.icon and not ICON_MUSTER.fullmatch(self.icon):
             raise UserError(self.env._(
-                "Das Symbol muss eine Font-Awesome-Klasse sein, z. B. fa-user."))
+                "The icon must be a Font Awesome class, e.g. fa-user."))
         if not (self.ort_anrufer_fenster or self.ort_protokoll_popup or self.ort_softphone):
-            raise UserError(self.env._("Bitte mindestens einen Ort wählen."))
+            raise UserError(self.env._("Please choose at least one location."))
 
     def _wb_voip_bestehend_pruefen(self, aktion):
         """Raise unless the caller may rework the existing button ``aktion`` here."""
         aktion.check_access('write')
         if not aktion.sudo().wb_voip_assistent:
-            raise UserError(self.env._("Dieser Button wurde nicht mit dem Assistenten angelegt."))
+            raise UserError(self.env._("This button was not created with the wizard."))
         if aktion.sudo().server_action_id.state == 'code' \
                 and not self.env.user.has_group(GRUPPE_SYSTEM):
-            raise AccessError(self.env._("Python-Code dürfen nur Systemadministratoren bearbeiten."))
+            raise AccessError(self.env._("Only system administrators may edit Python code."))
 
     def _wb_voip_serveraktion_werte(self):
         """Check step 2 and return the values of the server action to create (without group)."""
@@ -339,13 +339,13 @@ class WbVoipAktionAssistent(models.TransientModel):
         if self.art == 'code':
             # serverseitig, unabhängig von der Auswahlliste
             if not self.env.user.has_group(GRUPPE_SYSTEM):
-                raise AccessError(self.env._("Python-Code dürfen nur Systemadministratoren anlegen."))
+                raise AccessError(self.env._("Only system administrators may create Python code."))
             modell = self._wb_voip_modellname()
             if modell != 'wb.voip.anruf' and not self._wb_voip_modell_erlaubt(modell):
-                raise UserError(self.env._("Dieses Modell ist nicht erlaubt."))
+                raise UserError(self.env._("This model is not allowed."))
             code = self.sudo().code or ''
             if not code.strip() or len(code) > CODE_MAX:
-                raise UserError(self.env._("Bitte Python-Code (höchstens %s Zeichen) angeben.",
+                raise UserError(self.env._("Please enter Python code (at most %s characters).",
                                            CODE_MAX))
             fehler = test_python_expr(expr=code.strip(), mode='exec')
             if fehler:
@@ -354,33 +354,33 @@ class WbVoipAktionAssistent(models.TransientModel):
         if self.art == 'vorlage':
             vorlage = VORLAGEN.get(self.vorlage)
             if not vorlage:
-                raise UserError(self.env._("Bitte eine Vorlage wählen."))
+                raise UserError(self.env._("Please choose a template."))
             modell = vorlage['modell']
             Modell = self.env[modell]
             field = Modell._fields.get(vorlage['feld'])
             if not self._wb_voip_modell_erlaubt(modell) \
                     or not self._wb_voip_feld_erlaubt(Modell, field, vorlage=True):
-                raise UserError(self.env._("Sie dürfen dieses Feld nicht ändern."))
+                raise UserError(self.env._("You are not allowed to change this field."))
             if vorlage['wert'] == 'wert_kategorie_id':
                 werte = self._wb_voip_datensatz_wert(field, self.wert_kategorie_id)
             else:
                 sprachen = [code for code, _name in self._selection_sprache()]
                 if not self.wert_sprache or self.wert_sprache not in sprachen:
-                    raise UserError(self.env._("Bitte eine Sprache wählen."))
+                    raise UserError(self.env._("Please choose a language."))
                 werte = {'value': self.wert_sprache}
             return modell, dict(werte, state='object_write', update_path=field.name,
                                 evaluation_type='value')
         if self.art != 'feld':
-            raise UserError(self.env._("Bitte wählen, was passieren soll."))
+            raise UserError(self.env._("Please choose what should happen."))
         if self.ziel not in ('kontakt', 'datensatz'):
-            raise UserError(self.env._("Bitte als Ziel Kontakt oder Datensatz wählen."))
+            raise UserError(self.env._("Please choose contact or record as the target."))
         modell = self._wb_voip_modellname()
         if not self._wb_voip_modell_erlaubt(modell):
-            raise UserError(self.env._("Dieses Modell ist nicht erlaubt."))
+            raise UserError(self.env._("This model is not allowed."))
         Modell = self.env[modell]
         field = Modell._fields.get(self.feld_name) if isinstance(self.feld_name, str) else None
         if not self._wb_voip_feld_erlaubt(Modell, field):
-            raise UserError(self.env._("Dieses Feld darf ein Button nicht setzen."))
+            raise UserError(self.env._("A button may not set this field."))
         werte = self._wb_voip_wert(field)
         return modell, dict(werte, state='object_write', update_path=field.name,
                             evaluation_type='value')
@@ -393,7 +393,7 @@ class WbVoipAktionAssistent(models.TransientModel):
         if werte.get('aktion_id'):
             aktion = self.env['wb.voip.aktion'].browse(werte['aktion_id']).exists()
             if not aktion:
-                raise UserError(self.env._("Der Button existiert nicht mehr."))
+                raise UserError(self.env._("The button no longer exists."))
             self._wb_voip_bestehend_pruefen(aktion)
             geladen = self._wb_voip_aus_button(aktion)
             werte.update({k: v for k, v in geladen.items() if k in fields_list})
@@ -455,7 +455,7 @@ class WbVoipAktionAssistent(models.TransientModel):
     def _wb_voip_wieder_oeffnen(self):
         return {
             'type': 'ir.actions.act_window',
-            'name': self.env._("Button-Assistent"),
+            'name': self.env._("Button wizard"),
             'res_model': self._name,
             'res_id': self.id,
             'view_mode': 'form',
@@ -472,11 +472,11 @@ class WbVoipAktionAssistent(models.TransientModel):
             self.schritt = 'aktion'
         elif self.schritt == 'aktion':
             if self.art != 'feld':
-                raise UserError(self.env._("Diese Art wird direkt gespeichert."))
+                raise UserError(self.env._("This type is saved directly."))
             if self.ziel not in ('kontakt', 'datensatz'):
-                raise UserError(self.env._("Bitte als Ziel Kontakt oder Datensatz wählen."))
+                raise UserError(self.env._("Please choose contact or record as the target."))
             if not self._wb_voip_modell_erlaubt(self._wb_voip_modellname()):
-                raise UserError(self.env._("Bitte ein erlaubtes Modell wählen."))
+                raise UserError(self.env._("Please choose an allowed model."))
             self._wb_voip_optionen_erzeugen()
             self.schritt = 'feld'
         return self._wb_voip_wieder_oeffnen()
@@ -519,7 +519,7 @@ class WbVoipAktionAssistent(models.TransientModel):
         if not serveraktion_erlaubt(server) or not assistenten_aktion(server) or server.warning \
                 or (server.state == 'object_write'
                     and server.update_field_id.name != server_werte['update_path']):
-            raise UserError(selbst.env._("Die Serveraktion konnte nicht sicher angelegt werden."))
+            raise UserError(selbst.env._("The server action could not be created safely."))
         button_werte = {
             'name': name, 'icon': selbst.icon or False, 'farbe': selbst.farbe,
             'ort_anrufer_fenster': selbst.ort_anrufer_fenster,

@@ -27,29 +27,29 @@ class ResUsers(models.Model):
     _inherit = 'res.users'
 
     wb_voip_anlage_id = fields.Many2one(
-        'wb.voip.anlage', string='Telefonanlage', ondelete='set null', copy=False)
-    wb_voip_sip_benutzer = fields.Char(string='SIP-Benutzer', copy=False)
+        'wb.voip.anlage', string='PBX', ondelete='set null', copy=False)
+    wb_voip_sip_benutzer = fields.Char(string='SIP user', copy=False)
     # Nur schreibbar: liefert beim Lesen immer leer, gespeichert wird das Chiffrat
     wb_voip_sip_passwort = fields.Char(
-        string='SIP-Passwort', compute='_compute_wb_voip_sip_passwort',
+        string='SIP password', compute='_compute_wb_voip_sip_passwort',
         inverse='_inverse_wb_voip_sip_passwort', store=False, copy=False,
         groups='wb_voip.group_wb_voip_user')
     wb_voip_sip_passwort_enc = fields.Char(
-        string='SIP-Passwort (verschlüsselt)', groups='base.group_system', copy=False)
+        string='SIP password (encrypted)', groups='base.group_system', copy=False)
     wb_voip_sip_passwort_gesetzt = fields.Boolean(
-        string='SIP-Passwort gespeichert', compute='_compute_wb_voip_sip_passwort_gesetzt',
+        string='SIP password saved', compute='_compute_wb_voip_sip_passwort_gesetzt',
         groups='wb_voip.group_wb_voip_user')
 
     # Nur der Server schreibt diese Felder (nicht in SELF_WRITEABLE); Lesen nur per sudo
     wb_voip_lebenszeichen = fields.Datetime(
-        string='VoIP: letztes Lebenszeichen', copy=False, groups='base.group_system')
+        string='VoIP: last heartbeat', copy=False, groups='base.group_system')
     wb_voip_registriert = fields.Boolean(
-        string='VoIP: an der Anlage angemeldet', copy=False, groups='base.group_system')
+        string='VoIP: registered on the PBX', copy=False, groups='base.group_system')
 
     _wb_voip_nebenstelle_eindeutig = models.UniqueIndex(
         '(wb_voip_anlage_id, wb_voip_sip_benutzer) '
         'WHERE wb_voip_anlage_id IS NOT NULL AND wb_voip_sip_benutzer IS NOT NULL',
-        'Nebenstelle ist bereits einem anderen Benutzer zugeordnet.')
+        'The extension is already assigned to another user.')
 
     @property
     def SELF_READABLE_FIELDS(self):
@@ -82,7 +82,7 @@ class ResUsers(models.Model):
 
     def _wb_voip_manager_fehler(self):
         return AccessError(self.env._(
-            "Nebenstelle und Telefonanlage setzen nur VoIP-Administratoren."))
+            "Only VoIP administrators may set the extension and PBX."))
 
     @staticmethod
     def _wb_voip_wert(wert):
@@ -115,7 +115,7 @@ class ResUsers(models.Model):
                 and self != self.env.user \
                 and not self.env.user.has_group(GRUPPE_MANAGER):
             raise AccessError(self.env._(
-                "Das SIP-Passwort anderer Benutzer setzen nur VoIP-Administratoren."))
+                "Only VoIP administrators may set the SIP password of other users."))
         return super().write(vals)
 
     @api.constrains('wb_voip_anlage_id', 'wb_voip_sip_benutzer')
@@ -130,13 +130,13 @@ class ResUsers(models.Model):
                 benutzer.id, benutzer.wb_voip_anlage_id.id, benutzer.wb_voip_sip_benutzer))
             if self.env.cr.fetchone():
                 raise ValidationError(self.env._(
-                    "Nebenstelle ist bereits einem anderen Benutzer zugeordnet."))
+                    "The extension is already assigned to another user."))
 
     def _wb_voip_zugang(self):
         """Return the SIP credentials of the current user (never of others)."""
         self.ensure_one()
         if self != self.env.user:
-            raise AccessError(self.env._("SIP-Zugangsdaten sind nur für den Benutzer selbst lesbar."))
+            raise AccessError(self.env._("SIP credentials are readable only by the user themselves."))
         # Passwort nur serverseitig per sudo lesen und entschlüsseln, nie weitergeben außer
         # an den Besitzer
         geheimnis.pruefen(self.env)
@@ -196,11 +196,11 @@ class ResUsers(models.Model):
             info = self.env['wb.license.client'].check_license(PRODUKT_CODE)
             gueltig = bool(info.is_valid)
             meldung = '' if gueltig else (
-                info.user_message or self.env._("Lizenz fehlt oder abgelaufen"))
+                info.user_message or self.env._("License missing or expired"))
         except Exception:  # noqa: BLE001 - Status darf nie werfen
             _logger.exception("[wb_voip] Lizenzprüfung für den Softphone-Status fehlgeschlagen")
             gueltig = False
-            meldung = self.env._("Lizenz konnte nicht geprüft werden.")
+            meldung = self.env._("The license could not be checked.")
         konfiguriert = geheimnis.schluessel_vorhanden()
         if not konfiguriert:
             # Eigener Zustand: der Client zeigt dann nicht „ohne Lizenz“
@@ -224,7 +224,7 @@ class ResUsers(models.Model):
         """
         self.ensure_one()
         if ort not in dict(self.env['wb.voip.layout']._fields['ort'].selection):
-            raise ValidationError(self.env._("Unbekanntes Fenster."))
+            raise ValidationError(self.env._("Unknown window."))
         Layout = self.env['wb.voip.layout'].sudo()
         gruppen = self.sudo().all_group_ids.ids
         passend = Layout.search([
@@ -327,7 +327,7 @@ class ResUsers(models.Model):
         sign of life is deleted) and nothing is sent.
         """
         if type(registriert) is not bool:
-            raise UserError(self.env._("Ungültige Angabe: %s.", self.env._("Angemeldet")))
+            raise UserError(self.env._("Invalid value: %s.", self.env._("Signed in")))
         benutzer = self.env.user.sudo()
         if not self._wb_voip_team_aktiv():
             if benutzer.wb_voip_lebenszeichen or benutzer.wb_voip_registriert:

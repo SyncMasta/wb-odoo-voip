@@ -13,9 +13,9 @@
                     <field name="ersetzen" invisible="feld == 'nicht_speichern'"/>
                 </group>
                 <footer>
-                    <button name="action_zuordnen" type="object" string="Zuordnen"
+                    <button name="action_zuordnen" type="object" string="Assign"
                             class="btn-primary" data-hotkey="q"/>
-                    <button string="Abbrechen" class="btn-secondary" special="cancel"
+                    <button string="Cancel" class="btn-secondary" special="cancel"
                             data-hotkey="x"/>
                 </footer>
             </form>

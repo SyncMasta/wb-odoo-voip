@@ -11,17 +11,17 @@ NICHT_SPEICHERN = 'nicht_speichern'
 
 class WbVoipZuordnen(models.TransientModel):
     _name = 'wb.voip.zuordnen'
-    _description = 'WB VoIP: Rufnummer einem Kontakt zuordnen'
+    _description = 'WB VoIP: Assign phone number to a contact'
 
     anruf_id = fields.Many2one(
-        'wb.voip.anruf', string='Anruf', required=True, ondelete='cascade')
-    nummer = fields.Char(string='Rufnummer', compute='_compute_nummer')
-    partner_id = fields.Many2one('res.partner', string='Kontakt')
+        'wb.voip.anruf', string='Call', required=True, ondelete='cascade')
+    nummer = fields.Char(string='Phone number', compute='_compute_nummer')
+    partner_id = fields.Many2one('res.partner', string='Contact')
     feld = fields.Selection(
-        selection='_selection_feld', string='Nummer speichern in', default='phone',
+        selection='_selection_feld', string='Save number in', default='phone',
         required=True)
     ersetzen = fields.Boolean(
-        string='Ersetzen', help="Eine vorhandene Nummer im gewählten Feld überschreiben.")
+        string='Replace', help="Overwrite an existing number in the chosen field.")
 
     @api.depends('anruf_id')
     def _compute_nummer(self):
@@ -37,14 +37,14 @@ class WbVoipZuordnen(models.TransientModel):
         Partner = self.env['res.partner']
         auswahl = [(name, Partner._fields[name]._description_string(self.env))
                    for name in Partner._wb_voip_nummernfelder()]
-        return auswahl + [(NICHT_SPEICHERN, self.env._("Nicht speichern"))]
+        return auswahl + [(NICHT_SPEICHERN, self.env._("Do not save"))]
 
     # --- Schutz: nur eigene Anrufe ---
 
     def _anruf_pruefen(self, anruf):
         """Raise unless ``anruf`` is the caller's own call."""
         if not anruf:
-            raise UserError(self.env._("Der Anruf fehlt."))
+            raise UserError(self.env._("The call is missing."))
         anruf._wb_voip_eigener()
 
     @api.model
@@ -82,21 +82,20 @@ class WbVoipZuordnen(models.TransientModel):
         self._anruf_pruefen(anruf)
         partner = self.partner_id
         if not partner:
-            raise UserError(self.env._("Bitte einen Kontakt wählen."))
+            raise UserError(self.env._("Please choose a contact."))
         if not partner.has_access('read'):
-            raise AccessError(self.env._("Sie dürfen diesen Kontakt nicht lesen."))
+            raise AccessError(self.env._("You are not allowed to read this contact."))
         nummer = anruf.sudo().nummer
         gespeichert = True
         if self.feld != NICHT_SPEICHERN and nummer:
             if self.feld not in partner._wb_voip_nummernfelder():
-                raise UserError(self.env._("Ungültiges Feld."))
+                raise UserError(self.env._("Invalid field."))
             feld = partner._fields[self.feld]
             if partner.has_access('write') and partner._has_field_access(feld, 'write'):
                 vorhanden = partner[self.feld]
                 if vorhanden and vorhanden.strip() != nummer.strip() and not self.ersetzen:
                     raise UserError(self.env._(
-                        "Das Feld ist schon belegt. „Ersetzen“ anhaken oder ein anderes "
-                        "Feld wählen."))
+                        'The field is already in use. Tick "Replace" or choose another field.'))
                 anruf._wb_voip_partner_setzen(partner)
                 if vorhanden != nummer:
                     partner.write({self.feld: nummer})
@@ -110,8 +109,7 @@ class WbVoipZuordnen(models.TransientModel):
                 'params': {
                     'type': 'warning',
                     'message': self.env._(
-                        "Zugeordnet. Die Nummer wurde nicht am Kontakt gespeichert "
-                        "(keine Schreibrechte)."),
+                        "Assigned. The number was not saved on the contact (no write permission)."),
                     'next': {'type': 'ir.actions.act_window_close'},
                 },
             }

@@ -8,8 +8,8 @@ from odoo.tests import tagged
 
 from .common import WbVoipCase
 
-MELDUNG_SCHLUESSEL = "WB VoIP: Schlüssel WB_VOIP_FERNET_KEY fehlt auf dem Server."
-MELDUNG_UNLESBAR = "SIP-Passwort nicht lesbar, bitte neu eingeben."
+MELDUNG_SCHLUESSEL = "WB VoIP: The key WB_VOIP_FERNET_KEY is missing on the server."
+MELDUNG_UNLESBAR = "SIP password unreadable, please enter it again."
 
 
 @tagged('wb_voip', 'post_install', '-at_install')

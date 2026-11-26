@@ -13,7 +13,7 @@ from .wb_voip_aktion import GRUPPE_BUTTON_AKTION, assistenten_aktion
 
 def _verweigern(env):
     raise AccessError(env._(
-        "Diese Serveraktion gehört zu einem Anruf-Button von WB VoIP und läuft nur über den Button."))
+        "This server action belongs to a WB VoIP call button and runs only via the button."))
 
 
 class IrActionsServer(models.Model):
@@ -39,8 +39,7 @@ def _technische_gruppe_pruefen(env):
     gruppe = gruppe.sudo()
     if gruppe.implied_by_ids or gruppe.all_user_ids:
         raise ValidationError(env._(
-            "Die Gruppe „%s“ ist technisch und darf weder Benutzer noch übergeordnete Gruppen "
-            "haben.", gruppe.name))
+            'The group "%s" is technical and must have neither users nor parent groups.', gruppe.name))
 
 
 class ResGroups(models.Model):
@@ -60,5 +59,5 @@ class ResUsers(models.Model):
         if gruppe and any(gruppe in benutzer.sudo().all_group_ids for benutzer in self):
             _technische_gruppe_pruefen(self.env)
             raise ValidationError(self.env._(
-                "Die Gruppe „%s“ ist technisch und darf keinem Benutzer zugewiesen werden.",
+                'The group "%s" is technical and must not be assigned to any user.',
                 gruppe.name))

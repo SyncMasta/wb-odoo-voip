@@ -95,7 +95,7 @@ def _text_pruefen(env, wert, bezeichnung, hoechstens, pflicht):
     if not pflicht and wert is False:
         return
     if not isinstance(wert, str) or len(wert) > hoechstens or (pflicht and not wert.strip()):
-        raise UserError(env._("Ungültige Angabe: %s.", bezeichnung))
+        raise UserError(env._("Invalid value: %s.", bezeichnung))
 
 
 def _kontext_mischen(text, zusatz):
@@ -153,7 +153,7 @@ def _kontext_mischen(text, zusatz):
 
 class WbVoipAnruf(models.Model):
     _name = 'wb.voip.anruf'
-    _description = 'WB VoIP: Anruf'
+    _description = 'WB VoIP: Call'
     _order = 'beginn desc, id desc'
 
     # Nur der Server darf diese Felder ändern (siehe write/create). Die RPC-Methoden
@@ -169,52 +169,52 @@ class WbVoipAnruf(models.Model):
     )
 
     user_id = fields.Many2one(
-        'res.users', string='Benutzer', required=True, index=True,
+        'res.users', string='User', required=True, index=True,
         default=lambda self: self.env.user, ondelete='cascade')
     richtung = fields.Selection(
-        [('eingehend', 'Eingehend'), ('ausgehend', 'Ausgehend')],
-        string='Richtung', required=True)
-    nummer = fields.Char(string='Nummer')
-    nummer_e164 = fields.Char(string='Nummer (E.164)', index=True)
-    sip_call_id = fields.Char(string='SIP-Call-ID', index=True)
+        [('eingehend', 'Incoming'), ('ausgehend', 'Outgoing')],
+        string='Direction', required=True)
+    nummer = fields.Char(string='Number')
+    nummer_e164 = fields.Char(string='Number (E.164)', index=True)
+    sip_call_id = fields.Char(string='SIP call ID', index=True)
     zustand = fields.Selection(
-        [('neu', 'Neu'), ('klingelt', 'Klingelt'), ('laeuft', 'Läuft'),
-         ('beendet', 'Beendet'), ('abgelehnt', 'Abgelehnt'), ('besetzt', 'Besetzt'),
-         ('fehlgeschlagen', 'Fehlgeschlagen'), ('verpasst', 'Verpasst'),
-         ('anderswo', 'Anderswo angenommen')],
-        string='Zustand', required=True, default='neu', index=True)
-    partner_id = fields.Many2one('res.partner', string='Kontakt', ondelete='set null')
-    res_model = fields.Char(string='Datensatz-Modell')
+        [('neu', 'New'), ('klingelt', 'Ringing'), ('laeuft', 'Running'),
+         ('beendet', 'Ended'), ('abgelehnt', 'Rejected'), ('besetzt', 'Busy'),
+         ('fehlgeschlagen', 'Failed'), ('verpasst', 'Missed'),
+         ('anderswo', 'Answered elsewhere')],
+        string='State', required=True, default='neu', index=True)
+    partner_id = fields.Many2one('res.partner', string='Contact', ondelete='set null')
+    res_model = fields.Char(string='Record model')
     res_id = fields.Many2oneReference(
-        string='Datensatz', model_field='res_model')
-    beginn = fields.Datetime(string='Beginn', default=fields.Datetime.now)
-    annahme = fields.Datetime(string='Annahme')
-    ende = fields.Datetime(string='Ende')
-    dauer_sek = fields.Integer(string='Dauer (s)')
-    zuletzt_gesehen = fields.Datetime(string='Zuletzt gesehen')
-    notiz = fields.Text(string='Notiz')
+        string='Record', model_field='res_model')
+    beginn = fields.Datetime(string='Start', default=fields.Datetime.now)
+    annahme = fields.Datetime(string='Answer')
+    ende = fields.Datetime(string='End')
+    dauer_sek = fields.Integer(string='Duration (s)')
+    zuletzt_gesehen = fields.Datetime(string='Last seen')
+    notiz = fields.Text(string='Note')
     protokoll_id = fields.Many2one(
-        'wb.voip.protokoll', string='Protokoll', copy=False, index=True, ondelete='set null')
+        'wb.voip.protokoll', string='Call log', copy=False, index=True, ondelete='set null')
     company_id = fields.Many2one(
-        'res.company', string='Firma', index=True, default=lambda self: self.env.company)
+        'res.company', string='Company', index=True, default=lambda self: self.env.company)
     # Verpasst-Liste: Anruf des Kollegen, der angenommen hat („anderswo“)
     angenommen_anruf_id = fields.Many2one(
-        'wb.voip.anruf', string='Angenommen mit', copy=False, ondelete='set null',
+        'wb.voip.anruf', string='Answered with', copy=False, ondelete='set null',
         index='btree_not_null')
     rueckruf_aktivitaet_id = fields.Many2one(
-        'mail.activity', string='Rückruf-Aktivität', copy=False, ondelete='set null',
+        'mail.activity', string='Callback activity', copy=False, ondelete='set null',
         index='btree_not_null')
-    erledigt = fields.Boolean(string='Erledigt', copy=False, index=True)
-    erledigt_am = fields.Datetime(string='Erledigt am', copy=False)
-    erledigt_text = fields.Text(string='Erledigt wie', copy=False)
+    erledigt = fields.Boolean(string='Done', copy=False, index=True)
+    erledigt_am = fields.Datetime(string='Done on', copy=False)
+    erledigt_text = fields.Text(string='Done how', copy=False)
     erledigt_durch_protokoll_id = fields.Many2one(
-        'wb.voip.protokoll', string='Erledigt durch Protokoll', copy=False, ondelete='set null',
+        'wb.voip.protokoll', string='Done by call log', copy=False, ondelete='set null',
         index='btree_not_null')
-    gesehen = fields.Boolean(string='Gesehen', copy=False)
+    gesehen = fields.Boolean(string='Seen', copy=False)
 
     _sip_call_id_je_benutzer = models.Constraint(
         'unique(user_id, sip_call_id)',
-        'Diese SIP-Call-ID existiert für den Benutzer schon.')
+        'This SIP call ID already exists for the user.')
 
     # --- Schutz der Serverfelder ---
 
@@ -259,7 +259,7 @@ class WbVoipAnruf(models.Model):
         self.ensure_one()
         self.check_access('write')  # Datensatzregel: fremde Anrufe sind unsichtbar
         if self.user_id != self.env.user:
-            raise UserError(self.env._("Dies ist nicht Ihr Anruf."))
+            raise UserError(self.env._("This is not your call."))
         return self.sudo()
 
     @api.model
@@ -430,14 +430,14 @@ class WbVoipAnruf(models.Model):
         may read, otherwise both stay empty.
         """
         if not isinstance(richtung, str) or richtung not in RICHTUNGEN:
-            raise UserError(self.env._("Ungültige Richtung."))
-        _text_pruefen(self.env, nummer, self.env._("Nummer"), MAX_NUMMER, pflicht=True)
-        _text_pruefen(self.env, sip_call_id, self.env._("SIP-Call-ID"), MAX_SIP_CALL_ID,
+            raise UserError(self.env._("Invalid direction."))
+        _text_pruefen(self.env, nummer, self.env._("Number"), MAX_NUMMER, pflicht=True)
+        _text_pruefen(self.env, sip_call_id, self.env._("SIP call ID"), MAX_SIP_CALL_ID,
                       pflicht=True)
-        _text_pruefen(self.env, res_model, self.env._("Datensatz-Modell"), MAX_RES_MODEL,
+        _text_pruefen(self.env, res_model, self.env._("Record model"), MAX_RES_MODEL,
                       pflicht=False)
         if res_id is not False and type(res_id) is not int:
-            raise UserError(self.env._("Ungültige Angabe: %s.", self.env._("Datensatz")))
+            raise UserError(self.env._("Invalid value: %s.", self.env._("Record")))
         benutzer = self.env.user
         vorhanden = self.sudo().search([
             ('user_id', '=', benutzer.id), ('sip_call_id', '=', sip_call_id)], limit=1)
@@ -482,8 +482,8 @@ class WbVoipAnruf(models.Model):
         entry, callback activity and missed-list message as for any missed call (``anderswo``
         if a colleague already answered it). Idempotent per (user, sip_call_id).
         """
-        _text_pruefen(self.env, nummer, self.env._("Nummer"), MAX_NUMMER, pflicht=True)
-        _text_pruefen(self.env, sip_call_id, self.env._("SIP-Call-ID"), MAX_SIP_CALL_ID,
+        _text_pruefen(self.env, nummer, self.env._("Number"), MAX_NUMMER, pflicht=True)
+        _text_pruefen(self.env, sip_call_id, self.env._("SIP call ID"), MAX_SIP_CALL_ID,
                       pflicht=True)
         benutzer = self.env.user
         vorhanden = self.sudo().search([
@@ -565,10 +565,10 @@ class WbVoipAnruf(models.Model):
         (see ``SIP_GRUND_ZUSTAND`` and ``SIP_GRUND_ZUSTAND_EINGEHEND``). ``dauer_sek`` counts from the answer. A call
         that is already in a final state is returned unchanged (no-op).
         """
-        _text_pruefen(self.env, notiz, self.env._("Notiz"), MAX_NOTIZ, pflicht=False)
-        _text_pruefen(self.env, sip_grund, self.env._("SIP-Grund"), MAX_SIP_GRUND, pflicht=False)
+        _text_pruefen(self.env, notiz, self.env._("Note"), MAX_NOTIZ, pflicht=False)
+        _text_pruefen(self.env, sip_grund, self.env._("SIP reason"), MAX_SIP_GRUND, pflicht=False)
         if type(angenommen) is not bool:
-            raise UserError(self.env._("Ungültige Angabe: %s.", self.env._("Angenommen")))
+            raise UserError(self.env._("Invalid value: %s.", self.env._("Answered")))
         anruf = self._wb_voip_eigener()
         uebergang = neu_angenommen = False
         # ``anderswo`` ohne Annahme, aber der Client hat angenommen: wie wb_voip_angenommen
@@ -728,8 +728,8 @@ class WbVoipAnruf(models.Model):
                 with self.env.cr.savepoint():
                     aktivitaet = ziel.activity_schedule(
                         act_type_xmlid=RUECKRUF_TYP,
-                        summary=sprache._("Rückruf: verpasster Anruf"),
-                        note=plaintext2html(sprache._("Verpasster Anruf von %s", anruf.nummer or '')),
+                        summary=sprache._("Callback: missed call"),
+                        note=plaintext2html(sprache._("Missed call from %s", anruf.nummer or '')),
                         user_id=benutzer.id)
             except Exception:  # noqa: BLE001 - die Aktivität darf das Beenden nie verhindern
                 _logger.exception("[wb_voip] Rückruf-Aktivität fehlgeschlagen (Anruf %s)", anruf.id)
@@ -832,8 +832,8 @@ class WbVoipAnruf(models.Model):
             return offen
         name = anruf.user_id.name
         if not text:
-            text = (self.env._("Zurückgerufen von %s", name) if anruf.richtung == 'ausgehend'
-                    else self.env._("Angenommen von %s", name))
+            text = (self.env._("Called back by %s", name) if anruf.richtung == 'ausgehend'
+                    else self.env._("Answered by %s", name))
         werte = {'erledigt': True, 'erledigt_am': fields.Datetime.now(), 'erledigt_text': text}
         # Verknüpfung stets neu setzen, damit ein früheres Protokoll den Eintrag nicht mehr berührt
         werte['erledigt_durch_protokoll_id'] = protokoll.id if protokoll else False
@@ -1027,7 +1027,7 @@ class WbVoipAnruf(models.Model):
         if anruf.zustand not in ('verpasst', 'anderswo') or (
                 anruf.zustand == 'anderswo'
                 and not anruf.filtered_domain(self._wb_voip_anderswo_sichtbar_domain())):
-            raise UserError(self.env._("Dies ist kein offener Verpasst-Eintrag."))
+            raise UserError(self.env._("This is not an open missed-call entry."))
         # Gruppe direkt suchen (nicht über die gekappte Liste)
         gruppe = self._wb_voip_verpasst_offen(
             [('nummer_e164', '=', anruf.nummer_e164)] if anruf.nummer_e164
@@ -1036,7 +1036,7 @@ class WbVoipAnruf(models.Model):
         gruppe.write({
             'erledigt': True, 'erledigt_am': fields.Datetime.now(), 'erledigt_text': text or False,
             'erledigt_durch_protokoll_id': False})
-        anruf._wb_voip_aktivitaeten_abschliessen(aktivitaeten, text or self.env._("Erledigt"))
+        anruf._wb_voip_aktivitaeten_abschliessen(aktivitaeten, text or self.env._("Done"))
         gruppe._wb_voip_verpasst_melden()
         rest = self._wb_voip_verpasst_offen(
             [('nummer_e164', '=', anruf.nummer_e164)] if anruf.nummer_e164
@@ -1130,7 +1130,7 @@ class WbVoipAnruf(models.Model):
         anruf = self._wb_voip_eigener()
         return {
             'type': 'ir.actions.act_window',
-            'name': self.env._("Rufnummer zuordnen"),
+            'name': self.env._("Assign phone number"),
             'res_model': 'wb.voip.zuordnen',
             'view_mode': 'form',
             'views': [[False, 'form']],
@@ -1158,7 +1158,7 @@ class WbVoipAnruf(models.Model):
         partner = partner.with_user(self.env.user)
         partner.ensure_one()
         if not partner.has_access('read'):
-            raise AccessError(self.env._("Sie dürfen diesen Kontakt nicht lesen."))
+            raise AccessError(self.env._("You are not allowed to read this contact."))
         anruf.write({'partner_id': partner.id})
         if anruf.protokoll_id:
             # als Benutzer: der Verfolgungseintrag nennt den echten Autor
@@ -1320,7 +1320,7 @@ class WbVoipAnruf(models.Model):
         softphone call view.
         """
         if not isinstance(ort, str) or ort not in AKTION_ORTE:
-            raise UserError(self.env._("Ungültige Angabe: %s.", self.env._("Ort")))
+            raise UserError(self.env._("Invalid value: %s.", self.env._("Location")))
         anruf = self._wb_voip_eigener()
         return anruf.with_user(self.env.user)._wb_voip_aktionen(ort=ort)
 
@@ -1333,16 +1333,16 @@ class WbVoipAnruf(models.Model):
         more rights than the caller has without WB VoIP.
         """
         if type(aktion_id) is not int or aktion_id <= 0:
-            raise UserError(self.env._("Ungültige Angabe: %s.", self.env._("Button")))
+            raise UserError(self.env._("Invalid value: %s.", self.env._("Button")))
         anruf = self._wb_voip_eigener()
         eigen = anruf.with_user(self.env.user)
         aktion = self.env['wb.voip.aktion'].browse(aktion_id).exists()
         if not aktion or not aktion.active or not aktion._wb_voip_passend(eigen):
-            raise UserError(self.env._("Dieser Button passt nicht zu diesem Anruf."))
+            raise UserError(self.env._("This button does not match this call."))
         partner = eigen._wb_voip_lesbarer_kontakt()
         # wie in der Auswahl: „Neuer Kontakt“ nur ohne lesbaren Kontakt
         if aktion.art == 'neuer_kontakt' and partner:
-            raise UserError(self.env._("Dieser Button passt nicht zu diesem Anruf."))
+            raise UserError(self.env._("This button does not match this call."))
         # Ausführung je Art (_wb_voip_aktion_<art> am Button), andere Module ergänzen Arten
         return aktion._wb_voip_ausfuehren(eigen, partner)
 
@@ -1353,9 +1353,9 @@ class WbVoipAnruf(models.Model):
         fenster = aktion.sudo().act_window_id
         res_model = fenster.res_model
         if not fenster or not res_model or res_model not in self.env:
-            raise UserError(self.env._("Die Fensteraktion des Buttons ist ungültig."))
+            raise UserError(self.env._("The window action of the button is invalid."))
         if fenster.group_ids and not (fenster.group_ids & self.env.user.all_group_ids):
-            raise AccessError(self.env._("Sie dürfen diese Fensteraktion nicht öffnen."))
+            raise AccessError(self.env._("You are not allowed to open this window action."))
         self.env[res_model].check_access('read')
         daten = fenster.read(
             ['name', 'res_model', 'view_mode', 'views', 'target', 'domain', 'context'])[0]
@@ -1393,15 +1393,15 @@ class WbVoipAnruf(models.Model):
         server = aktion.sudo().server_action_id
         if not serveraktion_erlaubt(server):
             raise UserError(self.env._(
-                "Diese Art von Serveraktion ist für Anruf-Buttons nicht erlaubt."))
+                "This type of server action is not allowed for call buttons."))
         if server.warning:
-            raise UserError(self.env._("Die Serveraktion des Buttons ist fehlerhaft."))
+            raise UserError(self.env._("The server action of the button is faulty."))
         # Assistenten-Aktion nur mit Kennzeichen am Button und genau der technischen Gruppe
         assistent = aktion.sudo().wb_voip_assistent and assistenten_aktion(server)
         # wie run(): Gruppen der Serveraktion (gilt auch für object_write ohne run())
         if not assistent and server.group_ids \
                 and not (server.group_ids & self.env.user.all_group_ids):
-            raise AccessError(self.env._("Sie dürfen diese Serveraktion nicht ausführen."))
+            raise AccessError(self.env._("You are not allowed to run this server action."))
         modell = server.model_id.model
         if modell == self._name:
             datensatz = self
@@ -1410,7 +1410,7 @@ class WbVoipAnruf(models.Model):
         else:
             ziel = self._wb_voip_ziel(self.sudo().res_model, self.sudo().res_id)
             if ziel is None or ziel._name != modell:
-                raise UserError(self.env._("Die Serveraktion passt nicht zu diesem Anruf."))
+                raise UserError(self.env._("The server action does not match this call."))
             datensatz = ziel
         datensatz = datensatz.with_user(self.env.user)
         datensatz.check_access('write')
@@ -1454,7 +1454,7 @@ class WbVoipAnruf(models.Model):
             lambda treffer: quote(werte.get(treffer.group(1), ''), safe=''), vorlage)
         if not WbVoipAktion._wb_voip_url_ok(url) \
                 or urlsplit(url).netloc != urlsplit(vorlage).netloc:
-            raise UserError(self.env._("Die Webadresse des Buttons ist ungültig."))
+            raise UserError(self.env._("The web address of the button is invalid."))
         return {'type': 'ir.actions.act_url', 'url': url, 'target': 'new'}
 
     def _wb_voip_neuer_kontakt(self):
@@ -1462,7 +1462,7 @@ class WbVoipAnruf(models.Model):
         self.env['res.partner'].check_access('create')
         return {
             'type': 'ir.actions.act_window',
-            'name': self.env._("Neuer Kontakt"),
+            'name': self.env._("New contact"),
             'res_model': 'res.partner',
             'view_mode': 'form',
             'views': [[False, 'form']],

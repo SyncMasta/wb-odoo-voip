@@ -263,7 +263,7 @@ class TestVorgang(WbVoipCrmCase):
                 'name': 'Nur CRM 2', 'login': 'wb_voip_crm_nurcrm2',
                 'group_ids': [(6, 0, [self.env.ref('base.group_user').id,
                                       self.env.ref('sales_team.group_sale_salesman_all_leads').id])]}))
-        with self.assertRaisesRegex(AccessError, 'Nur für Benutzer von WB VoIP'):
+        with self.assertRaisesRegex(AccessError, 'For WB VoIP users only'):
             lead.action_wb_voip_anrufe()
 
     def test_protokolle_am_vorgang(self):

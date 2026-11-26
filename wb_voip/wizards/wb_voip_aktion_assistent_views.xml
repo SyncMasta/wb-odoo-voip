@@ -4,7 +4,7 @@
         <field name="name">wb.voip.aktion.assistent.form</field>
         <field name="model">wb.voip.aktion.assistent</field>
         <field name="arch" type="xml">
-            <form string="Button-Assistent">
+            <form string="Button wizard">
                 <field name="schritt" invisible="1"/>
                 <field name="aktion_id" invisible="1"/>
                 <field name="feld_typ" invisible="1"/>
@@ -12,31 +12,31 @@
                 <field name="wert_auswahl" invisible="1"/>
                 <field name="wert_res_model" invisible="1"/>
                 <div class="text-muted mb-3" invisible="schritt != 'button'">
-                    Schritt 1: Wie sieht der Button aus, wo und wann erscheint er?
+                    Step 1: What does the button look like, and where and when does it appear?
                 </div>
                 <div class="text-muted mb-3" invisible="schritt != 'aktion'">
-                    Schritt 2: Was passiert beim Klick? Die Aktion läuft immer mit den
-                    Rechten des Benutzers, der klickt.
+                    Step 2: What happens on click? The action always runs with the
+                    rights of the user who clicks.
                 </div>
                 <div class="text-muted mb-3" invisible="schritt != 'feld'">
-                    Schritt 3: Welches Feld bekommt welchen Wert?
+                    Step 3: Which field gets which value?
                 </div>
                 <group invisible="schritt != 'button'">
-                    <group string="Darstellung">
+                    <group string="Appearance">
                         <field name="name" required="schritt == 'button'"/>
                         <field name="icon" placeholder="fa-user"/>
                         <field name="farbe"/>
                     </group>
-                    <group string="Wo wird der Button gezeigt?">
+                    <group string="Where is the button shown?">
                         <field name="ort_anrufer_fenster"/>
                         <field name="ort_protokoll_popup"/>
                         <field name="ort_softphone"/>
                     </group>
-                    <group string="Wann?">
+                    <group string="When?">
                         <field name="richtung"/>
                         <field name="zustand"/>
                     </group>
-                    <group string="Für wen?">
+                    <group string="For whom?">
                         <field name="group_ids" widget="many2many_tags"/>
                     </group>
                 </group>
@@ -56,7 +56,7 @@
                            required="schritt == 'aktion' and art == 'vorlage' and vorlage == 'sprache_setzen'"/>
                     <field name="code" invisible="art != 'code'" widget="code"
                            options="{'mode': 'python'}" groups="base.group_system"
-                           placeholder="record.write({'function': 'Rückruf'})"/>
+                           placeholder="record.write({'function': 'Callback'})"/>
                 </group>
                 <group invisible="schritt != 'feld'">
                     <field name="feld_option_id" required="schritt == 'feld'"
@@ -76,19 +76,19 @@
                            options="{'no_create': True}"/>
                 </group>
                 <div class="text-muted" invisible="schritt != 'feld' or feld_typ != 'many2many'">
-                    Der gewählte Datensatz wird hinzugefügt, vorhandene bleiben erhalten.
+                    The chosen record is added; existing ones are kept.
                 </div>
                 <footer>
-                    <button name="action_weiter" type="object" string="Weiter" class="btn-primary"
+                    <button name="action_weiter" type="object" string="Next" class="btn-primary"
                             invisible="schritt == 'feld' or (schritt == 'aktion' and art != 'feld')"
                             data-hotkey="q"/>
-                    <button name="action_anlegen" type="object" string="Speichern"
+                    <button name="action_anlegen" type="object" string="Save"
                             class="btn-primary"
                             invisible="schritt == 'button' or (schritt == 'aktion' and art == 'feld')"
                             data-hotkey="q"/>
-                    <button name="action_zurueck" type="object" string="Zurück"
+                    <button name="action_zurueck" type="object" string="Back"
                             class="btn-secondary" invisible="schritt == 'button'"/>
-                    <button string="Abbrechen" class="btn-secondary" special="cancel"
+                    <button string="Cancel" class="btn-secondary" special="cancel"
                             data-hotkey="x"/>
                 </footer>
             </form>
@@ -96,7 +96,7 @@
     </record>
 
     <record id="wb_voip_aktion_assistent_action" model="ir.actions.act_window">
-        <field name="name">Button mit Assistent anlegen</field>
+        <field name="name">Create button with wizard</field>
         <field name="res_model">wb.voip.aktion.assistent</field>
         <field name="view_mode">form</field>
         <field name="target">new</field>

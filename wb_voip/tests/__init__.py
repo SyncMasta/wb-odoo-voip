@@ -27,3 +27,4 @@ from . import test_team
 from . import test_hooks
 from . import test_anlage_verbindung
 from . import test_i18n
+from . import test_de

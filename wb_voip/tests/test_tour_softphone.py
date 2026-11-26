@@ -27,7 +27,10 @@ class TestTourSoftphone(HttpCase):
             'ws_url': 'wss://tour.test/ws', 'sip_domain': 'tour.test',
         })
         self.admin = self.env.ref('base.user_admin')
+        # Tour in der Quellsprache Englisch, unabhängig von der Sprache der Datenbank
+        self.env['res.lang']._activate_lang('en_US')
         self.admin.write({
+            'lang': 'en_US',
             'wb_voip_anlage_id': anlage.id,
             'wb_voip_sip_benutzer': '900',
             'wb_voip_sip_passwort': 'tour',

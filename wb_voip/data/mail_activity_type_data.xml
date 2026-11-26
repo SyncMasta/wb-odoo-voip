@@ -4,12 +4,12 @@
          noupdate: Änderungen des Administrators (Name, Symbol, Frist) bleiben beim Update. -->
     <data noupdate="1">
         <record id="wb_voip_activity_type_rueckruf" model="mail.activity.type">
-            <field name="name">Rückruf</field>
+            <field name="name">Callback</field>
             <field name="category">phonecall</field>
             <field name="icon">fa-phone</field>
             <field name="res_model" eval="False"/>
             <field name="delay_count">0</field>
-            <field name="summary">Rückruf: verpasster Anruf</field>
+            <field name="summary">Callback: missed call</field>
         </record>
     </data>
 </odoo>

@@ -3,7 +3,7 @@
     <!-- Nur bei der Installation: Änderungen und Löschen durch den Administrator bleiben -->
     <data noupdate="1">
         <record id="wb_voip_aktion_neuer_kontakt" model="wb.voip.aktion">
-            <field name="name">Neuer Kontakt</field>
+            <field name="name">New contact</field>
             <field name="sequence">10</field>
             <field name="icon">fa-user-plus</field>
             <field name="farbe">primary</field>

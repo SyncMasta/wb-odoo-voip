@@ -36,7 +36,7 @@ def schluessel_vorhanden():
 
 def schluessel_meldung(env):
     """Return the user message for a missing (or unusable) key."""
-    return env._("WB VoIP: Schlüssel WB_VOIP_FERNET_KEY fehlt auf dem Server.")
+    return env._("WB VoIP: The key WB_VOIP_FERNET_KEY is missing on the server.")
 
 
 def pruefen(env):
@@ -59,4 +59,4 @@ def entschluesseln(env, chiffrat):
         return fernet.decrypt(chiffrat.encode()).decode()
     except (InvalidToken, ValueError, TypeError):
         # Schlüssel gewechselt oder Wert beschädigt: Inhalt nie ausgeben
-        raise UserError(env._("SIP-Passwort nicht lesbar, bitte neu eingeben.")) from None
+        raise UserError(env._("SIP password unreadable, please enter it again.")) from None

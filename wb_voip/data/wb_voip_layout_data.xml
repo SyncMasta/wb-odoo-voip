@@ -3,13 +3,13 @@
     <!-- Nur bei der Installation: Blöcke baut _wb_voip_standard_bloecke_sicherstellen (Hook/Migration), Zurücksetzen per Knopf -->
     <data noupdate="1">
         <record id="wb_voip_layout_anrufer_fenster_standard" model="wb.voip.layout">
-            <field name="name">Standard Anrufer-Fenster</field>
+            <field name="name">Default caller window</field>
             <field name="ort">anrufer_fenster</field>
             <field name="sequence">10</field>
             <field name="ist_standard" eval="True"/>
         </record>
         <record id="wb_voip_layout_protokoll_popup_standard" model="wb.voip.layout">
-            <field name="name">Standard Protokoll-Popup</field>
+            <field name="name">Default call log popup</field>
             <field name="ort">protokoll_popup</field>
             <field name="sequence">10</field>
             <field name="ist_standard" eval="True"/>

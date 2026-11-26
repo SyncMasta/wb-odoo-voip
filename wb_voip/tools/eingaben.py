@@ -8,10 +8,10 @@ MAX_SUCHTEXT = 100
 def limit_pruefen(env, limit):
     """Raise ``UserError`` unless ``limit`` is an int from 1 to ``MAX_LIMIT``."""
     if type(limit) is not int or not 1 <= limit <= MAX_LIMIT:
-        raise UserError(env._("Ungültige Angabe: %s.", env._("Anzahl")))
+        raise UserError(env._("Invalid value: %s.", env._("Count")))
 
 
 def suchtext_pruefen(env, suchtext):
     """Raise ``UserError`` unless ``suchtext`` is a str of at most ``MAX_SUCHTEXT`` characters."""
     if not isinstance(suchtext, str) or len(suchtext) > MAX_SUCHTEXT:
-        raise UserError(env._("Ungültige Angabe: %s.", env._("Suchtext")))
+        raise UserError(env._("Invalid value: %s.", env._("Search text")))

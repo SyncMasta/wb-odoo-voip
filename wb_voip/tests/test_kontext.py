@@ -145,7 +145,7 @@ class TestKontext(WbVoipCase):
         eintrag = protokolle[0]
         self.assertEqual(set(eintrag), {'id', 'datum', 'ergebnis_label', 'dauer_sek',
                                         'beschreibung_text'})
-        self.assertEqual(eintrag['ergebnis_label'], 'Erreicht')
+        self.assertEqual(eintrag['ergebnis_label'], 'Reached')
         self.assertEqual(eintrag['dauer_sek'], 30)
         self.assertLessEqual(len(eintrag['beschreibung_text']), 300)
         self.assertNotIn('<', eintrag['beschreibung_text'])
@@ -426,7 +426,7 @@ class TestKontext(WbVoipCase):
 
     def test_serveraktion_relationspfad_abgelehnt(self):
         server = self._serveraktion_schreiben(update_path='parent_id.function')
-        with self.assertRaisesRegex(ValidationError, 'nicht erlaubt'):
+        with self.assertRaisesRegex(ValidationError, 'not allowed'):
             self._aktion(art='serveraktion', server_action_id=server.id)
         # später geändert: zur Laufzeit abgelehnt und nicht angeboten
         server2 = self._serveraktion_schreiben()
@@ -443,7 +443,7 @@ class TestKontext(WbVoipCase):
         aktion = self._aktion(art='serveraktion', server_action_id=server.id)
         anruf = self._anruf().with_user(self.user_a)
         server.state = 'object_create'
-        with self.assertRaisesRegex(UserError, 'nicht erlaubt'):
+        with self.assertRaisesRegex(UserError, 'not allowed'):
             anruf._wb_voip_serveraktion(aktion, self.kontakt.with_user(self.user_a))
 
     def test_serveraktion_arten_abgelehnt(self):
@@ -458,7 +458,7 @@ class TestKontext(WbVoipCase):
             'state': 'object_create', 'crud_model_id': self.env.ref('base.model_res_partner').id,
             'value': 'Neu'})
         for server in (multi, anlegen):
-            with self.assertRaisesRegex(ValidationError, 'nicht erlaubt', msg=server.state):
+            with self.assertRaisesRegex(ValidationError, 'not allowed', msg=server.state):
                 self._aktion(art='serveraktion', server_action_id=server.id)
 
     def test_serveraktion_serverfeld(self):

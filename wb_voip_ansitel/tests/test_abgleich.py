@@ -792,7 +792,7 @@ class TestAbgleichRegeln(AbgleichCase):
         anruf = self.von_gruppe('L19', self.user_a)
         self.assertEqual((anruf.zustand, anruf.wb_voip_geraet), ('anderswo', 'Tisch A'))
         self.assertTrue(frueher.erledigt)
-        self.assertEqual(frueher.erledigt_text, f'Angenommen von {self.user_a.name}')
+        self.assertEqual(frueher.erledigt_text, f'Answered by {self.user_a.name}')
         self.assertFalse(spaeter.erledigt)
         # beide teilen sich die Rückruf-Aktivität am Kontakt; der offene Eintrag hält sie offen
         self.assertTrue(spaeter.rueckruf_aktivitaet_id.active)

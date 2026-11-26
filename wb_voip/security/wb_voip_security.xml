@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <record id="group_wb_voip_user" model="res.groups">
-        <field name="name">WB VoIP: Benutzer</field>
-        <field name="comment">Darf das Softphone nutzen und eigene Anrufe protokollieren.</field>
+        <field name="name">WB VoIP: User</field>
+        <field name="comment">May use the softphone and log own calls.</field>
         <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
     </record>
 
     <record id="group_wb_voip_manager" model="res.groups">
         <field name="name">WB VoIP: Administrator</field>
-        <field name="comment">Verwaltet Telefonanlagen und sieht alle Anrufe.</field>
+        <field name="comment">Manages PBXs and sees all calls.</field>
         <field name="implied_ids" eval="[(4, ref('group_wb_voip_user'))]"/>
     </record>
 
@@ -16,8 +16,8 @@
          deshalb lehnt Odoo die Ausführung außerhalb von WB VoIP (Aktionsmenü, /web/action/run)
          für alle ab. Nie Benutzern zuweisen. -->
     <record id="group_wb_voip_button_aktion" model="res.groups">
-        <field name="name">WB VoIP: Button-Serveraktionen (technisch)</field>
-        <field name="comment">Technische Gruppe – nie Benutzern zuweisen. Serveraktionen aus dem Button-Assistenten laufen nur über die Anruf-Buttons; Odoo lehnt Mitglieder dieser Gruppe ab.</field>
+        <field name="name">WB VoIP: Button server actions (technical)</field>
+        <field name="comment">Technical group – never assign to users. Server actions from the button wizard run only via the call buttons; Odoo rejects members of this group.</field>
     </record>
 
     <!-- Nur bei der Installation: entfernt ein Administrator die Mitgliedschaft, setzt ein

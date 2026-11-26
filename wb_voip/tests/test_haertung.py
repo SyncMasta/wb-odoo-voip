@@ -110,7 +110,7 @@ class TestHaertung(WbVoipCase):
         anruf = self._anruf(res_model='res.partner', res_id=genannt.id)
         daten = self._fuehren(anruf)
         self.assertTrue(daten['protokoll_id'])
-        self.assertFalse(genannt.message_ids.filtered(lambda m: 'Anruf eingehend' in (m.body or '')))
+        self.assertFalse(genannt.message_ids.filtered(lambda m: 'Call incoming' in (m.body or '')))
 
     def test_kein_chatter_am_nur_lesbaren_kontakt(self):
         self._schreibschutz(self.kontakt)
@@ -118,7 +118,7 @@ class TestHaertung(WbVoipCase):
         self.assertEqual(anruf.sudo().partner_id, self.kontakt)
         daten = self._fuehren(anruf)
         self.assertTrue(daten['protokoll_id'])
-        self.assertFalse(self.kontakt.message_ids.filtered(lambda m: 'Anruf eingehend' in (m.body or '')))
+        self.assertFalse(self.kontakt.message_ids.filtered(lambda m: 'Call incoming' in (m.body or '')))
 
     def test_chatter_am_kontakt_wenn_datensatz_nur_lesbar(self):
         # Ziel lesbar, aber nicht schreibbar; Kontakt schreibbar: Notiz am Kontakt
@@ -134,9 +134,9 @@ class TestHaertung(WbVoipCase):
         self.assertFalse(genannt.with_user(self.user_a).has_access('write'))
         anruf = self._anruf(res_model='wb.voip.protokoll', res_id=genannt.id)
         self._fuehren(anruf)
-        self.assertFalse(genannt.message_ids.filtered(lambda m: 'Anruf eingehend' in (m.body or '')))
+        self.assertFalse(genannt.message_ids.filtered(lambda m: 'Call incoming' in (m.body or '')))
         self.assertTrue(self.kontakt.message_ids.filtered(
-            lambda m: 'Anruf eingehend' in (m.body or '')))
+            lambda m: 'Call incoming' in (m.body or '')))
 
     # --- C3 Nebenstelle und Anlage nur durch Manager ---
 
@@ -163,7 +163,7 @@ class TestHaertung(WbVoipCase):
         with self.assertRaises(ValidationError) as fehler:
             self.user_b.write({'wb_voip_anlage_id': self.anlage.id, 'wb_voip_sip_benutzer': '100'})
         self.assertEqual(str(fehler.exception),
-                         "Nebenstelle ist bereits einem anderen Benutzer zugeordnet.")
+                         "The extension is already assigned to another user.")
         andere = self.env['wb.voip.anlage'].create({
             'name': 'Zweite', 'ws_url': 'wss://zwei.test/ws', 'sip_domain': 'zwei.test'})
         self.user_b.write({'wb_voip_anlage_id': andere.id, 'wb_voip_sip_benutzer': '100'})
@@ -236,9 +236,9 @@ class TestHaertung(WbVoipCase):
         anruf = self._anruf(richtung='ausgehend')
         daten = anruf.wb_voip_beendet(False, False)
         protokoll = self.env['wb.voip.protokoll'].browse(daten['protokoll_id'])
-        self.assertEqual(protokoll._wb_voip_text(), 'Anruf ausgehend · nicht erreicht · 0:00')
+        self.assertEqual(protokoll._wb_voip_text(), 'Call outgoing · not reached · 0:00')
         nachricht = self.kontakt.message_ids[:1]
-        self.assertIn('Anruf ausgehend · nicht erreicht · 0:00', nachricht.body)
+        self.assertIn('Call outgoing · not reached · 0:00', nachricht.body)
 
     # --- C7 SIP-Gründe ---
 

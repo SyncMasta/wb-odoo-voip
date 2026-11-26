@@ -46,7 +46,7 @@
     </record>
 
     <record id="wb_voip_anruf_action" model="ir.actions.act_window">
-        <field name="name">Anrufe</field>
+        <field name="name">Calls</field>
         <field name="res_model">wb.voip.anruf</field>
         <field name="view_mode">list,form</field>
     </record>

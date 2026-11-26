@@ -39,7 +39,7 @@ class MailActivity(models.Model):
             ('zustand', '=', 'verpasst')]) if self.ids else self.env['wb.voip.anruf']
         ergebnis = super()._action_done(feedback=feedback, attachment_ids=attachment_ids)
         if offen:
-            text = _feedback_text(feedback)[:ERLEDIGT_TEXT_MAX] or self.env._("Aufgabe erledigt")
+            text = _feedback_text(feedback)[:ERLEDIGT_TEXT_MAX] or self.env._("Task done")
             offen._wb_voip_durch_aktivitaet_erledigt(text)
         return ergebnis
 

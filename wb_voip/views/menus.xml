@@ -2,25 +2,25 @@
 <odoo>
     <menuitem id="wb_voip_menu_root" name="WB VoIP" parent="base.menu_custom"
               sequence="50" groups="wb_voip.group_wb_voip_manager"/>
-    <menuitem id="wb_voip_menu_anlage" name="Telefonanlagen" parent="wb_voip_menu_root"
+    <menuitem id="wb_voip_menu_anlage" name="PBXs" parent="wb_voip_menu_root"
               action="wb_voip_anlage_action" sequence="10"
               groups="wb_voip.group_wb_voip_manager"/>
-    <menuitem id="wb_voip_menu_anruf" name="Anrufe" parent="wb_voip_menu_root"
+    <menuitem id="wb_voip_menu_anruf" name="Calls" parent="wb_voip_menu_root"
               action="wb_voip_anruf_action" sequence="20"
               groups="wb_voip.group_wb_voip_manager"/>
-    <menuitem id="wb_voip_menu_protokoll" name="Anrufprotokolle" parent="wb_voip_menu_root"
+    <menuitem id="wb_voip_menu_protokoll" name="Call logs" parent="wb_voip_menu_root"
               action="wb_voip_protokoll_action" sequence="30"
               groups="wb_voip.group_wb_voip_manager"/>
-    <menuitem id="wb_voip_menu_aktion" name="Anruf-Buttons" parent="wb_voip_menu_root"
+    <menuitem id="wb_voip_menu_aktion" name="Call buttons" parent="wb_voip_menu_root"
               action="wb_voip_aktion_action" sequence="40"
               groups="wb_voip.group_wb_voip_manager"/>
-    <menuitem id="wb_voip_menu_aktion_assistent" name="Button mit Assistent anlegen"
+    <menuitem id="wb_voip_menu_aktion_assistent" name="Create button with wizard"
               parent="wb_voip_menu_root" action="wb_voip_aktion_assistent_action" sequence="45"
               groups="wb_voip.group_wb_voip_manager"/>
-    <menuitem id="wb_voip_menu_layout" name="Fenster-Layouts" parent="wb_voip_menu_root"
+    <menuitem id="wb_voip_menu_layout" name="Window layouts" parent="wb_voip_menu_root"
               action="wb_voip_layout_action" sequence="50"
               groups="wb_voip.group_wb_voip_manager"/>
-    <menuitem id="wb_voip_menu_layout_designer" name="Layout-Designer" parent="wb_voip_menu_root"
+    <menuitem id="wb_voip_menu_layout_designer" name="Layout designer" parent="wb_voip_menu_root"
               action="wb_voip_layout_designer_action" sequence="55"
               groups="wb_voip.group_wb_voip_manager"/>
 </odoo>

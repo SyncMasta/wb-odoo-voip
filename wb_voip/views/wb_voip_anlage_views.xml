@@ -32,11 +32,11 @@
                             <field name="ws_url" readonly="verbindung_gesperrt"/>
                         </group>
                     </group>
-                    <group string="Netzwerk">
-                        <field name="ice_server_urls" readonly="verbindung_gesperrt" placeholder="leer = kein STUN/TURN"/>
+                    <group string="Network">
+                        <field name="ice_server_urls" readonly="verbindung_gesperrt" placeholder="empty = no STUN/TURN"/>
                     </group>
                     <group string="Team">
-                        <field name="heranholen_praefix" placeholder="z. B. ** (leer = Heranholen aus)"/>
+                        <field name="heranholen_praefix" placeholder="e.g. ** (empty = pick-up off)"/>
                     </group>
                 </sheet>
             </form>
@@ -44,7 +44,7 @@
     </record>
 
     <record id="wb_voip_anlage_action" model="ir.actions.act_window">
-        <field name="name">Telefonanlagen</field>
+        <field name="name">PBXs</field>
         <field name="res_model">wb.voip.anlage</field>
         <field name="view_mode">list,form</field>
     </record>
