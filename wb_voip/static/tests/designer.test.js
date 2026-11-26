@@ -22,11 +22,11 @@ defineMailModels();
 defineModels([WbVoipProtokoll]);
 
 const ARTEN_FENSTER = [
-    ["kontaktkopf", "Kontaktkopf"],
-    ["felder", "Kontaktfelder"],
-    ["protokolle", "Letzte Protokolle"],
-    ["aufgaben", "Offene Aufgaben"],
-    ["notiz", "Notiz"],
+    ["kontaktkopf", "Contact header"],
+    ["felder", "Contact fields"],
+    ["protokolle", "Recent call logs"],
+    ["aufgaben", "Open tasks"],
+    ["notiz", "Note"],
     ["buttons", "Buttons"],
     ["text", "Text"],
 ].map(([art, label]) => ({ art, label }));
@@ -59,18 +59,18 @@ function ladeDaten({ layout = {}, bloecke } = {}) {
             ),
         },
         felder: [
-            { id: 11, name: "city", label: "Ort", typ: "char" },
-            { id: 12, name: "email", label: "E-Mail", typ: "char" },
-            { id: 13, name: "ref", label: "Referenz", typ: "char" },
+            { id: 11, name: "city", label: "City", typ: "char" },
+            { id: 12, name: "email", label: "Email", typ: "char" },
+            { id: 13, name: "ref", label: "Reference", typ: "char" },
         ],
         orte: [
-            ["anrufer_fenster", "Anrufer-Fenster"],
-            ["protokoll_popup", "Protokoll-Popup"],
+            ["anrufer_fenster", "Caller window"],
+            ["protokoll_popup", "Call log popup"],
         ],
         breiten: [
             ["normal", "Normal"],
-            ["breit", "Breit"],
-            ["sehr_breit", "Sehr breit"],
+            ["breit", "Wide"],
+            ["sehr_breit", "Very wide"],
         ],
         layouts: [{ id: 5, name: "Vertrieb", ort: "anrufer_fenster", ist_standard: false }],
         beispielkontakt_id: serverState.partnerId,
@@ -78,7 +78,7 @@ function ladeDaten({ layout = {}, bloecke } = {}) {
 }
 
 const WERTE = { city: "Musterstadt", email: "erika@example.com", ref: "K-1" };
-const LABEL = { city: "Ort", email: "E-Mail", ref: "Referenz" };
+const LABEL = { city: "City", email: "Email", ref: "Reference" };
 const NAME = { 11: "city", 12: "email", 13: "ref" };
 
 /** Vorschau wie der Server sie liefert: Feldwerte der Feldblöcke des Entwurfs. */
@@ -216,17 +216,17 @@ test("Feldblock: Suche, Auswahl, Vorschau lädt die Werte", async () => {
     await animationFrame();
     // ohne Feld nicht speicherbar, kein Vorschau-Aufruf für den leeren Block
     expect(".o_wb_voip_ds_speichern").toHaveAttribute("disabled");
-    expect(".o_wb_voip_ds_fehlermeldung").toHaveText(/Kontaktfelder: Please choose at least one field/);
+    expect(".o_wb_voip_ds_fehlermeldung").toHaveText(/Contact fields: Please choose at least one field/);
     expect(".o_wb_voip_ds_feld").toHaveCount(3);
     await click(".o_wb_voip_ds_feldsuche");
     await edit("mail");
     await animationFrame();
-    expect(queryAllTexts(".o_wb_voip_ds_feld")).toEqual(["E-Mail"]);
+    expect(queryAllTexts(".o_wb_voip_ds_feld")).toEqual(["Email"]);
     await click(".o_wb_voip_ds_feld input");
     await animationFrame();
     await animationFrame();
     expect.verifySteps([`vorschau 5 ${serverState.partnerId} 12`]);
-    expect(".o_wb_voip_ds_vorschau .o_wb_voip_lb_label").toHaveText("E-Mail");
+    expect(".o_wb_voip_ds_vorschau .o_wb_voip_lb_label").toHaveText("Email");
     expect(".o_wb_voip_ds_vorschau .o_wb_voip_lb_wert").toHaveText("erika@example.com");
     expect(".o_wb_voip_ds_speichern").not.toHaveAttribute("disabled");
     // Titel ändern lädt nicht neu
@@ -245,7 +245,7 @@ test("Verschieben per Knopf (Tastatur), Fokus bleibt am Block", async () => {
     await click(".o_wb_voip_ds_block:eq(0) .o_wb_voip_ds_runter");
     await animationFrame();
     expect(blockArten()).toEqual(["text", "kontaktkopf", "notiz"]);
-    expect(".o_wb_voip_ds_meldung").toHaveText("Block Kontaktkopf at position 2");
+    expect(".o_wb_voip_ds_meldung").toHaveText("Block Contact header at position 2");
     expect(vorschauArten()).toEqual(["o_wb_voip_lb_text", "o_wb_voip_lb_kontaktkopf", "o_wb_voip_lb_notiz"]);
     expect(".o_wb_voip_ds_block:eq(1) .o_wb_voip_ds_runter").toBeFocused();
     await click(".o_wb_voip_ds_block:eq(2) .o_wb_voip_ds_hoch");
@@ -429,10 +429,10 @@ test("Layout wechseln fragt bei ungespeicherten Änderungen nach", async () => {
 test("Vorschau: nicht lesbarer Beispielkontakt ergibt einen Hinweis", async () => {
     await designerMit({
         vorschauFn: () => {
-            throw new Error("Kontakt nicht lesbar");
+            throw new Error("Contact not readable");
         },
     });
-    expect(".o_wb_voip_ds_vorschau_hinweis").toHaveText(/Kontakt nicht lesbar/);
+    expect(".o_wb_voip_ds_vorschau_hinweis").toHaveText(/Contact not readable/);
     // Platzhalter statt Kontaktdaten
     expect(".o_wb_voip_ds_vorschau .o_wb_voip_lb_kontaktkopf").toHaveText(/\+49 …/);
 });
@@ -449,14 +449,14 @@ class FremderDesignerBlock extends Component {
 }
 
 test("Designer: Blockarten und Zählung kommen vom Server, Vorschau mit Block-Daten", async () => {
-    blockRegistry.add("fremd_test", { component: FremderDesignerBlock, label: "Fremde Art" });
+    blockRegistry.add("fremd_test", { component: FremderDesignerBlock, label: "Foreign type" });
     after(() => blockRegistry.remove("fremd_test"));
     let gesendet;
     const mitFremd = () => {
         const daten = ladeDaten();
         daten.arten.anrufer_fenster = [
             ...ARTEN_FENSTER.map((a) => ({ ...a, gezaehlt: ["protokolle", "aufgaben"].includes(a.art) })),
-            { art: "fremd_test", label: "Vorgänge (Server)", gezaehlt: true },
+            { art: "fremd_test", label: "Opportunities (server)", gezaehlt: true },
         ];
         return daten;
     };
@@ -477,11 +477,11 @@ test("Designer: Blockarten und Zählung kommen vom Server, Vorschau mit Block-Da
         },
     });
     expect(".o_wb_voip_ds_neu").toHaveCount(8);
-    expect(".o_wb_voip_ds_neu[data-art=fremd_test]").toHaveText("Vorgänge (Server)");
+    expect(".o_wb_voip_ds_neu[data-art=fremd_test]").toHaveText("Opportunities (server)");
     await click(".o_wb_voip_ds_neu[data-art=fremd_test]");
     await animationFrame();
     expect(blockArten()).toEqual(["kontaktkopf", "text", "notiz", "fremd_test"]);
-    expect(".o_wb_voip_ds_block:eq(3)").toHaveText(/Vorgänge \(Server\)/);
+    expect(".o_wb_voip_ds_block:eq(3)").toHaveText(/Opportunities \(server\)/);
     // vom Server als gezählt gemeldet: Anzahl einstellbar
     expect(".o_wb_voip_ds_eigenschaften .o_wb_voip_ds_anzahl").toHaveValue(5);
     await click(".o_wb_voip_ds_anzahl");
