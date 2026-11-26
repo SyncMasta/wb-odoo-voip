@@ -2,7 +2,7 @@
 <!-- noupdate: Administratoren dürfen Takt und Aktivierung ändern, Updates überschreiben das nicht -->
 <odoo noupdate="1">
     <record id="ir_cron_ansitel_abgleich" model="ir.cron">
-        <field name="name">WB VoIP Ansitel: Abgleich mit der Anrufliste</field>
+        <field name="name">WB VoIP Ansitel: Call list reconciliation</field>
         <field name="model_id" ref="wb_voip.model_wb_voip_anlage"/>
         <field name="state">code</field>
         <field name="code">model._wb_voip_ansitel_abgleich_alle()</field>

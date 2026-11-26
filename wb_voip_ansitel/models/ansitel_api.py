@@ -75,7 +75,7 @@ def _robust(methode):
         except (AntwortFormFehler, KeyError, ValueError) as exc:
             _logger.warning("[wb_voip_ansitel] %s: unerwartete Antwort (%s)", methode.__name__, type(exc).__name__)
         # außerhalb des except-Blocks: keine verkettete Ausnahme mit Antwortinhalt
-        raise AnsitelFehler(self.env._("Ansitel hat unverständlich geantwortet."))
+        raise AnsitelFehler(self.env._("Ansitel sent an unintelligible response."))
     return huelle
 
 
@@ -126,7 +126,7 @@ def _anlage_hash(anlage):
 
 class WbVoipAnsitel(models.AbstractModel):
     _name = 'wb.voip.ansitel'
-    _description = 'Ansitel-REST-Client'
+    _description = 'Ansitel REST client'
 
     def _token_lesen(self, anlage):
         """Return the central token of ``anlage`` in plain text or ``None`` if none is stored."""
@@ -141,7 +141,7 @@ class WbVoipAnsitel(models.AbstractModel):
             return fernet.decrypt(chiffrat.encode()).decode()
         except (InvalidToken, ValueError, TypeError):
             pass  # Inhalt nie ausgeben
-        raise AnsitelFehler(self.env._("Ansitel-Token nicht lesbar, bitte neu eingeben."))
+        raise AnsitelFehler(self.env._("Ansitel token unreadable, please enter it again."))
 
     def _aufruf(self, anlage, aktion, token=None, **werte):
         """POST ``{token, action, ...}`` to the REST URL of ``anlage``; return the JSON answer (dict).
@@ -152,16 +152,16 @@ class WbVoipAnsitel(models.AbstractModel):
         anlage = anlage.sudo()
         url = (anlage.ansitel_api_url or '').strip()
         if not (anlage.ansitel_aktiv and url):
-            raise AnsitelFehler(self.env._("Ansitel ist nicht eingerichtet."))
+            raise AnsitelFehler(self.env._("Ansitel is not set up."))
         # Nur https: auch Bestandsdaten, die am Feld vorbei geschrieben wurden
         if not url_ist_https(url):
-            raise AnsitelFehler(self.env._("Ansitel ist nicht eingerichtet."))
+            raise AnsitelFehler(self.env._("Ansitel is not set up."))
         token = token or self._token_lesen(anlage)
         if not token:
-            raise AnsitelFehler(self.env._("Ansitel ist nicht eingerichtet."))
+            raise AnsitelFehler(self.env._("Ansitel is not set up."))
 
         nutzdaten = {**werte, 'token': token, 'action': aktion}
-        nicht_erreichbar = self.env._("Ansitel nicht erreichbar.")
+        nicht_erreichbar = self.env._("Ansitel is unreachable.")
         fehler = None
         daten = None
         try:
@@ -186,22 +186,22 @@ class WbVoipAnsitel(models.AbstractModel):
         if code != 200:
             _logger.warning("[wb_voip_ansitel] %s: HTTP %s", aktion, code)
             if code in (401, 403):
-                return self.env._("Ansitel lehnt den Token ab."), None
+                return self.env._("Ansitel rejects the token."), None
             if code == 400:
-                return self.env._("Ansitel lehnt die Anfrage ab."), None
-            return self.env._("Ansitel nicht erreichbar."), None
+                return self.env._("Ansitel rejects the request."), None
+            return self.env._("Ansitel is unreachable."), None
         try:
             daten = antwort.json()
         except ValueError:
             daten = None
         if not isinstance(daten, dict):
             _logger.warning("[wb_voip_ansitel] %s: Antwort unverständlich", aktion)
-            return self.env._("Ansitel hat unverständlich geantwortet."), None
+            return self.env._("Ansitel sent an unintelligible response."), None
         # Fehlt `status` im Body, gilt allein der HTTP-Status
         status = daten.get('status')
         if status is not None and str(status) != '200':
             _logger.warning("[wb_voip_ansitel] %s: Status %s im Antworttext", aktion, str(status)[:20])
-            return self.env._("Ansitel lehnt die Anfrage ab."), None
+            return self.env._("Ansitel rejects the request."), None
         return None, daten
 
     def _peers(self, anlage):
@@ -221,7 +221,7 @@ class WbVoipAnsitel(models.AbstractModel):
             liste = None
         if not isinstance(liste, list):
             _logger.warning("[wb_voip_ansitel] getpeer: unerwartete Antwort")
-            raise AnsitelFehler(self.env._("Ansitel hat unverständlich geantwortet."))
+            raise AnsitelFehler(self.env._("Ansitel sent an unintelligible response."))
         # Kaputte Einträge überspringen, die übrigen Nebenstellen bleiben nutzbar
         peers = []
         kaputt = 0
@@ -427,7 +427,7 @@ class WbVoipAnsitel(models.AbstractModel):
             if len(daten) < CDR_SEITE or (gesamt is not None and linepos >= int(gesamt)):
                 break
         else:
-            raise AnsitelZuVieleAnrufe(self.env._("Ansitel liefert zu viele Anrufe auf einmal."))
+            raise AnsitelZuVieleAnrufe(self.env._("Ansitel returns too many calls at once."))
         _logger.debug("[wb_voip_ansitel] getcdr: %s Zeilen", len(zeilen))
         return zeilen
 

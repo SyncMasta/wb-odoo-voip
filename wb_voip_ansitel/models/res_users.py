@@ -22,42 +22,43 @@ class ResUsers(models.Model):
     # Systemverwaltung (siehe write/create): wer sie setzt, schaltet Weiterleitungen dieser Nebenstelle.
     # Nicht für den Benutzer selbst lesbar: der Zustand der Tasten verrät sie nicht.
     wb_voip_ansitel_nebenstelle = fields.Char(
-        string='Ansitel-Nebenstelle', copy=False, groups='wb_voip.group_wb_voip_manager',
-        help="Interne Nummer oder Gerätename an der Ansitel-Anlage, z. B. 100. Ohne Nebenstelle "
-             "gibt es keine Schnelltasten.")
+        string='Ansitel extension', copy=False, groups='wb_voip.group_wb_voip_manager',
+        help="Internal number or device name on the Ansitel PBX, e.g. 100. Without an extension there are no "
+             "quick keys.")
     # Persönlicher Token: nur Systemverwaltung; liefert beim Lesen immer leer, gespeichert wird das Chiffrat
     wb_voip_ansitel_token = fields.Char(
-        string='Ansitel-Token (persönlich)', compute='_compute_wb_voip_ansitel_token',
+        string='Ansitel token (personal)', compute='_compute_wb_voip_ansitel_token',
         inverse='_inverse_wb_voip_ansitel_token', store=False, copy=False, groups='base.group_system',
-        help="Token des Ansitel-Benutzers dieses Mitarbeiters. Nur für die AB-Taste nötig, wenn der "
-             "zentrale Token mehrere Nebenstellen besitzt.")
+        help="Token of this employee's Ansitel user. Only needed for the voicemail key if the central token "
+             "owns several extensions.")
     wb_voip_ansitel_token_enc = fields.Char(
-        string='Ansitel-Token (verschlüsselt)', copy=False, groups='base.group_system')
+        string='Ansitel token (encrypted)', copy=False, groups='base.group_system')
     wb_voip_ansitel_token_gesetzt = fields.Boolean(
-        string='Ansitel-Token gespeichert', compute='_compute_wb_voip_ansitel_token_gesetzt',
+        string='Ansitel token saved', compute='_compute_wb_voip_ansitel_token_gesetzt',
         groups='wb_voip.group_wb_voip_manager')
     wb_voip_ansitel_ab_zentral = fields.Boolean(
-        string='AB über zentralen Token schalten', copy=False, default=False, groups='base.group_system',
-        help="Nur setzen, wenn alle Nebenstellen des zentralen Ansitel-Benutzers diesem Benutzer gehören "
-             "(gemeinsamer AB). Ohne Häkchen gilt der zentrale Token für den AB nur bei genau einer "
-             "Nebenstelle.")
+        string='Switch voicemail via the central token', copy=False, default=False,
+        groups='base.group_system',
+        help="Only set if all extensions of the central Ansitel user belong to this user (shared voicemail). "
+             "Without the tick, the central token applies to voicemail only if there is exactly one "
+             "extension.")
     # Wie ein Geheimnis geschützt: die Feldgruppe sperrt alle anderen, der Benutzer selbst
     # liest und schreibt die Nummer über SELF_READABLE/SELF_WRITEABLE
     wb_voip_handy = fields.Char(
-        string='Mein Handy', copy=False, groups='base.group_system',
-        help="Ziel der Weiterleitungstaste „Eigenes Handy“, z. B. +49 30 23125 101.")
+        string='My mobile phone', copy=False, groups='base.group_system',
+        help='Target of the "Own mobile phone" call forwarding key, e.g. +49 30 23125 101.')
 
     # Wo die Tastenleiste erscheint; der Benutzer stellt sie selbst ein (wirkt nach dem Neuladen)
     wb_voip_ansitel_tastenleiste = fields.Selection(
-        [('softphone', 'Im Softphone'), ('rand', 'Am rechten Rand'), ('beide', 'Softphone und Rand')],
-        string='Schnelltasten anzeigen', default='softphone', required=True, copy=False,
-        help="Wo die Schnelltasten für Weiterleitung, Nicht stören und Anrufbeantworter erscheinen. "
-             "Die Änderung gilt nach dem Neuladen der Seite.")
+        [('softphone', 'In the softphone'), ('rand', 'On the right edge'), ('beide', 'Softphone and edge')],
+        string='Show quick keys', default='softphone', required=True, copy=False,
+        help="Where the quick keys for call forwarding, Do not disturb and voicemail appear. The change "
+             "takes effect after reloading the page.")
 
     _wb_voip_ansitel_nebenstelle_eindeutig = models.UniqueIndex(
         '(wb_voip_anlage_id, wb_voip_ansitel_nebenstelle) '
         'WHERE wb_voip_anlage_id IS NOT NULL AND wb_voip_ansitel_nebenstelle IS NOT NULL',
-        'Die Ansitel-Nebenstelle ist an dieser Telefonanlage schon vergeben.')
+        'The Ansitel extension is already assigned on this PBX.')
 
     @property
     def SELF_READABLE_FIELDS(self):
@@ -111,7 +112,7 @@ class ResUsers(models.Model):
                 vals['wb_voip_handy'] = Taste._ziel_e164(vals['wb_voip_handy'], land)
 
     def _wb_voip_nebenstelle_fehler(self):
-        return AccessError(self.env._("Die Ansitel-Nebenstelle darf nur die Systemverwaltung setzen."))
+        return AccessError(self.env._("Only system administrators may set the Ansitel extension."))
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -185,7 +186,7 @@ class ResUsers(models.Model):
                 benutzer.id, benutzer.wb_voip_anlage_id.id, benutzer.wb_voip_ansitel_nebenstelle))
             if self.env.cr.fetchone():
                 raise ValidationError(self.env._(
-                    "Die Ansitel-Nebenstelle %s ist an dieser Telefonanlage schon vergeben.",
+                    "The Ansitel extension %s is already assigned on this PBX.",
                     benutzer.wb_voip_ansitel_nebenstelle))
 
     @api.constrains('wb_voip_handy', 'wb_voip_anlage_id')
@@ -206,15 +207,16 @@ class ResUsers(models.Model):
         """Return the fixed user messages of the keys (translated)."""
         _ = self.env._
         return {
-            'allgemein': _("Schnelltasten sind gerade nicht verfügbar."),
-            'handy': _("Bitte unter Mein Profil › Telefonie Ihr Handy eintragen."),
-            'ab_token': _("AB braucht persönlichen Ansitel-Token oder Freigabe – bitte Administrator fragen."),
-            'taste_fehlt': _("Diese Taste gibt es nicht mehr."),
-            'wunsch': _("Ungültiger Wunschzustand."),
-            'nebenstelle': _("Die Nebenstelle gibt es in der Telefonanlage nicht."),
-            'ziel': _("Für diese Taste ist kein gültiges Weiterleitungsziel eingetragen."),
-            'intern_unbekannt': _("Interne Nebenstelle unbekannt – bitte Systemverwaltung fragen."),
-            'intern_eigen': _("Die eigene Nebenstelle kann nicht Weiterleitungsziel sein."),
+            'allgemein': _("Quick keys are currently unavailable."),
+            'handy': _("Please enter your mobile phone under My Profile › Telephony."),
+            'ab_token': _("Voicemail needs a personal Ansitel token or approval – "
+                          "please ask an administrator."),
+            'taste_fehlt': _("This key no longer exists."),
+            'wunsch': _("Invalid requested state."),
+            'nebenstelle': _("The extension does not exist on the PBX."),
+            'ziel': _("No valid call forwarding target is set for this key."),
+            'intern_unbekannt': _("Internal extension unknown – please ask the system administrators."),
+            'intern_eigen': _("Your own extension cannot be the call forwarding target."),
         }
 
     @api.model
@@ -403,10 +405,10 @@ class ResUsers(models.Model):
             info = self.env['wb.license.client'].check_license(PRODUKT_CODE)
             if info.is_valid:
                 return False
-            return info.user_message or self.env._("Lizenz fehlt oder abgelaufen")
+            return info.user_message or self.env._("License missing or expired")
         except Exception:  # noqa: BLE001 - Lesen darf nie werfen
             _logger.exception("[wb_voip_ansitel] Lizenzprüfung für die Schnelltasten fehlgeschlagen")
-            return self.env._("Lizenz konnte nicht geprüft werden.")
+            return self.env._("The license could not be checked.")
 
     @api.model
     @nur_voip_benutzer

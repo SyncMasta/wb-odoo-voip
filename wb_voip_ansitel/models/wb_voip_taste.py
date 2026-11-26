@@ -73,37 +73,37 @@ def _grob_teile(roh, vorwahl):
 
 class WbVoipTaste(models.Model):
     _name = 'wb.voip.taste'
-    _description = 'Softphone-Schnelltaste'
+    _description = 'Softphone quick key'
     _order = 'sequence, id'
 
-    name = fields.Char(string='Beschriftung', required=True, translate=True)
-    sequence = fields.Integer(string='Reihenfolge', default=10)
-    active = fields.Boolean(string='Aktiv', default=True)
-    icon = fields.Char(string='Symbol', help="Font-Awesome-Klasse, z. B. fa-mobile.")
+    name = fields.Char(string='Label', required=True, translate=True)
+    sequence = fields.Integer(string='Sequence', default=10)
+    active = fields.Boolean(string='Active', default=True)
+    icon = fields.Char(string='Icon', help="Font Awesome class, e.g. fa-mobile.")
     art = fields.Selection(
-        [('weiterleitung', 'Weiterleitung'), ('anrufschutz', 'Anrufschutz (Nicht stören)'),
-         ('anrufbeantworter', 'Anrufbeantworter')],
-        string='Art', required=True)
+        [('weiterleitung', 'Call forwarding'), ('anrufschutz', 'Call protection (Do not disturb)'),
+         ('anrufbeantworter', 'Voicemail')],
+        string='Type', required=True)
     ziel_art = fields.Selection(
-        [('fest', 'Feste Nummer'), ('handy', 'Eigenes Handy des Benutzers'),
-         ('intern', 'Interne Nebenstelle')],
-        string='Ziel', default='fest', required=True,
-        help="Feste Nummer: gilt für alle Benutzer. Eigenes Handy: jeder Benutzer trägt seine "
-             "Nummer unter Mein Profil › Telefonie ein (Feld „Mein Handy“). Interne Nebenstelle: "
-             "Nebenstelle oder Rufgruppe der Anlage des Benutzers (2 bis 6 Ziffern).")
+        [('fest', 'Fixed number'), ('handy', "User's own mobile phone"),
+         ('intern', 'Internal extension')],
+        string='Target', default='fest', required=True,
+        help="Fixed number: applies to all users. Own mobile phone: each user enters their number under My "
+             'Profile › Telephony (field "My mobile phone"). Internal extension: extension or ring group of '
+             "the user's PBX (2 to 6 digits).")
     ziel = fields.Char(
-        string='Weiterleitungsziel',
-        help="Rufnummer, z. B. +49 152 28817386, bei „Interne Nebenstelle“ die Nebenstelle oder "
-             "Rufgruppe, z. B. 100. Eine Weiterleitungstaste mit fester Nummer oder interner "
-             "Nebenstelle ohne gültiges Ziel bleibt ausgeblendet.")
+        string='Call forwarding target',
+        help='Phone number, e.g. +49 152 28817386; for "Internal extension" the extension or ring group, '
+             "e.g. 100. A call forwarding key with a fixed number or internal extension without a valid "
+             "target stays hidden.")
     ab_modus = fields.Selection(
-        [('sofort', 'Sofort'), ('nach_rufzeit', 'Nach Rufzeit')],
-        string='Anrufbeantworter greift', default='sofort')
-    ab_sekunden = fields.Integer(string='Rufzeit in Sekunden', default=20)
+        [('sofort', 'Immediately'), ('nach_rufzeit', 'After ring time')],
+        string='Voicemail picks up', default='sofort')
+    ab_sekunden = fields.Integer(string='Ring time in seconds', default=20)
 
     def _ziel_fehler(self):
         return AccessError(self.env._(
-            "Feste und interne Weiterleitungsziele darf nur die Systemverwaltung setzen."))
+            "Only system administrators may set fixed and internal call forwarding targets."))
 
     @api.model
     def _ziel_laender(self):
@@ -166,7 +166,7 @@ class WbVoipTaste(models.Model):
     def _check_ab_sekunden(self):
         for taste in self.filtered(lambda t: t.art == 'anrufbeantworter'):
             if not 1 <= taste.ab_sekunden <= 600:
-                raise ValidationError(self.env._("Die Rufzeit muss zwischen 1 und 600 Sekunden liegen."))
+                raise ValidationError(self.env._("The ring time must be between 1 and 600 seconds."))
 
     @api.model
     def _ziel_gueltig(self, ziel):
@@ -184,14 +184,15 @@ class WbVoipTaste(models.Model):
         """Return the user message if ``ziel`` is no internal extension (format only), or ``False``."""
         _ = self.env._
         if not self._intern_gueltig(ziel):
-            return _("Eine interne Nebenstelle hat 2 bis 6 Ziffern (nur 0–9), z. B. 100.")
+            return _("An internal extension has 2 to 6 digits (0–9 only), e.g. 100.")
         ziel = ziel.strip()
         # Kurzwahl, Notruf und Auskunft gehen über die Wählregel nach außen; 1xx-Nebenstellen bleiben erlaubt
         if ziel in KURZ_NUMMERN or ziel.startswith(KURZ_PRAEFIXE):
-            return _("Notruf-, Kurzwahl- und Auskunftsnummern sind als Weiterleitungsziel nicht erlaubt.")
+            return _("Emergency, short-code and directory-enquiry numbers are not allowed as a call "
+                     "forwarding target.")
         # Führende 0 ist an vielen Anlagen die Amtsholung
         if ziel.startswith('0'):
-            return _("Ein internes Ziel beginnt nicht mit 0 (Amtsholung).")
+            return _("An internal target does not start with 0 (trunk access).")
         return False
 
     @api.model
@@ -217,8 +218,8 @@ class WbVoipTaste(models.Model):
         _ = self.env._
         ziel = ziel if isinstance(ziel, str) else ''
         if any(zeichen.isdigit() and zeichen not in '0123456789' for zeichen in ziel):
-            return _("Bitte nur die Ziffern 0–9 verwenden.")
-        ungueltig = _("„%s“ ist keine gültige Rufnummer (z. B. +49 152 28817386).", ziel)
+            return _("Please use only the digits 0–9.")
+        ungueltig = _('"%s" is not a valid phone number (e.g. +49 152 28817386).', ziel)
         if not self._ziel_gueltig(ziel):
             return ungueltig
         vorwahl = _laendervorwahl(land_code)
@@ -229,18 +230,19 @@ class WbVoipTaste(models.Model):
             teile = _grob_teile(TRENNER.sub('', ziel.strip()), vorwahl)
         land_vorwahl, rest = teile
         if land_vorwahl in GESPERRTE_VORWAHLEN:
-            return _("Satelliten- und globale Sonderdienste (+881, +882, +883) sind als Weiterleitungsziel "
-                     "nicht erlaubt.")
+            return _("Satellite and global special services (+881, +882, +883) are not allowed as a call "
+                     "forwarding target.")
         if rest in KURZ_NUMMERN or rest.startswith(KURZ_PRAEFIXE):
-            return _("Notruf-, Kurzwahl- und Auskunftsnummern sind als Weiterleitungsziel nicht erlaubt.")
+            return _("Emergency, short-code and directory-enquiry numbers are not allowed as a call "
+                     "forwarding target.")
         if len(rest) + 1 < WEITERLEITUNG_MIN_ZIFFERN:
-            return _("Ein Weiterleitungsziel braucht mindestens %s Ziffern.", WEITERLEITUNG_MIN_ZIFFERN)
+            return _("A call forwarding target needs at least %s digits.", WEITERLEITUNG_MIN_ZIFFERN)
         if rest.startswith(SONDER_PRAEFIXE.get(land_vorwahl, ())):
-            return _("Sonder- und Mehrwertnummern (z. B. 0900, 0137, 0180, 0700) sind als "
-                     "Weiterleitungsziel nicht erlaubt.")
+            return _("Special and premium-rate numbers (e.g. 0900, 0137, 0180, 0700) are not allowed as a "
+                     "call forwarding target.")
         if land_vorwahl != vorwahl and \
                 self.env['ir.config_parameter'].sudo().get_param(PARAM_AUSLAND) != '1':
-            return _("Weiterleitungen ins Ausland sind gesperrt (Freigabe über den Systemparameter %s).",
+            return _("Forwarding abroad is blocked (release via the system parameter %s).",
                      PARAM_AUSLAND)
         if not e164:
             return ungueltig

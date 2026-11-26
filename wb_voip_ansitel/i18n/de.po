@@ -1,0 +1,906 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* wb_voip_ansitel
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-26 10:24+0000\n"
+"PO-Revision-Date: 2026-11-26 10:24+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/wb_voip_taste.py:0
+msgid "\"%s\" is not a valid phone number (e.g. +49 152 28817386)."
+msgstr "„%s“ ist keine gültige Rufnummer (z. B. +49 152 28817386)."
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,help:wb_voip_ansitel.field_wb_voip_anruf__wb_voip_herkunft
+msgid "\"PBX call list\": Odoo did not see the call (e.g. it was closed); the reconciliation created it."
+msgstr "„Anrufliste der Anlage“: Odoo hat den Anruf nicht gesehen (z. B. geschlossen), der Abgleich hat ihn angelegt."
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/wb_voip_anlage.py:0
+msgid "%s new devices created."
+msgstr "%s neue Geräte angelegt."
+
+#. module: wb_voip_ansitel
+#. odoo-javascript
+#: code:addons/wb_voip_ansitel/static/src/tasten/tastenleiste.js:0
+msgid "%s, calls are being forwarded"
+msgstr "%s, Anrufe werden umgeleitet"
+
+#. module: wb_voip_ansitel
+#: model_terms:ir.ui.view,arch_db:wb_voip_ansitel.wb_voip_taste_view_form
+msgid "+49 152 28817386 or 100"
+msgstr "+49 152 28817386 bzw. 100"
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/wb_voip_taste.py:0
+msgid "A call forwarding target needs at least %s digits."
+msgstr "Ein Weiterleitungsziel braucht mindestens %s Ziffern."
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_geraet__active
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_taste__active
+msgid "Active"
+msgstr "Aktiv"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_anlage__ansitel_interne_ziele
+msgid "Additional internal targets"
+msgstr "Weitere interne Ziele"
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/wb_voip_anlage.py:0
+msgid "Additional internal targets (one number per line), \"%(ziel)s\": %(fehler)s"
+msgstr "Weitere interne Ziele (eine Nummer je Zeile), „%(ziel)s“: %(fehler)s"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields.selection,name:wb_voip_ansitel.selection__wb_voip_taste__ab_modus__nach_rufzeit
+msgid "After ring time"
+msgstr "Nach Rufzeit"
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/wb_voip_taste.py:0
+msgid "An internal extension has 2 to 6 digits (0–9 only), e.g. 100."
+msgstr "Eine interne Nebenstelle hat 2 bis 6 Ziffern (nur 0–9), z. B. 100."
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/wb_voip_taste.py:0
+msgid "An internal target does not start with 0 (trunk access)."
+msgstr "Ein internes Ziel beginnt nicht mit 0 (Amtsholung)."
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/wb_voip_anlage.py:0
+#: model_terms:ir.ui.view,arch_db:wb_voip_ansitel.wb_voip_ansitel_res_users_view_form
+msgid "Ansitel"
+msgstr "Ansitel"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_anlage__ansitel_api_url
+msgid "Ansitel REST URL"
+msgstr "Ansitel-REST-URL"
+
+#. module: wb_voip_ansitel
+#: model:ir.model,name:wb_voip_ansitel.model_wb_voip_ansitel
+msgid "Ansitel REST client"
+msgstr "Ansitel-REST-Client"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_res_users__wb_voip_ansitel_nebenstelle
+msgid "Ansitel extension"
+msgstr "Ansitel-Nebenstelle"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_anlage__ansitel_aktiv
+#: model_terms:ir.ui.view,arch_db:wb_voip_ansitel.wb_voip_anlage_view_form_ansitel
+msgid "Ansitel interface"
+msgstr "Ansitel-Schnittstelle"
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/ansitel_api.py:0
+msgid "Ansitel is not set up."
+msgstr "Ansitel ist nicht eingerichtet."
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/ansitel_api.py:0
+msgid "Ansitel is unreachable."
+msgstr "Ansitel nicht erreichbar."
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/ansitel_api.py:0
+msgid "Ansitel rejects the request."
+msgstr "Ansitel lehnt die Anfrage ab."
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/ansitel_api.py:0
+msgid "Ansitel rejects the token."
+msgstr "Ansitel lehnt den Token ab."
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/ansitel_api.py:0
+msgid "Ansitel returns too many calls at once."
+msgstr "Ansitel liefert zu viele Anrufe auf einmal."
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/ansitel_api.py:0
+#: code:addons/wb_voip_ansitel/models/wb_voip_anlage.py:0
+msgid "Ansitel sent an unintelligible response."
+msgstr "Ansitel hat unverständlich geantwortet."
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_anlage__ansitel_token
+msgid "Ansitel token (central)"
+msgstr "Ansitel-Token (zentral)"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_res_users__wb_voip_ansitel_token_enc
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_anlage__ansitel_token_enc
+msgid "Ansitel token (encrypted)"
+msgstr "Ansitel-Token (verschlüsselt)"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_res_users__wb_voip_ansitel_token
+msgid "Ansitel token (personal)"
+msgstr "Ansitel-Token (persönlich)"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_res_users__wb_voip_ansitel_token_gesetzt
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_anlage__ansitel_token_gesetzt
+msgid "Ansitel token saved"
+msgstr "Ansitel-Token gespeichert"
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/ansitel_api.py:0
+msgid "Ansitel token unreadable, please enter it again."
+msgstr "Ansitel-Token nicht lesbar, bitte neu eingeben."
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/wb_voip_anruf.py:0
+msgid "Answered on %s"
+msgstr "Angenommen auf %s"
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/wb_voip_anruf.py:0
+msgid "Answered on %s."
+msgstr "Angenommen auf %s."
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_anruf__wb_voip_geraet
+msgid "Answered on (device)"
+msgstr "Angenommen auf (Gerät)"
+
+#. module: wb_voip_ansitel
+#: model_terms:ir.ui.view,arch_db:wb_voip_ansitel.wb_voip_geraet_view_form
+#: model_terms:ir.ui.view,arch_db:wb_voip_ansitel.wb_voip_geraet_view_search
+#: model_terms:ir.ui.view,arch_db:wb_voip_ansitel.wb_voip_taste_view_form
+msgid "Archived"
+msgstr "Archiviert"
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/wb_voip_anruf.py:0
+#: model:ir.model.fields.selection,name:wb_voip_ansitel.selection__wb_voip_taste__art__weiterleitung
+msgid "Call forwarding"
+msgstr "Weiterleitung"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_taste__ziel
+msgid "Call forwarding target"
+msgstr "Weiterleitungsziel"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_anruf__wb_voip_cdr_linkedid
+msgid "Call in the PBX (linkedid)"
+msgstr "Anruf in der Anlage (linkedid)"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_anlage__ansitel_cdr_ab
+msgid "Call list reconciled from (UTC)"
+msgstr "Anrufliste abgeglichen ab (UTC)"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_anlage__ansitel_cdr_stand
+msgid "Call list reconciled until (UTC)"
+msgstr "Anrufliste abgeglichen bis (UTC)"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_anlage__ansitel_tz
+msgid "Call list time zone"
+msgstr "Zeitzone der Anrufliste"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields.selection,name:wb_voip_ansitel.selection__wb_voip_taste__art__anrufschutz
+msgid "Call protection (Do not disturb)"
+msgstr "Anrufschutz (Nicht stören)"
+
+#. module: wb_voip_ansitel
+#. odoo-javascript
+#: code:addons/wb_voip_ansitel/static/src/verpasst/verpasst_geraet.xml:0
+msgid "Cancel"
+msgstr "Abbrechen"
+
+#. module: wb_voip_ansitel
+#. odoo-javascript
+#: code:addons/wb_voip_ansitel/static/src/verpasst/verpasst_geraet.js:0
+msgid "Colleague"
+msgstr "Kollege"
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/wb_voip_anlage.py:0
+msgid "Connection to the PBX established."
+msgstr "Verbindung zur Anlage steht."
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_geraet__create_uid
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_taste__create_uid
+msgid "Created by"
+msgstr "Erstellt von"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_geraet__create_date
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_taste__create_date
+msgid "Created on"
+msgstr "Erstellt am"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_geraet__peer_name
+msgid "Device (peer name)"
+msgstr "Gerät (Peer-Name)"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_anlage__ansitel_geraet_ids
+#: model:ir.ui.menu,name:wb_voip_ansitel.wb_voip_menu_geraet
+msgid "Devices"
+msgstr "Geräte"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_ir_http__display_name
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_res_users__display_name
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_anlage__display_name
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_anruf__display_name
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_ansitel__display_name
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_geraet__display_name
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_taste__display_name
+msgid "Display Name"
+msgstr "Anzeigename"
+
+#. module: wb_voip_ansitel
+#: model:wb.voip.taste,name:wb_voip_ansitel.taste_dnd
+msgid "Do not disturb"
+msgstr "Nicht stören"
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/wb_voip_taste.py:0
+msgid "Emergency, short-code and directory-enquiry numbers are not allowed as a call forwarding target."
+msgstr "Notruf-, Kurzwahl- und Auskunftsnummern sind als Weiterleitungsziel nicht erlaubt."
+
+#. module: wb_voip_ansitel
+#: model_terms:ir.ui.view,arch_db:wb_voip_ansitel.wb_voip_anlage_view_form_ansitel
+#: model_terms:ir.ui.view,arch_db:wb_voip_ansitel.wb_voip_ansitel_res_users_view_form
+msgid "Enter new token"
+msgstr "Neuen Token eingeben"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_geraet__nebenstelle
+msgid "Extension"
+msgstr "Nebenstelle"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields.selection,name:wb_voip_ansitel.selection__wb_voip_taste__ziel_art__fest
+msgid "Fixed number"
+msgstr "Feste Nummer"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,help:wb_voip_ansitel.field_wb_voip_taste__ziel_art
+msgid "Fixed number: applies to all users. Own mobile phone: each user enters their number under My Profile › Telephony (field \"My mobile phone\"). Internal extension: extension or ring group of the user's PBX (2 to 6 digits)."
+msgstr "Feste Nummer: gilt für alle Benutzer. Eigenes Handy: jeder Benutzer trägt seine Nummer unter Mein Profil › Telefonie ein (Feld „Mein Handy“). Interne Nebenstelle: Nebenstelle oder Rufgruppe der Anlage des Benutzers (2 bis 6 Ziffern)."
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,help:wb_voip_ansitel.field_wb_voip_taste__icon
+msgid "Font Awesome class, e.g. fa-mobile."
+msgstr "Font-Awesome-Klasse, z. B. fa-mobile."
+
+#. module: wb_voip_ansitel
+#. odoo-javascript
+#: code:addons/wb_voip_ansitel/static/src/tasten/tastenleiste.xml:0
+msgid "Forward to"
+msgstr "Weiterleitung auf"
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/wb_voip_taste.py:0
+msgid "Forwarding abroad is blocked (release via the system parameter %s)."
+msgstr "Weiterleitungen ins Ausland sind gesperrt (Freigabe über den Systemparameter %s)."
+
+#. module: wb_voip_ansitel
+#: model:ir.model,name:wb_voip_ansitel.model_ir_http
+msgid "HTTP Routing"
+msgstr "HTTP-Routing"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_ir_http__id
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_res_users__id
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_anlage__id
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_anruf__id
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_ansitel__id
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_geraet__id
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_taste__id
+msgid "ID"
+msgstr "ID"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_taste__icon
+msgid "Icon"
+msgstr "Symbol"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,help:wb_voip_ansitel.field_wb_voip_anruf__wb_voip_cdr_linkedid
+msgid "Identifier of the call in the PBX call list; at most one call per user."
+msgstr "Kennung des Anrufs in der Anrufliste der Anlage; je Benutzer höchstens ein Anruf."
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields.selection,name:wb_voip_ansitel.selection__wb_voip_taste__ab_modus__sofort
+msgid "Immediately"
+msgstr "Sofort"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields.selection,name:wb_voip_ansitel.selection__res_users__wb_voip_ansitel_tastenleiste__softphone
+msgid "In the softphone"
+msgstr "Im Softphone"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields.selection,name:wb_voip_ansitel.selection__wb_voip_taste__ziel_art__intern
+msgid "Internal extension"
+msgstr "Interne Nebenstelle"
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/res_users.py:0
+msgid "Internal extension unknown – please ask the system administrators."
+msgstr "Interne Nebenstelle unbekannt – bitte Systemverwaltung fragen."
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,help:wb_voip_ansitel.field_res_users__wb_voip_ansitel_nebenstelle
+msgid "Internal number or device name on the Ansitel PBX, e.g. 100. Without an extension there are no quick keys."
+msgstr "Interne Nummer oder Gerätename an der Ansitel-Anlage, z. B. 100. Ohne Nebenstelle gibt es keine Schnelltasten."
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,help:wb_voip_ansitel.field_wb_voip_geraet__nebenstelle
+msgid "Internal phone number according to the PBX."
+msgstr "Interne Rufnummer laut Anlage."
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/res_users.py:0
+msgid "Invalid requested state."
+msgstr "Ungültiger Wunschzustand."
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_taste__name
+msgid "Label"
+msgstr "Beschriftung"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_geraet__write_uid
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_taste__write_uid
+msgid "Last Updated by"
+msgstr "Zuletzt aktualisiert von"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_geraet__write_date
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_taste__write_date
+msgid "Last Updated on"
+msgstr "Zuletzt aktualisiert am"
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/res_users.py:0
+msgid "License missing or expired"
+msgstr "Lizenz fehlt oder abgelaufen"
+
+#. module: wb_voip_ansitel
+#: model_terms:ir.ui.view,arch_db:wb_voip_ansitel.wb_voip_anlage_view_form_ansitel
+msgid "Load devices from PBX"
+msgstr "Geräte aus Anlage laden"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_res_users__wb_voip_handy
+msgid "My mobile phone"
+msgstr "Mein Handy"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_geraet__name
+msgid "Name"
+msgstr "Bezeichnung"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,help:wb_voip_ansitel.field_wb_voip_geraet__peer_name
+msgid "Name of the device on the PBX, e.g. Tel51. It appears in the destination channel of the call list."
+msgstr "Name des Geräts in der Anlage, z. B. Tel51. Er steht im Zielkanal der Anrufliste."
+
+#. module: wb_voip_ansitel
+#: model_terms:ir.actions.act_window,help:wb_voip_ansitel.wb_voip_geraet_action
+msgid "No devices yet"
+msgstr "Noch keine Geräte"
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/wb_voip_anruf.py:0
+msgid "No remark can be saved for this call."
+msgstr "Zu diesem Anruf lässt sich keine Bemerkung speichern."
+
+#. module: wb_voip_ansitel
+#: model_terms:ir.ui.view,arch_db:wb_voip_ansitel.wb_voip_geraet_view_search
+msgid "No user"
+msgstr "Ohne Benutzer"
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/res_users.py:0
+msgid "No valid call forwarding target is set for this key."
+msgstr "Für diese Taste ist kein gültiges Weiterleitungsziel eingetragen."
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields.selection,name:wb_voip_ansitel.selection__res_users__wb_voip_ansitel_tastenleiste__rand
+msgid "On the right edge"
+msgstr "Am rechten Rand"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,help:wb_voip_ansitel.field_res_users__wb_voip_ansitel_ab_zentral
+msgid "Only set if all extensions of the central Ansitel user belong to this user (shared voicemail). Without the tick, the central token applies to voicemail only if there is exactly one extension."
+msgstr "Nur setzen, wenn alle Nebenstellen des zentralen Ansitel-Benutzers diesem Benutzer gehören (gemeinsamer AB). Ohne Häkchen gilt der zentrale Token für den AB nur bei genau einer Nebenstelle."
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/wb_voip_anlage.py:0
+msgid "Only system administrators may change the time zone of the call list."
+msgstr "Die Zeitzone der Anrufliste darf nur die Systemverwaltung ändern."
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/wb_voip_anlage.py:0
+msgid "Only system administrators may load devices."
+msgstr "Geräte laden darf nur die Systemverwaltung."
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/wb_voip_taste.py:0
+msgid "Only system administrators may set fixed and internal call forwarding targets."
+msgstr "Feste und interne Weiterleitungsziele darf nur die Systemverwaltung setzen."
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/res_users.py:0
+msgid "Only system administrators may set the Ansitel extension."
+msgstr "Die Ansitel-Nebenstelle darf nur die Systemverwaltung setzen."
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_anruf__wb_voip_herkunft
+msgid "Origin"
+msgstr "Herkunft"
+
+#. module: wb_voip_ansitel
+#: model:ir.model,name:wb_voip_ansitel.model_wb_voip_anlage
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_geraet__anlage_id
+msgid "PBX"
+msgstr "Telefonanlage"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields.selection,name:wb_voip_ansitel.selection__wb_voip_anruf__wb_voip_herkunft__anlage
+msgid "PBX call list"
+msgstr "Anrufliste der Anlage"
+
+#. module: wb_voip_ansitel
+#: model:ir.actions.act_window,name:wb_voip_ansitel.wb_voip_geraet_action
+msgid "PBX devices"
+msgstr "Geräte der Telefonanlage"
+
+#. module: wb_voip_ansitel
+#: model_terms:ir.ui.view,arch_db:wb_voip_ansitel.wb_voip_ansitel_res_users_view_form
+msgid "Personal token saved – enter again to change"
+msgstr "Persönlicher Token gespeichert – zum Ändern neu eingeben"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,help:wb_voip_ansitel.field_wb_voip_taste__ziel
+msgid "Phone number, e.g. +49 152 28817386; for \"Internal extension\" the extension or ring group, e.g. 100. A call forwarding key with a fixed number or internal extension without a valid target stays hidden."
+msgstr "Rufnummer, z. B. +49 152 28817386, bei „Interne Nebenstelle“ die Nebenstelle oder Rufgruppe, z. B. 100. Eine Weiterleitungstaste mit fester Nummer oder interner Nebenstelle ohne gültiges Ziel bleibt ausgeblendet."
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/res_users.py:0
+msgid "Please enter your mobile phone under My Profile › Telephony."
+msgstr "Bitte unter Mein Profil › Telefonie Ihr Handy eintragen."
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/wb_voip_taste.py:0
+msgid "Please use only the digits 0–9."
+msgstr "Bitte nur die Ziffern 0–9 verwenden."
+
+#. module: wb_voip_ansitel
+#. odoo-javascript
+#: code:addons/wb_voip_ansitel/static/src/tasten/tastenleiste.js:0
+#: model_terms:ir.ui.view,arch_db:wb_voip_ansitel.wb_voip_ansitel_res_users_view_form_simple
+msgid "Quick keys"
+msgstr "Schnelltasten"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,help:wb_voip_ansitel.field_wb_voip_anlage__ansitel_aktiv
+msgid "Quick keys and call list reconciliation via the PBX REST interface."
+msgstr "Schnelltasten und Abgleich der Anrufliste über die REST-Schnittstelle der Anlage."
+
+#. module: wb_voip_ansitel
+#. odoo-javascript
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/res_users.py:0
+#: code:addons/wb_voip_ansitel/static/src/tasten/tasten_dienst.js:0
+msgid "Quick keys are currently unavailable."
+msgstr "Schnelltasten sind gerade nicht verfügbar."
+
+#. module: wb_voip_ansitel
+#. odoo-javascript
+#: code:addons/wb_voip_ansitel/static/src/tasten/tastenleiste.js:0
+msgid "Quick keys on the edge"
+msgstr "Schnelltasten am Rand"
+
+#. module: wb_voip_ansitel
+#. odoo-javascript
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/wb_voip_anruf.py:0
+#: code:addons/wb_voip_ansitel/static/src/verpasst/verpasst_geraet.xml:0
+msgid "Remark"
+msgstr "Bemerkung"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_anruf__wb_voip_bemerkung_hash
+msgid "Remark hash"
+msgstr "Bemerkungs-Hash"
+
+#. module: wb_voip_ansitel
+#. odoo-javascript
+#: code:addons/wb_voip_ansitel/static/src/verpasst/verpasst_geraet.xml:0
+msgid "Remark on the conversation"
+msgstr "Bemerkung zum Gespräch"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,help:wb_voip_ansitel.field_wb_voip_anlage__ansitel_interne_ziele
+msgid "Ring groups or queues of this PBX that are allowed as internal call forwarding targets: one number per line, 2 to 6 digits. Extensions of the PBX are allowed without an entry."
+msgstr "Rufgruppen oder Warteschlangen dieser Anlage, die als interne Weiterleitungsziele erlaubt sind: eine Nummer je Zeile, 2 bis 6 Ziffern. Nebenstellen der Anlage sind ohne Eintrag erlaubt."
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_taste__ab_sekunden
+msgid "Ring time in seconds"
+msgstr "Rufzeit in Sekunden"
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/wb_voip_taste.py:0
+msgid "Satellite and global special services (+881, +882, +883) are not allowed as a call forwarding target."
+msgstr "Satelliten- und globale Sonderdienste (+881, +882, +883) sind als Weiterleitungsziel nicht erlaubt."
+
+#. module: wb_voip_ansitel
+#. odoo-javascript
+#: code:addons/wb_voip_ansitel/static/src/verpasst/verpasst_geraet.xml:0
+msgid "Save"
+msgstr "Speichern"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_taste__sequence
+msgid "Sequence"
+msgstr "Reihenfolge"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_res_users__wb_voip_ansitel_tastenleiste
+msgid "Show quick keys"
+msgstr "Schnelltasten anzeigen"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields.selection,name:wb_voip_ansitel.selection__wb_voip_anruf__wb_voip_herkunft__softphone
+msgid "Softphone"
+msgstr "Softphone"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields.selection,name:wb_voip_ansitel.selection__res_users__wb_voip_ansitel_tastenleiste__beide
+msgid "Softphone and edge"
+msgstr "Softphone und Rand"
+
+#. module: wb_voip_ansitel
+#: model:ir.actions.act_window,name:wb_voip_ansitel.wb_voip_taste_action
+#: model:ir.ui.menu,name:wb_voip_ansitel.wb_voip_menu_taste
+msgid "Softphone keys"
+msgstr "Softphone-Tasten"
+
+#. module: wb_voip_ansitel
+#: model:ir.model,name:wb_voip_ansitel.model_wb_voip_taste
+msgid "Softphone quick key"
+msgstr "Softphone-Schnelltaste"
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/wb_voip_taste.py:0
+msgid "Special and premium-rate numbers (e.g. 0900, 0137, 0180, 0700) are not allowed as a call forwarding target."
+msgstr "Sonder- und Mehrwertnummern (z. B. 0900, 0137, 0180, 0700) sind als Weiterleitungsziel nicht erlaubt."
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,help:wb_voip_ansitel.field_wb_voip_anlage__ansitel_cdr_ab
+msgid "Start of the first reconciliation; no run reads further back."
+msgstr "Beginn des ersten Abgleichs; kein Lauf liest weiter zurück."
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_res_users__wb_voip_ansitel_ab_zentral
+msgid "Switch voicemail via the central token"
+msgstr "AB über zentralen Token schalten"
+
+#. module: wb_voip_ansitel
+#: model_terms:ir.actions.act_window,help:wb_voip_ansitel.wb_voip_geraet_action
+msgid ""
+"System administrators load them on the PBX with \"Load devices from PBX\".\n"
+"                This way the call list shows on which device a call was answered."
+msgstr ""
+"Die Systemverwaltung lädt sie an der Telefonanlage mit „Geräte aus Anlage laden“.\n"
+"                Die Anrufliste nennt so, auf welchem Gerät ein Anruf angenommen wurde."
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_taste__ziel_art
+msgid "Target"
+msgstr "Ziel"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,help:wb_voip_ansitel.field_res_users__wb_voip_handy
+msgid "Target of the \"Own mobile phone\" call forwarding key, e.g. +49 30 23125 101."
+msgstr "Ziel der Weiterleitungstaste „Eigenes Handy“, z. B. +49 30 23125 101."
+
+#. module: wb_voip_ansitel
+#: model_terms:ir.ui.view,arch_db:wb_voip_ansitel.wb_voip_geraet_view_form
+msgid "Tel51"
+msgstr "Tel51"
+
+#. module: wb_voip_ansitel
+#: model_terms:ir.ui.view,arch_db:wb_voip_ansitel.wb_voip_anlage_view_form_ansitel
+msgid "Test connection"
+msgstr "Verbindung testen"
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/wb_voip_anlage.py:0
+msgid "The Ansitel URL must start with https:// and have a host, without user name and password, e.g. https://anlage.example/awi/api/rest."
+msgstr "Die Ansitel-URL muss mit https:// beginnen und einen Host haben, ohne Benutzer und Passwort, z. B. https://anlage.example/awi/api/rest."
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/res_users.py:0
+msgid "The Ansitel extension %s is already assigned on this PBX."
+msgstr "Die Ansitel-Nebenstelle %s ist an dieser Telefonanlage schon vergeben."
+
+#. module: wb_voip_ansitel
+#: model:ir.model.constraint,message:wb_voip_ansitel.constraint_res_users_wb_voip_ansitel_nebenstelle_eindeutig
+msgid "The Ansitel extension is already assigned on this PBX."
+msgstr "Die Ansitel-Nebenstelle ist an dieser Telefonanlage schon vergeben."
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,help:wb_voip_ansitel.field_wb_voip_anlage__ansitel_tz
+msgid "The PBX delivers the times of the call list in local time of this zone."
+msgstr "Die Anlage liefert die Zeiten der Anrufliste in Ortszeit dieser Zone."
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/wb_voip_anlage.py:0
+msgid "The REST URL for the Ansitel interface is missing."
+msgstr "Für die Ansitel-Schnittstelle fehlt die REST-URL."
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,help:wb_voip_ansitel.field_wb_voip_anlage__ansitel_cdr_stand
+msgid "The call list is reconciled up to here; the next run starts 4 hours earlier."
+msgstr "Bis hierhin ist die Anrufliste abgeglichen; der nächste Lauf beginnt 4 Stunden davor."
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/res_users.py:0
+msgid "The extension does not exist on the PBX."
+msgstr "Die Nebenstelle gibt es in der Telefonanlage nicht."
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/res_users.py:0
+msgid "The license could not be checked."
+msgstr "Lizenz konnte nicht geprüft werden."
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/wb_voip_geraet.py:0
+msgid "The peer name of the device must not be empty."
+msgstr "Der Peer-Name des Geräts darf nicht leer sein."
+
+#. module: wb_voip_ansitel
+#. odoo-javascript
+#: code:addons/wb_voip_ansitel/static/src/verpasst/verpasst_geraet.js:0
+msgid "The remark could not be saved."
+msgstr "Die Bemerkung konnte nicht gespeichert werden."
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/wb_voip_taste.py:0
+msgid "The ring time must be between 1 and 600 seconds."
+msgstr "Die Rufzeit muss zwischen 1 und 600 Sekunden liegen."
+
+#. module: wb_voip_ansitel
+#: model:ir.model.constraint,message:wb_voip_ansitel.constraint_wb_voip_anruf_wb_voip_cdr_linkedid_je_benutzer
+msgid "This PBX call (linkedid) already exists for the user."
+msgstr "Dieser Anruf der Anlage (linkedid) existiert für den Benutzer schon."
+
+#. module: wb_voip_ansitel
+#: model:ir.model.constraint,message:wb_voip_ansitel.constraint_wb_voip_geraet_peer_je_anlage
+msgid "This device already exists on the PBX."
+msgstr "Dieses Gerät gibt es an der Telefonanlage schon."
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/res_users.py:0
+msgid "This key no longer exists."
+msgstr "Diese Taste gibt es nicht mehr."
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,help:wb_voip_ansitel.field_res_users__wb_voip_ansitel_token
+msgid "Token of this employee's Ansitel user. Only needed for the voicemail key if the central token owns several extensions."
+msgstr "Token des Ansitel-Benutzers dieses Mitarbeiters. Nur für die AB-Taste nötig, wenn der zentrale Token mehrere Nebenstellen besitzt."
+
+#. module: wb_voip_ansitel
+#: model_terms:ir.ui.view,arch_db:wb_voip_ansitel.wb_voip_anlage_view_form_ansitel
+msgid "Token saved – enter again to change"
+msgstr "Token gespeichert – zum Ändern neu eingeben"
+
+#. module: wb_voip_ansitel
+#. odoo-javascript
+#: code:addons/wb_voip_ansitel/static/src/tasten/tastenleiste.js:0
+msgid "Turn off forwarding to %s"
+msgstr "Weiterleitung auf %s ausschalten"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_taste__art
+msgid "Type"
+msgstr "Art"
+
+#. module: wb_voip_ansitel
+#: model:ir.model,name:wb_voip_ansitel.model_res_users
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_geraet__user_id
+msgid "User"
+msgstr "Benutzer"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields.selection,name:wb_voip_ansitel.selection__wb_voip_taste__ziel_art__handy
+msgid "User's own mobile phone"
+msgstr "Eigenes Handy des Benutzers"
+
+#. module: wb_voip_ansitel
+#: model:wb.voip.taste,name:wb_voip_ansitel.taste_ab
+msgid "VM"
+msgstr "AB"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields.selection,name:wb_voip_ansitel.selection__wb_voip_taste__art__anrufbeantworter
+msgid "Voicemail"
+msgstr "Anrufbeantworter"
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/res_users.py:0
+msgid "Voicemail needs a personal Ansitel token or approval – please ask an administrator."
+msgstr "AB braucht persönlichen Ansitel-Token oder Freigabe – bitte Administrator fragen."
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,field_description:wb_voip_ansitel.field_wb_voip_taste__ab_modus
+msgid "Voicemail picks up"
+msgstr "Anrufbeantworter greift"
+
+#. module: wb_voip_ansitel
+#: model:ir.actions.server,name:wb_voip_ansitel.ir_cron_ansitel_abgleich_ir_actions_server
+msgid "WB VoIP Ansitel: Call list reconciliation"
+msgstr "WB VoIP Ansitel: Abgleich mit der Anrufliste"
+
+#. module: wb_voip_ansitel
+#: model:ir.model,name:wb_voip_ansitel.model_wb_voip_anruf
+msgid "WB VoIP: Call"
+msgstr "WB VoIP: Anruf"
+
+#. module: wb_voip_ansitel
+#: model:ir.model,name:wb_voip_ansitel.model_wb_voip_geraet
+msgid "WB VoIP: PBX device"
+msgstr "WB VoIP: Gerät der Telefonanlage"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,help:wb_voip_ansitel.field_res_users__wb_voip_ansitel_tastenleiste
+msgid "Where the quick keys for call forwarding, Do not disturb and voicemail appear. The change takes effect after reloading the page."
+msgstr "Wo die Schnelltasten für Weiterleitung, Nicht stören und Anrufbeantworter erscheinen. Die Änderung gilt nach dem Neuladen der Seite."
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,help:wb_voip_ansitel.field_wb_voip_geraet__user_id
+msgid "Who owns the device; empty for devices without a fixed owner (e.g. reception)."
+msgstr "Wem das Gerät gehört; leer bei Geräten ohne festen Besitzer (z. B. Empfang)."
+
+#. module: wb_voip_ansitel
+#. odoo-python
+#: code:addons/wb_voip_ansitel/models/res_users.py:0
+msgid "Your own extension cannot be the call forwarding target."
+msgstr "Die eigene Nebenstelle kann nicht Weiterleitungsziel sein."
+
+#. module: wb_voip_ansitel
+#: model_terms:ir.ui.view,arch_db:wb_voip_ansitel.wb_voip_anlage_view_form_ansitel
+msgid "e.g. 600 (one ring group per line)"
+msgstr "z. B. 600 (eine Rufgruppe je Zeile)"
+
+#. module: wb_voip_ansitel
+#: model_terms:ir.ui.view,arch_db:wb_voip_ansitel.wb_voip_taste_view_form
+msgid "fa-mobile"
+msgstr "fa-mobile"
+
+#. module: wb_voip_ansitel
+#: model:ir.model.fields,help:wb_voip_ansitel.field_wb_voip_anlage__ansitel_api_url
+msgid "https only, e.g. https://anlage.example/awi/api/rest."
+msgstr "Nur https, z. B. https://anlage.example/awi/api/rest."
+
+#. module: wb_voip_ansitel
+#: model_terms:ir.ui.view,arch_db:wb_voip_ansitel.wb_voip_anlage_view_form_ansitel
+msgid "https://anlage.example/awi/api/rest"
+msgstr "https://anlage.example/awi/api/rest"
+
+#. module: wb_voip_ansitel
+#. odoo-javascript
+#: code:addons/wb_voip_ansitel/static/src/tasten/tastenleiste.xml:0
+msgid "off"
+msgstr "aus"
+
+#. module: wb_voip_ansitel
+#: model:wb.voip.taste,name:wb_voip_ansitel.taste_handy
+msgid "→ Mobile"
+msgstr "→ Handy"
+
+#. module: wb_voip_ansitel
+#. odoo-javascript
+#: code:addons/wb_voip_ansitel/static/src/verpasst/verpasst_geraet.js:0
+msgid "↪ answered by %s · %s"
+msgstr "↪ angenommen von %s · %s"
+
+#. module: wb_voip_ansitel
+#. odoo-javascript
+#: code:addons/wb_voip_ansitel/static/src/verpasst/verpasst_geraet.js:0
+msgid "↪ answered by %s · %s (%s)"
+msgstr "↪ angenommen von %s · %s (%s)"
+
+#. module: wb_voip_ansitel
+#. odoo-javascript
+#: code:addons/wb_voip_ansitel/static/src/verpasst/verpasst_geraet.js:0
+msgid "↪ answered on %s"
+msgstr "↪ angenommen auf %s"
+
+#. module: wb_voip_ansitel
+#. odoo-javascript
+#: code:addons/wb_voip_ansitel/static/src/verpasst/verpasst_geraet.js:0
+msgid "↪ answered on %s (%s)"
+msgstr "↪ angenommen auf %s (%s)"

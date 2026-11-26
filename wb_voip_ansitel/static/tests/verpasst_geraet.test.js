@@ -87,8 +87,8 @@ test("Angenommen auf einem Gerät: Hinweis mit Gerät und Dauer", async () => {
         e.textContent.trim()
     );
     expect(hinweise).toEqual([
-        "↪ angenommen auf Tisch A (4:00)",
-        "↪ angenommen von Hans Kollege · Tisch B (1:30)",
+        "↪ answered on Tisch A (4:00)",
+        "↪ answered by Hans Kollege · Tisch B (1:30)",
     ]);
     // „Bemerkung“ nur beim eigenen Gerät, nicht beim Kollegen
     expect(".o_wb_voip_ansitel_bemerkung").toHaveCount(1);
@@ -103,7 +103,7 @@ test("Kollege geht vor: auch wenn die Zeile ein Gerät hätte, steht der Kollege
         e.textContent.trim()
     );
     expect(hinweise).toEqual([
-        "↪ angenommen von Hans Kollege · Tisch B (1:30)",
+        "↪ answered by Hans Kollege · Tisch B (1:30)",
         "↪ answered by Hans Kollege (0:30)",
     ]);
 });

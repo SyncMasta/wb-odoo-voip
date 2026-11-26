@@ -22,7 +22,7 @@
         <field name="arch" type="xml">
             <form>
                 <sheet>
-                    <widget name="web_ribbon" title="Archiviert" bg_color="text-bg-danger"
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger"
                             invisible="active"/>
                     <group>
                         <group>
@@ -38,7 +38,7 @@
                             <field name="ziel" invisible="ziel_art not in ('fest', 'intern')"
                                    groups="base.group_system"
                                    required="art == 'weiterleitung' and ziel_art in ('fest', 'intern')"
-                                   placeholder="+49 152 28817386 bzw. 100"/>
+                                   placeholder="+49 152 28817386 or 100"/>
                             <field name="ziel" invisible="ziel_art not in ('fest', 'intern')" readonly="1"
                                    groups="!base.group_system"/>
                         </group>
@@ -53,13 +53,13 @@
     </record>
 
     <record id="wb_voip_taste_action" model="ir.actions.act_window">
-        <field name="name">Softphone-Tasten</field>
+        <field name="name">Softphone keys</field>
         <field name="res_model">wb.voip.taste</field>
         <field name="view_mode">list,form</field>
         <field name="context">{'active_test': False}</field>
     </record>
 
-    <menuitem id="wb_voip_menu_taste" name="Softphone-Tasten" parent="wb_voip.wb_voip_menu_root"
+    <menuitem id="wb_voip_menu_taste" name="Softphone keys" parent="wb_voip.wb_voip_menu_root"
               action="wb_voip_taste_action" sequence="60"
               groups="wb_voip.group_wb_voip_manager"/>
 </odoo>

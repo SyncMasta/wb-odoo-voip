@@ -1,6 +1,6 @@
 {
     'name': 'WB VoIP Ansitel',
-    'version': '19.0.1.1.4',
+    'version': '19.0.2.0.0',
     'category': 'Productivity/VoIP',
     'summary': 'Schnelltasten und Anrufabgleich für Ansitel-Telefonanlagen',
     'description': """

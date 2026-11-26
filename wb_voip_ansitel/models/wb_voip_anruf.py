@@ -54,20 +54,20 @@ class WbVoipAnruf(models.Model):
     _inherit = 'wb.voip.anruf'
 
     wb_voip_cdr_linkedid = fields.Char(
-        string='Anruf in der Anlage (linkedid)', copy=False, readonly=True, index='btree_not_null',
-        help="Kennung des Anrufs in der Anrufliste der Anlage; je Benutzer höchstens ein Anruf.")
+        string='Call in the PBX (linkedid)', copy=False, readonly=True, index='btree_not_null',
+        help="Identifier of the call in the PBX call list; at most one call per user.")
     wb_voip_herkunft = fields.Selection(
-        [('softphone', 'Softphone'), ('anlage', 'Anrufliste der Anlage')], string='Herkunft',
+        [('softphone', 'Softphone'), ('anlage', 'PBX call list')], string='Origin',
         default='softphone', readonly=True,
-        help="„Anrufliste der Anlage“: Odoo hat den Anruf nicht gesehen (z. B. geschlossen), "
-             "der Abgleich hat ihn angelegt.")
-    wb_voip_geraet = fields.Char(string='Angenommen auf (Gerät)', copy=False, readonly=True)
+        help='"PBX call list": Odoo did not see the call (e.g. it was closed); '
+             'the reconciliation created it.')
+    wb_voip_geraet = fields.Char(string='Answered on (device)', copy=False, readonly=True)
     # Hash der zuletzt erzeugten Protokollbeschreibung: weicht sie ab, hat jemand sie von Hand geändert
-    wb_voip_bemerkung_hash = fields.Char(copy=False, readonly=True)
+    wb_voip_bemerkung_hash = fields.Char(string='Remark hash', copy=False, readonly=True)
 
     _wb_voip_cdr_linkedid_je_benutzer = models.Constraint(
         'unique(user_id, wb_voip_cdr_linkedid)',
-        'Dieser Anruf der Anlage (linkedid) existiert für den Benutzer schon.')
+        'This PBX call (linkedid) already exists for the user.')
 
     @api.model
     def _wb_voip_nur_server(self):
@@ -141,7 +141,7 @@ class WbVoipAnruf(models.Model):
         """Return the log description of a call answered on a device: device plus remark."""
         self.ensure_one()
         anruf = self.sudo()
-        text = self.env._("Angenommen auf %s.", anruf.wb_voip_geraet)
+        text = self.env._("Answered on %s.", anruf.wb_voip_geraet)
         return f"{text}\n{anruf.notiz}" if anruf.notiz else text
 
     @staticmethod
@@ -163,10 +163,10 @@ class WbVoipAnruf(models.Model):
         with log: the remark is removed, the log stays with the device. Works without a
         licence (like closing missed entries). Returns ``True`` if something was saved.
         """
-        _text_pruefen(self.env, text, self.env._("Bemerkung"), MAX_NOTIZ, pflicht=False)
+        _text_pruefen(self.env, text, self.env._("Remark"), MAX_NOTIZ, pflicht=False)
         anruf = self._wb_voip_eigener()
         if not anruf._wb_voip_bemerkung_moeglich():
-            raise UserError(self.env._("Zu diesem Anruf lässt sich keine Bemerkung speichern."))
+            raise UserError(self.env._("No remark can be saved for this call."))
         text = (text or '').strip()
         protokoll = anruf._wb_voip_eigenes_protokoll()
         if anruf.protokoll_id and not protokoll:
@@ -239,7 +239,7 @@ class WbVoipAnruf(models.Model):
         geraet, dauer, annahme = self._wb_voip_cdr_annahme(anlage, zweige)
         besitzer, geraet_name = Users, False
         if geraet == WEITERLEITUNG:
-            geraet_name = self.env._("Weiterleitung")
+            geraet_name = self.env._("Call forwarding")
         elif geraet:
             eintrag = Geraet._fuer(anlage, geraet)
             geraet_name = (eintrag.name or geraet)[:MAX_GERAET]
@@ -275,7 +275,7 @@ class WbVoipAnruf(models.Model):
             erreicht = annehmer or geaendert[0]
             if erreicht.nummer_e164:
                 # ohne Besitzer (gemeinsames Gerät, Weiterleitung) neutral: kein Benutzername
-                text = None if annehmer else self.env._("Angenommen auf %s", geraet_name)
+                text = None if annehmer else self.env._("Answered on %s", geraet_name)
                 erreicht._wb_voip_nummer_erreicht(bis=ende, text=text)
         return bool(geaendert)
 

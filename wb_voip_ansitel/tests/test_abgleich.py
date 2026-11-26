@@ -171,7 +171,7 @@ class TestCdrLesen(AnsitelCase):
             self._post(antwort({'status': 200, 'data': kaputt}))
             with self.assertRaises(ansitel_api.AnsitelFehler) as fang:
                 self.api._cdr_lesen(self.anlage, von, bis)
-            self.assertEqual(str(fang.exception), 'Ansitel hat unverständlich geantwortet.')
+            self.assertEqual(str(fang.exception), 'Ansitel sent an unintelligible response.')
             self.assertIsNone(fang.exception.__cause__)
 
     def test_kanal_geraet(self):
@@ -697,7 +697,7 @@ class TestAbgleichRegeln(AbgleichCase):
         self.assertFalse(anruf.angenommen_anruf_id)
         # kein Besitzer: neutraler Text ohne Benutzernamen
         self.assertTrue(alt.erledigt)
-        self.assertEqual(alt.erledigt_text, 'Angenommen auf Empfang')
+        self.assertEqual(alt.erledigt_text, 'Answered on Empfang')
         self.assertFalse(self.von_gruppe('L11', self.user_b))
 
     def test_weiterleitung(self):
@@ -706,7 +706,7 @@ class TestAbgleichRegeln(AbgleichCase):
                        billsec=30, direction='outgoing')])
         anruf = self.von_gruppe('L12', self.user_a)
         self.assertEqual((len(anruf), anruf.zustand, anruf.wb_voip_geraet, anruf.dauer_sek),
-                         (1, 'anderswo', 'Weiterleitung', 30))
+                         (1, 'anderswo', 'Call forwarding', 30))
         self.assertFalse(anruf.rueckruf_aktivitaet_id)
         self.assertFalse(anruf.protokoll_id)
         self.assertEqual(anruf.ende, BASIS + timedelta(seconds=42))
@@ -716,7 +716,7 @@ class TestAbgleichRegeln(AbgleichCase):
         self.lauf([cdr('L29', BASIS, '10', 'Local/03023125999@default-0009;1', 'NO ANSWER', nummer(29)),
                    cdr('L29', BASIS, ZIEL, f'PJSIP/{TRUNK}-000009', 'ANSWERED', nummer(29),
                        billsec=30, direction='outgoing')])
-        self.assertEqual(alt.erledigt_text, 'Angenommen auf Weiterleitung')
+        self.assertEqual(alt.erledigt_text, 'Answered on Call forwarding')
 
     def test_rueckruf_erledigt_dann_anderswo_oeffnet_wieder(self):
         anruf = self.verpasst(self.user_a, 27, BASIS)
@@ -751,7 +751,7 @@ class TestAbgleichRegeln(AbgleichCase):
         self.lauf([cdr('L13', BASIS, '10', f'PJSIP/{TRUNK}-000002', 'NO ANSWER', nummer(13)),
                    cdr('L13', BASIS, ZIEL, f'PJSIP/{TRUNK}-000003', 'ANSWERED', nummer(13),
                        billsec=15, direction='outgoing')])
-        self.assertEqual(self.von_gruppe('L13', self.user_a).wb_voip_geraet, 'Weiterleitung')
+        self.assertEqual(self.von_gruppe('L13', self.user_a).wb_voip_geraet, 'Call forwarding')
 
     def test_weiterleitung_ohne_gespraech_nicht_angenommen(self):
         self.lauf([cdr('L14', BASIS, '10', 'Local/03023125999@default-0003;1', 'NO ANSWER', nummer(14)),
@@ -894,7 +894,7 @@ class TestBemerkung(AbgleichCase):
         self.assertEqual((protokoll.ergebnis, protokoll.dauer_sek, protokoll.richtung, protokoll.datum),
                          ('erreicht', 240, 'eingehend', BASIS))
         self.assertEqual(protokoll.partner_id, self.kunden[1])
-        self.assertIn('Angenommen auf Tisch A.', protokoll.beschreibung)
+        self.assertIn('Answered on Tisch A.', protokoll.beschreibung)
         self.assertIn('Angebot schicken', protokoll.beschreibung)
         self.assertEqual(anruf.notiz, 'Angebot schicken')
         # Zweites Speichern: dasselbe Protokoll, nur die Beschreibung
@@ -909,7 +909,7 @@ class TestBemerkung(AbgleichCase):
         # Leer: Bemerkung weg, Protokoll bleibt mit dem Gerät
         anruf.wb_voip_bemerkung_speichern('')
         self.assertTrue(protokoll.exists())
-        self.assertIn('Angenommen auf Tisch A.', protokoll.beschreibung)
+        self.assertIn('Answered on Tisch A.', protokoll.beschreibung)
         self.assertNotIn('Termin', protokoll.beschreibung)
         self.assertFalse(anruf.notiz)
 
@@ -931,7 +931,7 @@ class TestBemerkung(AbgleichCase):
         self.assertIn('Zeile 3', protokoll.beschreibung)
         self.assertIn('Zeile 4', protokoll.beschreibung)
         self.assertNotIn('Zeile 1', protokoll.beschreibung)
-        self.assertEqual(protokoll.beschreibung.count('Angenommen auf Tisch A.'), 1)
+        self.assertEqual(protokoll.beschreibung.count('Answered on Tisch A.'), 1)
         protokoll.with_user(self.user_a).write({'beschreibung': '<p><b>Wichtig</b></p>'})
         anruf.wb_voip_bemerkung_speichern('Nachtrag\nzweite Zeile')
         self.assertIn('<b>Wichtig</b>', protokoll.beschreibung)
@@ -1022,7 +1022,7 @@ class TestGeraete(AbgleichCase):
         self._post(antwort({'status': 500}, 500))
         with self.assertRaises(UserError) as fang:
             self.anlage.action_wb_voip_ansitel_geraete_laden()
-        self.assertEqual(str(fang.exception), 'Ansitel nicht erreichbar.')
+        self.assertEqual(str(fang.exception), 'Ansitel is unreachable.')
         self._post(antwort({'status': 200, 'data': 'text'}))
         with self.assertRaises(UserError):
             self.anlage.action_wb_voip_ansitel_geraete_laden()

@@ -18,11 +18,11 @@
                 </button>
             </div>
             <div t-if="state.fremde_weiterleitung" class="o_wb_voip_tasten_fremd">
-                <span class="o_wb_voip_tasten_fremd_text">Weiterleitung auf <t t-esc="state.fremde_weiterleitung"/></span>
+                <span class="o_wb_voip_tasten_fremd_text">Forward to <t t-esc="state.fremde_weiterleitung"/></span>
                 <button type="button" class="o_wb_voip_tasten_fremd_aus"
                         t-att-title="fremdTitel" t-att-aria-label="fremdTitel"
                         t-att-aria-disabled="beschaeftigt"
-                        t-on-click="weiterleitungAus">aus</button>
+                        t-on-click="weiterleitungAus">off</button>
             </div>
             <div t-if="state.fehler and props.lage === 'softphone'" class="o_wb_voip_tasten_fehler"
                  role="status" t-att-id="fehlerId" t-esc="state.fehler"/>

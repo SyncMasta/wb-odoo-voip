@@ -39,40 +39,39 @@ class WbVoipAnlage(models.Model):
     _inherit = 'wb.voip.anlage'
 
     ansitel_aktiv = fields.Boolean(
-        string='Ansitel-Schnittstelle', copy=False, groups='base.group_system',
-        help="Schnelltasten und Abgleich der Anrufliste über die REST-Schnittstelle der Anlage.")
+        string='Ansitel interface', copy=False, groups='base.group_system',
+        help="Quick keys and call list reconciliation via the PBX REST interface.")
     ansitel_api_url = fields.Char(
-        string='Ansitel-REST-URL', copy=False, groups='base.group_system',
-        help="Nur https, z. B. https://anlage.example/awi/api/rest.")
+        string='Ansitel REST URL', copy=False, groups='base.group_system',
+        help="https only, e.g. https://anlage.example/awi/api/rest.")
     # Nur schreibbar: liefert beim Lesen immer leer, gespeichert wird das Chiffrat
     ansitel_token = fields.Char(
-        string='Ansitel-Token (zentral)', compute='_compute_ansitel_token',
+        string='Ansitel token (central)', compute='_compute_ansitel_token',
         inverse='_inverse_ansitel_token', store=False, copy=False, groups='base.group_system')
     ansitel_token_enc = fields.Char(
-        string='Ansitel-Token (verschlüsselt)', copy=False, groups='base.group_system')
+        string='Ansitel token (encrypted)', copy=False, groups='base.group_system')
     ansitel_token_gesetzt = fields.Boolean(
-        string='Ansitel-Token gespeichert', compute='_compute_ansitel_token_gesetzt')
+        string='Ansitel token saved', compute='_compute_ansitel_token_gesetzt')
     ansitel_tz = fields.Selection(
-        _tz_get, string='Zeitzone der Anrufliste', default='Europe/Berlin', required=True,
-        help="Die Anlage liefert die Zeiten der Anrufliste in Ortszeit dieser Zone.")
+        _tz_get, string='Call list time zone', default='Europe/Berlin', required=True,
+        help="The PBX delivers the times of the call list in local time of this zone.")
     # Stand und Beginn des Abgleichs: per SQL geschrieben, damit das Schreibdatum (Schlüssel des
     # Peer-Caches) unberührt bleibt
     ansitel_cdr_stand = fields.Datetime(
-        string='Anrufliste abgeglichen bis (UTC)', readonly=True, copy=False,
+        string='Call list reconciled until (UTC)', readonly=True, copy=False,
         groups='base.group_system',
-        help="Bis hierhin ist die Anrufliste abgeglichen; der nächste Lauf beginnt 4 Stunden davor.")
+        help="The call list is reconciled up to here; the next run starts 4 hours earlier.")
     ansitel_cdr_ab = fields.Datetime(
-        string='Anrufliste abgeglichen ab (UTC)', readonly=True, copy=False,
+        string='Call list reconciled from (UTC)', readonly=True, copy=False,
         groups='base.group_system',
-        help="Beginn des ersten Abgleichs; kein Lauf liest weiter zurück.")
-    ansitel_geraet_ids = fields.One2many('wb.voip.geraet', 'anlage_id', string='Geräte')
+        help="Start of the first reconciliation; no run reads further back.")
+    ansitel_geraet_ids = fields.One2many('wb.voip.geraet', 'anlage_id', string='Devices')
     # Zusätzliche interne Weiterleitungsziele (Rufgruppen, Warteschlangen), die ``getpeer`` nicht
     # kennt: nur Systemverwaltung, weil jede Weiterleitungstaste „intern“ darauf schalten kann
     ansitel_interne_ziele = fields.Text(
-        string='Weitere interne Ziele', copy=False, groups='base.group_system',
-        help="Rufgruppen oder Warteschlangen dieser Anlage, die als interne Weiterleitungsziele "
-             "erlaubt sind: eine Nummer je Zeile, 2 bis 6 Ziffern. Nebenstellen der Anlage sind "
-             "ohne Eintrag erlaubt.")
+        string='Additional internal targets', copy=False, groups='base.group_system',
+        help="Ring groups or queues of this PBX that are allowed as internal call forwarding targets: one "
+             "number per line, 2 to 6 digits. Extensions of the PBX are allowed without an entry.")
 
     def _ansitel_tz_pruefen(self, vals):
         """Raise ``AccessError`` if a user without system right changes the time zone.
@@ -81,7 +80,8 @@ class WbVoipAnlage(models.Model):
         Internal code running as superuser stays allowed.
         """
         if 'ansitel_tz' in vals and not (self.env.su or self.env.user._is_system()):
-            raise AccessError(self.env._("Die Zeitzone der Anrufliste darf nur die Systemverwaltung ändern."))
+            raise AccessError(self.env._(
+                "Only system administrators may change the time zone of the call list."))
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -117,11 +117,11 @@ class WbVoipAnlage(models.Model):
         for anlage in self.sudo():
             if anlage.ansitel_api_url and not url_ist_https(anlage.ansitel_api_url):
                 raise ValidationError(self.env._(
-                    "Die Ansitel-URL muss mit https:// beginnen und einen Host haben, "
-                    "ohne Benutzer und Passwort, z. B. https://anlage.example/awi/api/rest."))
+                    "The Ansitel URL must start with https:// and have a host, without user name and "
+                    "password, e.g. https://anlage.example/awi/api/rest."))
             if anlage.ansitel_aktiv and not anlage.ansitel_api_url:
                 raise ValidationError(self.env._(
-                    "Für die Ansitel-Schnittstelle fehlt die REST-URL."))
+                    "The REST URL for the Ansitel interface is missing."))
 
     def _ansitel_interne_ziele_liste(self):
         """Return the additional internal targets of this PBX as a set of strings (sudo)."""
@@ -137,7 +137,7 @@ class WbVoipAnlage(models.Model):
                 fehler = Taste._intern_format_fehler(ziel)
                 if fehler:
                     raise ValidationError(self.env._(
-                        "Weitere interne Ziele (eine Nummer je Zeile), „%(ziel)s“: %(fehler)s",
+                        'Additional internal targets (one number per line), "%(ziel)s": %(fehler)s',
                         ziel=ziel, fehler=fehler))
 
     def _compute_ansitel_token(self):
@@ -166,7 +166,7 @@ class WbVoipAnlage(models.Model):
         except UserError as fehler:
             art, text = 'danger', str(fehler)
         else:
-            art, text = 'success', self.env._("Verbindung zur Anlage steht.")
+            art, text = 'success', self.env._("Connection to the PBX established.")
         return {
             'type': 'ir.actions.client',
             'tag': 'display_notification',
@@ -185,7 +185,7 @@ class WbVoipAnlage(models.Model):
         because the owner assignment decides whose calls a device's calls are matched to.
         """
         if not self.env.user._is_system():
-            raise AccessError(self.env._("Geräte laden darf nur die Systemverwaltung."))
+            raise AccessError(self.env._("Only system administrators may load devices."))
         Geraet = self.env['wb.voip.geraet'].sudo()
         Users = self.env['res.users'].sudo()
         neu = 0
@@ -195,7 +195,7 @@ class WbVoipAnlage(models.Model):
             except AnsitelFehler as fehler:
                 raise UserError(str(fehler)) from None
             if not isinstance(liste, list):
-                raise UserError(self.env._("Ansitel hat unverständlich geantwortet."))
+                raise UserError(self.env._("Ansitel sent an unintelligible response."))
             vorhanden = set(Geraet.with_context(active_test=False).search(
                 [('anlage_id', '=', anlage.id)]).mapped('peer_name'))
             for peer in liste:
@@ -221,7 +221,7 @@ class WbVoipAnlage(models.Model):
             'type': 'ir.actions.client',
             'tag': 'display_notification',
             'params': {'title': self.env._("Ansitel"), 'type': 'success', 'sticky': False,
-                       'message': self.env._("%s neue Geräte angelegt.", neu)},
+                       'message': self.env._("%s new devices created.", neu)},
         }
 
     # --- Abgleich mit der Anrufliste (Cron) ---

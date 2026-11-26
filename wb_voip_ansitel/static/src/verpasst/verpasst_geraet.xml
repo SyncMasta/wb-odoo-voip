@@ -4,7 +4,7 @@
         <xpath expr="//button[hasclass('o_wb_voip_erledigen')]" position="before">
             <button t-if="zeile.bemerkung_moeglich" type="button"
                     class="o_wb_voip_ansitel_bemerkung btn btn-sm btn-outline-secondary"
-                    title="Bemerkung" aria-label="Bemerkung"
+                    title="Remark" aria-label="Remark"
                     t-att-aria-expanded="bemerkung.offen === zeile.schluessel ? 'true' : 'false'"
                     t-on-click="() => this.bemerkungOeffnen(zeile)">
                 <i class="fa fa-pencil" aria-hidden="true"/>
@@ -18,14 +18,14 @@
                      t-esc="bemerkung.fehler"/>
                 <textarea class="o_wb_voip_ansitel_bemerkung_eingabe form-control form-control-sm"
                           rows="2" t-att-maxlength="maxBemerkung"
-                          placeholder="Bemerkung zum Gespräch" aria-label="Bemerkung zum Gespräch"
+                          placeholder="Remark on the conversation" aria-label="Remark on the conversation"
                           t-model="bemerkung.text" t-on-keydown="bemerkungTaste"/>
                 <div class="d-flex gap-2 mt-1">
                     <button type="button" class="o_wb_voip_ansitel_bemerkung_speichern btn btn-sm btn-primary"
                             t-att-disabled="bemerkung.speichert"
-                            t-on-click="() => this.bemerkungSpeichern(zeile)">Speichern</button>
+                            t-on-click="() => this.bemerkungSpeichern(zeile)">Save</button>
                     <button type="button" class="o_wb_voip_ansitel_bemerkung_abbrechen btn btn-sm btn-secondary"
-                            t-on-click="() => this.bemerkungAbbrechen()">Abbrechen</button>
+                            t-on-click="() => this.bemerkungAbbrechen()">Cancel</button>
                 </div>
             </div>
         </xpath>

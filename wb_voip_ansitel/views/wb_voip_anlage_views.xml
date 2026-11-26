@@ -6,25 +6,25 @@
         <field name="inherit_id" ref="wb_voip.wb_voip_anlage_view_form"/>
         <field name="arch" type="xml">
             <xpath expr="//field[@name='heranholen_praefix']/ancestor::group" position="after">
-                <group string="Ansitel-Schnittstelle">
+                <group string="Ansitel interface">
                     <field name="ansitel_aktiv" groups="base.group_system"/>
                     <field name="ansitel_api_url" groups="base.group_system"
                            placeholder="https://anlage.example/awi/api/rest"/>
                     <field name="ansitel_token_gesetzt" invisible="1"/>
                     <field name="ansitel_token" password="True"
-                           groups="base.group_system" placeholder="Neuen Token eingeben"/>
+                           groups="base.group_system" placeholder="Enter new token"/>
                     <div colspan="2" class="text-muted"
                          invisible="not ansitel_token_gesetzt">
-                        Token gespeichert – zum Ändern neu eingeben
+                        Token saved – enter again to change
                     </div>
                     <field name="ansitel_tz" readonly="verbindung_gesperrt"/>
                     <field name="ansitel_interne_ziele" groups="base.group_system"
-                           placeholder="z. B. 600 (eine Rufgruppe je Zeile)"/>
+                           placeholder="e.g. 600 (one ring group per line)"/>
                     <div colspan="2" invisible="not id or not ansitel_token_gesetzt">
                         <button name="action_ansitel_testen" type="object" class="btn-secondary"
-                                string="Verbindung testen" groups="wb_voip.group_wb_voip_manager"/>
+                                string="Test connection" groups="wb_voip.group_wb_voip_manager"/>
                         <button name="action_wb_voip_ansitel_geraete_laden" type="object"
-                                class="btn-secondary ms-2" string="Geräte aus Anlage laden"
+                                class="btn-secondary ms-2" string="Load devices from PBX"
                                 groups="base.group_system"/>
                     </div>
                     <field name="ansitel_cdr_stand" groups="base.group_system"/>

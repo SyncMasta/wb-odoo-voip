@@ -7,7 +7,7 @@
         <field name="inherit_id" ref="wb_voip.wb_voip_res_users_view_form_simple"/>
         <field name="arch" type="xml">
             <xpath expr="//field[@name='wb_voip_sip_passwort']/.." position="after">
-                <group string="Schnelltasten">
+                <group string="Quick keys">
                     <field name="wb_voip_handy" readonly="0" placeholder="+49 30 23125 101"/>
                     <field name="wb_voip_ansitel_tastenleiste" readonly="0"/>
                 </group>
@@ -28,9 +28,9 @@
                     <field name="wb_voip_ansitel_nebenstelle" groups="!base.group_system" readonly="1"/>
                     <field name="wb_voip_ansitel_token_gesetzt" invisible="1"/>
                     <field name="wb_voip_ansitel_token" password="True" groups="base.group_system"
-                           placeholder="Neuen Token eingeben"/>
+                           placeholder="Enter new token"/>
                     <div colspan="2" class="text-muted" invisible="not wb_voip_ansitel_token_gesetzt">
-                        Persönlicher Token gespeichert – zum Ändern neu eingeben
+                        Personal token saved – enter again to change
                     </div>
                     <field name="wb_voip_ansitel_ab_zentral" groups="base.group_system"/>
                     <field name="wb_voip_handy" groups="base.group_system"/>

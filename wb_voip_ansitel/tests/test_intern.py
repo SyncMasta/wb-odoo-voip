@@ -6,7 +6,7 @@ from odoo.addons.wb_voip_ansitel.models import ansitel_api
 from .common import PEERS
 from .test_tasten import TastenCase
 
-HINWEIS_UNBEKANNT = 'Interne Nebenstelle unbekannt – bitte Systemverwaltung fragen.'
+HINWEIS_UNBEKANNT = 'Internal extension unknown – please ask the system administrators.'
 
 
 @tagged('wb_voip_ansitel', 'post_install', '-at_install')
@@ -58,7 +58,7 @@ class TestInterneWeiterleitung(TastenCase):
                     self.taste_intern.write({'ziel': ziel})
                 with self.assertRaises(ValidationError), self.env.cr.savepoint():
                     self.anlage.write({'ansitel_interne_ziele': '600\n' + ziel})
-        self.assertIn('Notruf', self.env['wb.voip.taste']._intern_format_fehler('112'))
+        self.assertIn('Emergency', self.env['wb.voip.taste']._intern_format_fehler('112'))
 
     def test_kurzwahl_am_orm_vorbei_nie_gewaehlt(self):
         self._ziel_setzen('112')
@@ -70,7 +70,7 @@ class TestInterneWeiterleitung(TastenCase):
         Taste = self.env['wb.voip.taste'].with_user(self.user_manager)
         with self.assertRaises(AccessError) as fehler:
             self.taste_intern.with_user(self.user_manager).write({'ziel': '100'})
-        self.assertIn('Systemverwaltung', str(fehler.exception))
+        self.assertIn('system administrators', str(fehler.exception))
         with self.assertRaises(AccessError):
             Taste.create({'name': 'X', 'art': 'weiterleitung', 'ziel_art': 'intern', 'ziel': '101'})
         # Auch nicht über die Zielart: aus einer festen Nummer würde sonst ein internes Ziel
@@ -139,7 +139,7 @@ class TestInterneWeiterleitung(TastenCase):
     def test_eigene_nebenstelle_abgelehnt(self):
         self.taste_intern.write({'ziel': '100'})  # Nebenstelle von A, die von B
         zustand = self.schalten(self.taste_intern)
-        self.assertIn('eigene Nebenstelle', zustand['fehler'])
+        self.assertIn('own extension', zustand['fehler'])
         self.assertEqual(self.fake.anzahl('setcallfordwardingonpeer'), 0)
         self.assertIsNone(self.aktiv(zustand)['→ Zentrale'])
         # B darf auf 100 weiterleiten
@@ -151,14 +151,14 @@ class TestInterneWeiterleitung(TastenCase):
         self.user_a.write({'wb_voip_ansitel_nebenstelle': 'Tel100'})
         self.taste_intern.write({'ziel': '100'})
         zustand = self.schalten(self.taste_intern)
-        self.assertIn('eigene Nebenstelle', zustand['fehler'])
+        self.assertIn('own extension', zustand['fehler'])
         self.assertEqual(self.fake.anzahl('setcallfordwardingonpeer'), 0)
 
     def test_eigene_nebenstelle_in_rufgruppenliste(self):
         self.anlage.write({'ansitel_interne_ziele': '100'})
         self.taste_intern.write({'ziel': '100'})
         zustand = self.schalten(self.taste_intern)
-        self.assertIn('eigene Nebenstelle', zustand['fehler'])
+        self.assertIn('own extension', zustand['fehler'])
         self.assertEqual(self.fake.anzahl('setcallfordwardingonpeer'), 0)
 
     def test_am_orm_vorbei_gespeichertes_externes_ziel(self):
@@ -203,7 +203,7 @@ class TestInterneWeiterleitung(TastenCase):
         self.user_a.write({'wb_voip_ansitel_nebenstelle': 'Tel100'})
         self.taste_intern.write({'ziel': '100'})
         zustand = self.schalten(self.taste_intern)
-        self.assertIn('eigene Nebenstelle', zustand['fehler'])
+        self.assertIn('own extension', zustand['fehler'])
         self.assertEqual(self.fake.anzahl('setcallfordwardingonpeer'), 0)
 
     def test_eine_peer_liste_je_anlage(self):
@@ -223,7 +223,7 @@ class TestInterneWeiterleitung(TastenCase):
         self.assertFalse(Users._wb_voip_intern_pruefen(self.anlage, '100', '600'))
         self.assertEqual(self.fake.anzahl('getpeer'), 0)
         self.assertEqual(Users._wb_voip_intern_pruefen(self.anlage, '600', '600'),
-                         'Die eigene Nebenstelle kann nicht Weiterleitungsziel sein.')
+                         'Your own extension cannot be the call forwarding target.')
         self.assertEqual(self.fake.anzahl('getpeer'), 0)
         self.assertFalse(Users._wb_voip_intern_pruefen(self.anlage, '100', '101'))
         self.assertEqual(self.fake.anzahl('getpeer'), 1)

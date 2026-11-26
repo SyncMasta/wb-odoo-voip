@@ -4,21 +4,21 @@
          Handy des jeweiligen Benutzers (Mein Profil › Telefonie); ohne Nummer ist die Taste grau. -->
     <data noupdate="1">
         <record id="taste_ab" model="wb.voip.taste">
-            <field name="name">AB</field>
+            <field name="name">VM</field>
             <field name="sequence">10</field>
             <field name="icon">fa-envelope</field>
             <field name="art">anrufbeantworter</field>
             <field name="ab_modus">sofort</field>
         </record>
         <record id="taste_handy" model="wb.voip.taste">
-            <field name="name">→ Handy</field>
+            <field name="name">→ Mobile</field>
             <field name="sequence">20</field>
             <field name="icon">fa-mobile</field>
             <field name="art">weiterleitung</field>
             <field name="ziel_art">handy</field>
         </record>
         <record id="taste_dnd" model="wb.voip.taste">
-            <field name="name">Nicht stören</field>
+            <field name="name">Do not disturb</field>
             <field name="sequence">30</field>
             <field name="icon">fa-bell-slash</field>
             <field name="art">anrufschutz</field>

@@ -65,7 +65,7 @@ class TestAufruf(AnsitelCase):
 
     def test_inaktiv_ist_nicht_eingerichtet(self):
         self.anlage.write({'ansitel_aktiv': False})
-        self.assertIn('nicht eingerichtet', str(self._fehler()))
+        self.assertIn('not set up', str(self._fehler()))
 
     def test_nicht_https_wird_vor_dem_aufruf_abgewiesen(self):
         post = self._post(antwort({'status': 200}))
@@ -93,12 +93,12 @@ class TestAufruf(AnsitelCase):
         with self.assertLogs(LOGGER, level='WARNING') as logs:
             fehler = self._fehler()
         self._kein_geheimnis(fehler, logs.output)
-        self.assertIn('nicht erreichbar', str(fehler))
+        self.assertIn('unreachable', str(fehler))
 
     def test_http_fehler(self):
-        for code, text in ((401, 'lehnt den Token ab'), (403, 'lehnt den Token ab'),
-                           (400, 'lehnt die Anfrage ab'), (500, 'nicht erreichbar'),
-                           (302, 'nicht erreichbar')):
+        for code, text in ((401, 'rejects the token'), (403, 'rejects the token'),
+                           (400, 'rejects the request'), (500, 'unreachable'),
+                           (302, 'unreachable')):
             with self.subTest(code=code):
                 self._post(antwort({'status': 200}, status_code=code))
                 with self.assertLogs(LOGGER, level='WARNING') as logs:

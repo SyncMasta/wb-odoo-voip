@@ -12,9 +12,9 @@ from odoo.addons.wb_voip_ansitel.models import ansitel_api
 from .common import PEERS, TOKEN, URL, AnsitelCase, antwort
 
 TOKEN_A = 'persoenlicher-token-a-456'
-HINWEIS_AB = 'AB braucht persönlichen Ansitel-Token oder Freigabe – bitte Administrator fragen.'
-HINWEIS_HANDY = 'Bitte unter Mein Profil › Telefonie Ihr Handy eintragen.'
-NICHT_ERREICHBAR = 'Ansitel nicht erreichbar.'
+HINWEIS_AB = 'Voicemail needs a personal Ansitel token or approval – please ask an administrator.'
+HINWEIS_HANDY = 'Please enter your mobile phone under My Profile › Telephony.'
+NICHT_ERREICHBAR = 'Ansitel is unreachable.'
 LOGGER_USERS = 'odoo.addons.wb_voip_ansitel.models.res_users'
 LOGGER_API = 'odoo.addons.wb_voip_ansitel.models.ansitel_api'
 
@@ -162,7 +162,7 @@ class TestTastenFelder(TastenCase):
                     self.user_a.with_user(benutzer).write(werte)
         with self.assertRaises(AccessError) as fehler:
             self.user_a.with_user(verwalter).write({'wb_voip_ansitel_nebenstelle': '102'})
-        self.assertIn('Systemverwaltung', str(fehler.exception))
+        self.assertIn('system administrators', str(fehler.exception))
         with self.assertRaises(AccessError):
             self.env['res.users'].with_user(verwalter).with_context(no_reset_password=True).create({
                 'name': 'Neu', 'login': 'wb_voip_ansitel_neu', 'wb_voip_anlage_id': self.anlage.id,
@@ -321,7 +321,7 @@ class TestTasteModell(TastenCase):
         manager = self.taste_handy.with_user(self.user_manager)
         with self.assertRaises(AccessError) as fehler:
             manager.write({'ziel': '+49 152 28817389'})
-        self.assertIn('Systemverwaltung', str(fehler.exception))
+        self.assertIn('system administrators', str(fehler.exception))
         with self.assertRaises(AccessError):
             self.env['wb.voip.taste'].with_user(self.user_manager).create({
                 'name': 'X', 'art': 'weiterleitung', 'ziel': '+49 152 28817389'})
@@ -379,7 +379,7 @@ class TestWeiterleitungsziele(TastenCase):
                             ('CH', ('0900 123 456', '0901 123 456', '+41 906 123 456'))):
             for ziel in ziele:
                 with self.subTest(land=land, ziel=ziel):
-                    self.assertIn('Sonder', Taste._ziel_pruefen(ziel, land))
+                    self.assertIn('premium-rate', Taste._ziel_pruefen(ziel, land))
         self.assertFalse(Taste._ziel_pruefen('0660 1234567', 'AT'))
         self.assertFalse(Taste._ziel_pruefen('079 123 45 67', 'CH'))
 
@@ -390,7 +390,7 @@ class TestWeiterleitungsziele(TastenCase):
             with self.subTest(ziel=ziel):
                 self.assertTrue(Taste._ziel_pruefen(ziel, 'DE'))
         # Sondernummern im Ausland bleiben gesperrt
-        self.assertIn('Sonder', Taste._ziel_pruefen('+43 900 123456', 'DE'))
+        self.assertIn('premium-rate', Taste._ziel_pruefen('+43 900 123456', 'DE'))
         self.assertFalse(Taste._ziel_pruefen('+43 660 1234567', 'DE'))
 
     def test_gewaehlt_wird_die_normalform(self):
@@ -407,9 +407,9 @@ class TestWeiterleitungsziele(TastenCase):
 
     def test_meldungen(self):
         Taste = self.env['wb.voip.taste']
-        self.assertIn('Sonder', Taste._ziel_pruefen('0900 1234567', 'DE'))
-        self.assertIn('Notruf', Taste._ziel_pruefen('112', 'DE'))
-        self.assertIn('Ausland', Taste._ziel_pruefen('+43 660 1234567', 'DE'))
+        self.assertIn('premium-rate', Taste._ziel_pruefen('0900 1234567', 'DE'))
+        self.assertIn('Emergency', Taste._ziel_pruefen('112', 'DE'))
+        self.assertIn('abroad', Taste._ziel_pruefen('+43 660 1234567', 'DE'))
 
     def test_ausland_nur_mit_freigabe(self):
         Taste = self.env['wb.voip.taste']
@@ -431,7 +431,7 @@ class TestWeiterleitungsziele(TastenCase):
         self.env.cr.execute("UPDATE wb_voip_taste SET ziel = '0900 1234567' WHERE id = %s", [self.taste_handy.id])
         self.taste_handy.invalidate_recordset(['ziel'])
         zustand = self.schalten(self.taste_handy)
-        self.assertIn('Sonder', zustand['fehler'])
+        self.assertIn('premium-rate', zustand['fehler'])
         self.assertEqual(self.fake.anzahl('setcallfordwardingonpeer'), 0)
         self.assertIsNone(self.aktiv(zustand)['→ Handy'])
 
@@ -439,7 +439,7 @@ class TestWeiterleitungsziele(TastenCase):
         self.env.cr.execute("UPDATE res_users SET wb_voip_handy = '0137 1234567' WHERE id = %s", [self.user_a.id])
         self.user_a.invalidate_recordset(['wb_voip_handy'])
         zustand = self.schalten(self.taste_mein)
-        self.assertIn('Sonder', zustand['fehler'])
+        self.assertIn('premium-rate', zustand['fehler'])
         self.assertEqual(self.fake.anzahl('setcallfordwardingonpeer'), 0)
         self.assertIsNone(self.aktiv(zustand)['→ Mein Handy'])
 
@@ -522,6 +522,7 @@ class TestTastenZustand(TastenCase):
         zustand = self.zustand()
         self.assertTrue(zustand['verfuegbar'])
         self.assertEqual(set(self.aktiv(zustand).values()), {None})
+        # Meldung kommt aus wb_license_client (nicht aus diesem Modul)
         self.assertEqual(zustand['fehler'], 'Lizenz fehlt oder abgelaufen')
         self.assertFalse(self.fake.aufrufe)
 
@@ -578,7 +579,7 @@ class TestTastenZustand(TastenCase):
         with mute_logger('odoo.addons.wb_voip_ansitel.models.ansitel_api'):
             zustand = self.zustand()
         self.assertTrue(zustand['verfuegbar'])
-        self.assertEqual(zustand['fehler'], 'Ansitel hat unverständlich geantwortet.')
+        self.assertEqual(zustand['fehler'], 'Ansitel sent an unintelligible response.')
         self.assertEqual(set(self.aktiv(zustand).values()), {None})
 
     def test_programmierfehler_nicht_verschluckt(self):
@@ -590,7 +591,7 @@ class TestTastenZustand(TastenCase):
         self._post(antwort({'status': 200, 'data': [1]}))
         with self.assertLogs(LOGGER_API, 'WARNING') as logs, self.assertRaises(UserError) as fehler:
             api._dnd_lesen(self.anlage, 7)
-        self.assertEqual(str(fehler.exception), 'Ansitel hat unverständlich geantwortet.')
+        self.assertEqual(str(fehler.exception), 'Ansitel sent an unintelligible response.')
         self.assertIn('_dnd_lesen', ' '.join(logs.output))
         self._post(antwort(PEERS), antwort({'status': 200, 'data': {'peer': {'1': 'kein dict'}}}))
         with mute_logger(LOGGER_API), self.assertRaises(UserError):
@@ -601,7 +602,7 @@ class TestTastenZustand(TastenCase):
                 mute_logger(LOGGER_USERS):
             zustand = self.zustand()
         self.assertTrue(zustand['verfuegbar'])
-        self.assertEqual(zustand['fehler'], 'Schnelltasten sind gerade nicht verfügbar.')
+        self.assertEqual(zustand['fehler'], 'Quick keys are currently unavailable.')
 
     def test_bus_nur_zustand(self):
         self.user_a.write({'wb_voip_ansitel_token': TOKEN_A})
@@ -769,16 +770,16 @@ class TestTastenSchalten(TastenCase):
         for falsch in ('ja', 1, 0, [True]):
             with self.subTest(falsch=falsch):
                 zustand = self.schalten(self.taste_dnd, an=falsch)
-                self.assertEqual(zustand['fehler'], 'Ungültiger Wunschzustand.')
+                self.assertEqual(zustand['fehler'], 'Invalid requested state.')
         self.assertEqual(self.fake.anzahl('setdndonpeer'), 0)
 
     def test_ungueltige_taste(self):
         for falsch in (0, -1, 999999, 'x', None, True):
             with self.subTest(falsch=falsch):
                 zustand = self.als(self.user_a).wb_voip_taste_schalten(falsch)
-                self.assertEqual(zustand['fehler'], 'Diese Taste gibt es nicht mehr.')
+                self.assertEqual(zustand['fehler'], 'This key no longer exists.')
         self.taste_dnd.active = False
-        self.assertEqual(self.schalten(self.taste_dnd)['fehler'], 'Diese Taste gibt es nicht mehr.')
+        self.assertEqual(self.schalten(self.taste_dnd)['fehler'], 'This key no longer exists.')
         self.assertFalse(any(a['action'].startswith('set') for a in self.fake.aufrufe))
 
     def test_weiterleitung_fest(self):
@@ -872,5 +873,5 @@ class TestTastenSchalten(TastenCase):
         self._post(side_effect=ablehnen)
         with mute_logger('odoo.addons.wb_voip_ansitel.models.ansitel_api'):
             zustand = self.schalten(self.taste_dnd)
-        self.assertEqual(zustand['fehler'], 'Ansitel lehnt die Anfrage ab.')
+        self.assertEqual(zustand['fehler'], 'Ansitel rejects the request.')
         self.assertFalse(self.aktiv(zustand)['Nicht stören'])

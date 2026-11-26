@@ -21,7 +21,7 @@
         <field name="arch" type="xml">
             <form>
                 <sheet>
-                    <widget name="web_ribbon" title="Archiviert" bg_color="text-bg-danger"
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger"
                             invisible="active"/>
                     <group>
                         <group>
@@ -48,24 +48,24 @@
                 <field name="name"/>
                 <field name="peer_name"/>
                 <field name="user_id"/>
-                <filter name="ohne_benutzer" string="Ohne Benutzer" domain="[('user_id', '=', False)]"/>
-                <filter name="archiviert" string="Archiviert" domain="[('active', '=', False)]"/>
+                <filter name="ohne_benutzer" string="No user" domain="[('user_id', '=', False)]"/>
+                <filter name="archiviert" string="Archived" domain="[('active', '=', False)]"/>
             </search>
         </field>
     </record>
 
     <record id="wb_voip_geraet_action" model="ir.actions.act_window">
-        <field name="name">Geräte der Telefonanlage</field>
+        <field name="name">PBX devices</field>
         <field name="res_model">wb.voip.geraet</field>
         <field name="view_mode">list,form</field>
         <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">Noch keine Geräte</p>
-            <p>Die Systemverwaltung lädt sie an der Telefonanlage mit „Geräte aus Anlage laden“.
-                Die Anrufliste nennt so, auf welchem Gerät ein Anruf angenommen wurde.</p>
+            <p class="o_view_nocontent_smiling_face">No devices yet</p>
+            <p>System administrators load them on the PBX with "Load devices from PBX".
+                This way the call list shows on which device a call was answered.</p>
         </field>
     </record>
 
-    <menuitem id="wb_voip_menu_geraet" name="Geräte" parent="wb_voip.wb_voip_menu_root"
+    <menuitem id="wb_voip_menu_geraet" name="Devices" parent="wb_voip.wb_voip_menu_root"
               action="wb_voip_geraet_action" sequence="65"
               groups="wb_voip.group_wb_voip_manager"/>
 </odoo>

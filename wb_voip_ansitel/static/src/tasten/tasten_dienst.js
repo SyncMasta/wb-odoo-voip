@@ -166,7 +166,7 @@ export class TastenDienst {
         try {
             this._speichern(await this.orm.call("res.users", methode, args));
         } catch {
-            this.state.fehler = _t("Schnelltasten sind gerade nicht verfügbar.");
+            this.state.fehler = _t("Quick keys are currently unavailable.");
         } finally {
             this.state.schaltet = false;
         }

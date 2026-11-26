@@ -4,23 +4,24 @@ from odoo.exceptions import ValidationError
 
 class WbVoipGeraet(models.Model):
     _name = 'wb.voip.geraet'
-    _description = 'WB VoIP: Gerät der Telefonanlage'
+    _description = 'WB VoIP: PBX device'
     _order = 'anlage_id, name, id'
 
-    name = fields.Char(string='Bezeichnung', required=True)
+    name = fields.Char(string='Name', required=True)
     peer_name = fields.Char(
-        string='Gerät (Peer-Name)', required=True,
-        help="Name des Geräts in der Anlage, z. B. Tel51. Er steht im Zielkanal der Anrufliste.")
-    nebenstelle = fields.Char(string='Nebenstelle', help="Interne Rufnummer laut Anlage.")
+        string='Device (peer name)', required=True,
+        help="Name of the device on the PBX, e.g. Tel51. It appears in the destination channel "
+             "of the call list.")
+    nebenstelle = fields.Char(string='Extension', help="Internal phone number according to the PBX.")
     anlage_id = fields.Many2one(
-        'wb.voip.anlage', string='Telefonanlage', required=True, index=True, ondelete='cascade')
+        'wb.voip.anlage', string='PBX', required=True, index=True, ondelete='cascade')
     user_id = fields.Many2one(
-        'res.users', string='Benutzer', index='btree_not_null', ondelete='set null',
-        help="Wem das Gerät gehört; leer bei Geräten ohne festen Besitzer (z. B. Empfang).")
-    active = fields.Boolean(string='Aktiv', default=True)
+        'res.users', string='User', index='btree_not_null', ondelete='set null',
+        help="Who owns the device; empty for devices without a fixed owner (e.g. reception).")
+    active = fields.Boolean(string='Active', default=True)
 
     _peer_je_anlage = models.Constraint(
-        'unique(anlage_id, peer_name)', 'Dieses Gerät gibt es an der Telefonanlage schon.')
+        'unique(anlage_id, peer_name)', 'This device already exists on the PBX.')
 
     @staticmethod
     def _bereinigen(vals):
@@ -41,7 +42,7 @@ class WbVoipGeraet(models.Model):
     def _check_peer_name(self):
         for geraet in self:
             if not (geraet.peer_name or '').strip():
-                raise ValidationError(self.env._("Der Peer-Name des Geräts darf nicht leer sein."))
+                raise ValidationError(self.env._("The peer name of the device must not be empty."))
 
     @api.model
     def _fuer(self, anlage, peer_name):

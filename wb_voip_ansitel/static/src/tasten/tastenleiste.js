@@ -39,8 +39,8 @@ export class WbVoipTastenleiste extends Component {
     /** Bei „beide“ gibt es zwei Gruppen mit gleichem Zweck: die am Rand bekommt einen eigenen Namen. */
     get gruppenName() {
         return this.props.lage === "rand" && this.state.ort === "beide"
-            ? _t("Schnelltasten am Rand")
-            : _t("Schnelltasten");
+            ? _t("Quick keys on the edge")
+            : _t("Quick keys");
     }
 
     get fehlerId() {
@@ -98,7 +98,7 @@ export class WbVoipTastenleiste extends Component {
     }
 
     get fremdTitel() {
-        return _t("Weiterleitung auf %s ausschalten", this.state.fremde_weiterleitung);
+        return _t("Turn off forwarding to %s", this.state.fremde_weiterleitung);
     }
 }
 
@@ -121,6 +121,6 @@ patch(WbVoipSystray.prototype, {
     },
     get titel() {
         const titel = super.titel;
-        return this.tasten.umgeleitet ? _t("%s, Anrufe werden umgeleitet", titel) : titel;
+        return this.tasten.umgeleitet ? _t("%s, calls are being forwarded", titel) : titel;
     },
 });

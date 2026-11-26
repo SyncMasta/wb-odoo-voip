@@ -30,15 +30,15 @@ patch(Verpasstliste.prototype, {
             if (!kollege.geraet) {
                 return super.hinweis(zeile);
             }
-            const name = kollege.name || _t("Kollege");
+            const name = kollege.name || _t("Colleague");
             return kollege.dauer_sek
-                ? _t("↪ angenommen von %s · %s (%s)", name, kollege.geraet, formatDauer(kollege.dauer_sek))
-                : _t("↪ angenommen von %s · %s", name, kollege.geraet);
+                ? _t("↪ answered by %s · %s (%s)", name, kollege.geraet, formatDauer(kollege.dauer_sek))
+                : _t("↪ answered by %s · %s", name, kollege.geraet);
         }
         if (zeile.geraet) {
             return zeile.geraet_dauer_sek
-                ? _t("↪ angenommen auf %s (%s)", zeile.geraet, formatDauer(zeile.geraet_dauer_sek))
-                : _t("↪ angenommen auf %s", zeile.geraet);
+                ? _t("↪ answered on %s (%s)", zeile.geraet, formatDauer(zeile.geraet_dauer_sek))
+                : _t("↪ answered on %s", zeile.geraet);
         }
         return super.hinweis(zeile);
     },
@@ -73,7 +73,7 @@ patch(Verpasstliste.prototype, {
             ]);
         } catch (fehler) {
             this.bemerkung.fehler =
-                fehler?.data?.message || _t("Die Bemerkung konnte nicht gespeichert werden.");
+                fehler?.data?.message || _t("The remark could not be saved.");
             return;
         } finally {
             this.bemerkung.speichert = false;

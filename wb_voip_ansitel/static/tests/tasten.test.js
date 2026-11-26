@@ -276,7 +276,7 @@ test("Fehler beim Schalten: Tasten bleiben sichtbar, Hinweis gesetzt, Sperre gel
     const dienst = await dienstStarten();
     await dienst.schalten(1, true);
     expect(dienst.state.schaltet).toBe(false);
-    expect(dienst.state.fehler).toBe("Schnelltasten sind gerade nicht verfügbar.");
+    expect(dienst.state.fehler).toBe("Quick keys are currently unavailable.");
     expect(dienst.state.tasten.length).toBe(3);
     expect(w.aufrufe.length).toBe(2);
 });
@@ -336,7 +336,7 @@ test("Leiste im Softphone zeigt die Tasten mit Zustand, ARIA und Namen", async (
 });
 
 test("Graue Taste: gestrichelt, aria-pressed false mit aria-describedby, Hinweistext sichtbar und im Titel", async () => {
-    const hinweis = "AB braucht persönlichen Ansitel-Token oder Freigabe – bitte Administrator fragen.";
+    const hinweis = "Voicemail needs a personal Ansitel token or approval – please ask an administrator.";
     vorbereiten({ antworten: { wb_voip_tasten_zustand: zustand({ fehler: hinweis }) } });
     await mountWithCleanup(WbVoipTastenleiste, { props: { lage: "softphone" } });
     await animationFrame();
@@ -428,7 +428,7 @@ test("Bei „beide“ trägt die Rand-Leiste einen eigenen Namen", async () => {
     await animationFrame();
     expect(".o_wb_voip_tasten_rand [role='group']:first").toHaveAttribute(
         "aria-label",
-        "Schnelltasten am Rand"
+        "Quick keys on the edge"
     );
 });
 
@@ -438,7 +438,7 @@ test("Im Softphone heißt die Gruppe „Schnelltasten“", async () => {
     await animationFrame();
     expect(".o_wb_voip_tasten_softphone [role='group']:first").toHaveAttribute(
         "aria-label",
-        "Schnelltasten"
+        "Quick keys"
     );
 });
 
@@ -451,10 +451,10 @@ test("Fremde Weiterleitung: Zeile mit Knopf „aus“", async () => {
     });
     await mountWithCleanup(WbVoipTastenleiste, { props: { lage: "softphone" } });
     await animationFrame();
-    expect(".o_wb_voip_tasten_fremd").toHaveText(/Weiterleitung auf \+49 30 1234/);
+    expect(".o_wb_voip_tasten_fremd").toHaveText(/Forward to \+49 30 1234/);
     expect(".o_wb_voip_tasten_fremd_aus").toHaveAttribute(
         "aria-label",
-        "Weiterleitung auf +49 30 1234 ausschalten"
+        "Turn off forwarding to +49 30 1234"
     );
     await click(".o_wb_voip_tasten_fremd_aus");
     await animationFrame();
@@ -465,7 +465,7 @@ test("Fremde Weiterleitung: Zeile mit Knopf „aus“", async () => {
 test("Einstellung rand: im Softphone keine Leiste", async () => {
     vorbereiten({
         ort: "rand",
-        antworten: { wb_voip_tasten_zustand: zustand({ fehler: "Ansitel nicht erreichbar." }) },
+        antworten: { wb_voip_tasten_zustand: zustand({ fehler: "Ansitel is unreachable." }) },
     });
     await mountWithCleanup(WbVoipTastenleiste, { props: { lage: "softphone" } });
     await animationFrame();
@@ -475,7 +475,7 @@ test("Einstellung rand: im Softphone keine Leiste", async () => {
 test("Rand-Leiste: Einstellung rand zeigt sie, Fehler als Symbol mit Titel", async () => {
     vorbereiten({
         ort: "rand",
-        antworten: { wb_voip_tasten_zustand: zustand({ fehler: "Ansitel nicht erreichbar." }) },
+        antworten: { wb_voip_tasten_zustand: zustand({ fehler: "Ansitel is unreachable." }) },
     });
     await mountWithCleanup(WbVoipTastenleiste, { props: { lage: "rand" } });
     await animationFrame();
@@ -483,7 +483,7 @@ test("Rand-Leiste: Einstellung rand zeigt sie, Fehler als Symbol mit Titel", asy
     expect(".o_wb_voip_tasten_rand").toHaveCount(2);
     expect(".o_wb_voip_tasten_fehler_icon:first").toHaveAttribute(
         "title",
-        "Ansitel nicht erreichbar."
+        "Ansitel is unreachable."
     );
     expect(".o_wb_voip_tasten_fehler").toHaveCount(0);
     expect(document.body).toHaveClass("o_wb_voip_tasten_rand_platz");
@@ -526,9 +526,9 @@ test("Punkt am Systray-Symbol bei umgeleitet, mit Hinweis im Titel", async () =>
     await mountWithCleanup(WbVoipSystray);
     await animationFrame();
     expect(".o_wb_voip_ansitel_umgeleitet_punkt").toHaveCount(1);
-    expect(".o_wb_voip_systray_knopf").toHaveAttribute("title", /Anrufe werden umgeleitet/);
+    expect(".o_wb_voip_systray_knopf").toHaveAttribute("title", /calls are being forwarded/);
     w.busSenden(zustand({ umgeleitet: false }));
     await animationFrame();
     expect(".o_wb_voip_ansitel_umgeleitet_punkt").toHaveCount(0);
-    expect(".o_wb_voip_systray_knopf").not.toHaveAttribute("title", /umgeleitet/);
+    expect(".o_wb_voip_systray_knopf").not.toHaveAttribute("title", /forwarded/);
 });
