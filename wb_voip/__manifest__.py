@@ -1,6 +1,6 @@
 {
     'name': 'WB VoIP',
-    'version': '19.0.5.1.0',
+    'version': '19.0.5.1.1',
     'category': 'Productivity/VoIP',
     'summary': 'Softphone, call log and PBX integration for Odoo',
     'description': """

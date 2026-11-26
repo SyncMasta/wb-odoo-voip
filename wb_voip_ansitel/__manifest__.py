@@ -1,6 +1,6 @@
 {
     'name': 'WB VoIP Ansitel',
-    'version': '19.0.2.0.1',
+    'version': '19.0.2.0.2',
     'category': 'Productivity/VoIP',
     'summary': 'Quick keys and call list reconciliation for Ansitel PBXs',
     'description': """
