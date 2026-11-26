@@ -92,6 +92,10 @@ man im Designer; im Formular ist die Feldspalte nur mit diesem Recht sichtbar.
 * **Nur lesbare Felder**: Kontaktfelder erscheinen nur, wenn der angemeldete Benutzer sie auch sonst lesen
   darf; andere Felder bleiben für ihn weg. Zugangsdaten- und Systemfelder (Passwörter, Tokens, Schlüssel,
   Anmeldelinks) lassen sich nie einbinden, Verknüpfungen nur auf eine feste Liste unkritischer Modelle.
+* **Übersetzungen**: Titel und Text eines Blocks sind übersetzbar; Speichern im Designer ändert nur die
+  Sprache des angemeldeten Benutzers, die anderen Sprachen bleiben. Bekannte Grenze: Speichert man in einer
+  Sprache ohne eigene Übersetzung, wird der angezeigte Ersatztext (meist Englisch) als Übersetzung dieser
+  Sprache gespeichert.
 
 Die Schaltflächen „Zuordnen“ und „Neuer Kontakt“ bei unbekannter Nummer stehen immer im Kopf des Fensters,
 unabhängig vom Layout, damit sich ein Anruf nie ohne Zuordnungsmöglichkeit verirrt.
