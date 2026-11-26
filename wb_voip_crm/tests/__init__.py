@@ -5,3 +5,5 @@ from . import test_aktion_vorgang
 from . import test_block_vorgaenge
 from . import test_js
 from . import test_i18n
+from . import test_de
+from . import test_migration_quellsprache

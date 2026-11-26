@@ -54,15 +54,15 @@ export class VorgaengeBlock extends Component {
     }
 
     zuordnenLabel(vorgang) {
-        return _t("Vorgang %s dem Anruf zuordnen", vorgang.name);
+        return _t("Assign opportunity %s to the call", vorgang.name);
     }
 
     loesenLabel(vorgang) {
-        return _t("Zuordnung zu %s lösen", vorgang.name);
+        return _t("Remove assignment to %s", vorgang.name);
     }
 
     oeffnenLabel(vorgang) {
-        return _t("Vorgang %s öffnen", vorgang.name);
+        return _t("Open opportunity %s", vorgang.name);
     }
 
     /** Setzt (``vorgangId``) oder löst (``false``) die Zuordnung am eigenen Anruf. */
@@ -88,11 +88,11 @@ export class VorgaengeBlock extends Component {
     }
 
     zuordnen(vorgang) {
-        return this.setzen(vorgang.id, _t("Der Vorgang konnte nicht zugeordnet werden."));
+        return this.setzen(vorgang.id, _t("The opportunity could not be assigned."));
     }
 
     loesen() {
-        return this.setzen(false, _t("Die Zuordnung konnte nicht gelöst werden."));
+        return this.setzen(false, _t("The assignment could not be removed."));
     }
 
     oeffnen(vorgang) {
@@ -106,4 +106,4 @@ export class VorgaengeBlock extends Component {
     }
 }
 
-blockRegistry.add("vorgaenge", { component: VorgaengeBlock, label: _t("Vorgänge") });
+blockRegistry.add("vorgaenge", { component: VorgaengeBlock, label: _t("Opportunities") });

@@ -54,7 +54,7 @@ class TestBlockVorgaenge(WbVoipCrmCase):
     def test_designer_kennt_die_art(self):
         daten = self.Layout.with_user(self.user_manager).wb_voip_designer_laden(False)
         arten = {a['art']: a for a in daten['arten']['anrufer_fenster']}
-        self.assertEqual(arten['vorgaenge'], {'art': 'vorgaenge', 'label': 'Vorgänge',
+        self.assertEqual(arten['vorgaenge'], {'art': 'vorgaenge', 'label': 'Opportunities',
                                              'gezaehlt': True})
         self.assertNotIn('vorgaenge', [a['art'] for a in daten['arten']['protokoll_popup']])
 

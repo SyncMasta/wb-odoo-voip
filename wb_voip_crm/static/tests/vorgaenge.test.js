@@ -51,7 +51,7 @@ async function zeigen(daten, { anruf = { id: 10 }, extra = {} } = {}) {
 test("Block ist registriert und heißt Vorgänge", async () => {
     // die Test-Umgebung lädt die Übersetzungen
     await makeMockEnv();
-    expect(artLabel("vorgaenge")).toBe("Vorgänge");
+    expect(artLabel("vorgaenge")).toBe("Opportunities");
 });
 
 test("Zeilen mit Name, Stufe und Umsatz nur als Text, zugeordneter markiert", async () => {
@@ -97,7 +97,7 @@ test("Lösen nur an der zugeordneten Zeile, ruft setzen mit false und leert die 
     expect(".o_wb_voip_lb_vorgang_aktiv .o_wb_voip_lb_vorgang_loesen").toHaveCount(1);
     expect(".o_wb_voip_lb_vorgang_loesen").toHaveAttribute(
         "aria-label",
-        "Zuordnung zu Angebot <b>Dach</b> lösen"
+        "Remove assignment to Angebot <b>Dach</b>"
     );
     await click(".o_wb_voip_lb_vorgang_loesen");
     await animationFrame();
@@ -129,10 +129,10 @@ test("Vorschau ohne Anruf: auch kein Lösen-Knopf", async () => {
 test("Knöpfe nennen den Vorgang, gekürzter Name hat einen Titel", async () => {
     await zeigen(VORGAENGE);
     const zuordnen = queryAll(".o_wb_voip_lb_vorgang_zuordnen")[0];
-    expect(zuordnen).toHaveAttribute("aria-label", "Vorgang Zweiter Vorgang dem Anruf zuordnen");
+    expect(zuordnen).toHaveAttribute("aria-label", "Assign opportunity Zweiter Vorgang to the call");
     expect(queryAll(".o_wb_voip_lb_vorgang_oeffnen")[1]).toHaveAttribute(
         "aria-label",
-        "Vorgang Zweiter Vorgang öffnen"
+        "Open opportunity Zweiter Vorgang"
     );
     expect(queryAll(".o_wb_voip_lb_vorgang_name")[1]).toHaveAttribute("title", "Zweiter Vorgang");
 });

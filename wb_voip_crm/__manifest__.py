@@ -1,6 +1,6 @@
 {
     'name': 'WB VoIP CRM',
-    'version': '19.0.1.0.4',
+    'version': '19.0.2.0.0',
     'category': 'Productivity/VoIP',
     'summary': 'Anrufe und Anrufprotokolle am CRM-Vorgang',
     'description': """

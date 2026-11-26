@@ -9,9 +9,9 @@ class CrmLead(models.Model):
     _inherit = 'crm.lead'
 
     wb_voip_anruf_anzahl = fields.Integer(
-        string='Anzahl Anrufe', compute='_compute_wb_voip_anruf_anzahl', groups=GRUPPE)
+        string='Number of calls', compute='_compute_wb_voip_anruf_anzahl', groups=GRUPPE)
     wb_voip_protokoll_ids = fields.Many2many(
-        'wb.voip.protokoll', string='Anrufprotokolle',
+        'wb.voip.protokoll', string='Call logs',
         compute='_compute_wb_voip_protokoll_ids', groups=GRUPPE)
 
     @api.depends_context('uid')
@@ -42,7 +42,7 @@ class CrmLead(models.Model):
         self.env['wb.voip.anruf'].check_access('read')
         return {
             'type': 'ir.actions.act_window',
-            'name': self.env._("Anrufe"),
+            'name': self.env._("Calls"),
             'res_model': 'wb.voip.anruf',
             'view_mode': 'list,form',
             'domain': [('res_model', '=', 'crm.lead'), ('res_id', '=', self.id)],

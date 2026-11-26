@@ -12,7 +12,7 @@ class WbVoipLayoutBlock(models.Model):
 
     # Ohne dieses Modul gibt es die Blockart nicht mehr: ihre Blöcke werden mit gelöscht
     art = fields.Selection(
-        selection_add=[('vorgaenge', 'Vorgänge')], ondelete={'vorgaenge': 'cascade'})
+        selection_add=[('vorgaenge', 'Opportunities')], ondelete={'vorgaenge': 'cascade'})
 
 
 class WbVoipLayout(models.Model):

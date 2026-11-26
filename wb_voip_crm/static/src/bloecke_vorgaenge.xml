@@ -4,7 +4,7 @@
     <t t-name="wb_voip_crm.LayoutBlockVorgaenge">
         <section t-if="vorgaenge.length" class="o_wb_voip_lb_block o_wb_voip_lb_vorgaenge mb-3"
                  t-att-aria-labelledby="titelId">
-            <h3 t-att-id="titelId" class="o_wb_voip_lb_titel h6 text-muted"><t t-if="titel" t-esc="titel"/><t t-else="">Vorgänge</t></h3>
+            <h3 t-att-id="titelId" class="o_wb_voip_lb_titel h6 text-muted"><t t-if="titel" t-esc="titel"/><t t-else="">Opportunities</t></h3>
             <ul class="list-unstyled mb-0">
                 <li t-foreach="vorgaenge" t-as="vorgang" t-key="vorgang.id"
                     class="o_wb_voip_lb_vorgang border-top py-2 d-flex flex-wrap align-items-center gap-2"
@@ -14,21 +14,21 @@
                         <span t-if="vorgang.stufe" class="o_wb_voip_lb_vorgang_stufe badge text-bg-light ms-2" t-esc="vorgang.stufe"/>
                         <span t-if="vorgang.umsatz" class="o_wb_voip_lb_vorgang_umsatz small text-muted ms-2" t-esc="vorgang.umsatz"/>
                         <span t-if="vorgang.zugeordnet" class="o_wb_voip_lb_vorgang_marke small text-success ms-2">
-                            <i class="fa fa-check me-1" aria-hidden="true"/>Zugeordnet
+                            <i class="fa fa-check me-1" aria-hidden="true"/>Assigned
                         </span>
                     </div>
                     <button t-if="anrufId and !vorgang.zugeordnet" type="button"
                             class="o_wb_voip_lb_vorgang_zuordnen btn btn-sm btn-secondary"
                             t-att-aria-label="zuordnenLabel(vorgang)"
-                            t-att-disabled="state.arbeitet" t-on-click="() => this.zuordnen(vorgang)">Zuordnen</button>
+                            t-att-disabled="state.arbeitet" t-on-click="() => this.zuordnen(vorgang)">Assign</button>
                     <button t-if="anrufId and vorgang.zugeordnet" type="button"
                             class="o_wb_voip_lb_vorgang_loesen btn btn-sm btn-outline-secondary"
                             t-att-aria-label="loesenLabel(vorgang)"
-                            t-att-disabled="state.arbeitet" t-on-click="() => this.loesen()">Lösen</button>
+                            t-att-disabled="state.arbeitet" t-on-click="() => this.loesen()">Unlink</button>
                     <button type="button" class="o_wb_voip_lb_vorgang_oeffnen btn btn-sm btn-link p-0"
                             t-att-aria-label="oeffnenLabel(vorgang)"
                             t-on-click="() => this.oeffnen(vorgang)">
-                        <i class="fa fa-external-link me-1" aria-hidden="true"/>Öffnen
+                        <i class="fa fa-external-link me-1" aria-hidden="true"/>Open
                     </button>
                 </li>
             </ul>

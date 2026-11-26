@@ -20,22 +20,22 @@ class WbVoipAktion(models.Model):
     # Ohne dieses Modul sind solche Buttons sinnlos (kein Vorgang): sie werden mit gelöscht,
     # statt auf eine Art ohne Ziel zurückzufallen.
     art = fields.Selection(
-        selection_add=[('vorgang', 'Vorgang anlegen')], ondelete={'vorgang': 'cascade'})
+        selection_add=[('vorgang', 'Create opportunity')], ondelete={'vorgang': 'cascade'})
     crm_team_id = fields.Many2one(
-        'crm.team', string='Verkaufsteam', ondelete='set null',
+        'crm.team', string='Sales team', ondelete='set null',
         groups='wb_voip.group_wb_voip_manager',
-        help="Team des neuen Vorgangs. Leer = Standardteam des Benutzers.")
+        help="Team of the new opportunity. Empty = the user's default team.")
     titel_vorlage = fields.Char(
-        string='Titel des Vorgangs', groups='wb_voip.group_wb_voip_manager',
-        help="Klartext, höchstens 200 Zeichen. Platzhalter: {kontakt}, {nummer}, {datum}. "
-             "Leer = „Anruf von {kontakt}“.")
+        string='Opportunity title', groups='wb_voip.group_wb_voip_manager',
+        help='Plain text, at most 200 characters. Placeholders: {kontakt}, {nummer}, {datum}. '
+             'Empty = "Call from {kontakt}".')
 
     @api.constrains('titel_vorlage')
     def _check_titel_vorlage(self):
         for aktion in self:
             if aktion.titel_vorlage and len(aktion.titel_vorlage) > TITEL_MAX:
                 raise ValidationError(self.env._(
-                    "Der Titel darf höchstens %(max)s Zeichen lang sein.", max=TITEL_MAX))
+                    "The title may be at most %(max)s characters long.", max=TITEL_MAX))
 
     def _wb_voip_titel(self, anruf, partner):
         """Return the lead title: the template with its three placeholders replaced.
@@ -46,7 +46,7 @@ class WbVoipAktion(models.Model):
         (category Cf, e.g. zero-width, bidi) are dropped, the result has at most 200 characters.
         """
         self.ensure_one()
-        vorlage = self.sudo().titel_vorlage or self.env._("Anruf von {kontakt}")
+        vorlage = self.sudo().titel_vorlage or self.env._("Call from {kontakt}")
         nummer = anruf.sudo().nummer or ''
         werte = {
             'kontakt': (partner.display_name if partner else '') or nummer,
@@ -57,7 +57,7 @@ class WbVoipAktion(models.Model):
         # unsichtbare Formatzeichen (Kategorie Cf: Zero-Width, Bidi) entfallen ganz
         titel = ''.join(z for z in titel if unicodedata.category(z) != 'Cf')
         titel = ' '.join(STEUERZEICHEN_MUSTER.sub(' ', titel).split())
-        return titel[:TITEL_MAX] or self.env._("Anruf")
+        return titel[:TITEL_MAX] or self.env._("Call")
 
     def _wb_voip_aktion_vorgang(self, anruf, partner):
         """Create a lead for the call as the caller and open its form.
@@ -82,9 +82,9 @@ class WbVoipAktion(models.Model):
         if team:
             # nur ein Team, das der Benutzer lesen darf: nie still ein anderes nehmen
             if not team.with_user(self.env.user).has_access('read'):
-                raise AccessError(self.env._("Sie dürfen das Verkaufsteam dieses Buttons nicht lesen."))
+                raise AccessError(self.env._("You are not allowed to read the sales team of this button."))
             if team.company_id and team.company_id != self.env.company:
-                raise UserError(self.env._("Das Team gehört zu einer anderen Firma."))
+                raise UserError(self.env._("The team belongs to a different company."))
             werte['team_id'] = team.id
         # ohne default_* aus dem Client-Kontext (RPC): nur die Werte oben gelten
         lead = Lead.with_context(clean_context(self.env.context)).create(werte)

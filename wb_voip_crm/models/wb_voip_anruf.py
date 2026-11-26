@@ -24,12 +24,12 @@ class WbVoipAnruf(models.Model):
     # Vorgangsnamen ohne Leserecht preisgeben; Benutzer nutzen res_model/res_id und das
     # Feld wb_voip_lead_lesbar_id.
     lead_id = fields.Many2one(
-        'crm.lead', string='Vorgang', compute='_compute_lead_id', store=True, readonly=True,
+        'crm.lead', string='Opportunity', compute='_compute_lead_id', store=True, readonly=True,
         copy=False, index='btree_not_null', ondelete='set null',
         groups='base.group_system')
 
     wb_voip_lead_lesbar_id = fields.Many2one(
-        'crm.lead', string='Vorgang', compute='_compute_wb_voip_lead_lesbar_id')
+        'crm.lead', string='Opportunity', compute='_compute_wb_voip_lead_lesbar_id')
 
     @api.depends_context('uid')
     @api.depends('lead_id')
@@ -102,10 +102,10 @@ class WbVoipAnruf(models.Model):
                      'res_id': partner.id if partner else False}
         else:
             if type(lead_id) is not int or lead_id <= 0:
-                raise UserError(self.env._("Ungültige Angabe: %s.", self.env._("Vorgang")))
+                raise UserError(self.env._("Invalid value: %s.", self.env._("Opportunity")))
             lead = self.env[LEAD_MODELL].with_user(self.env.user).browse(lead_id).exists()
             if not lead or not lead.has_access('read'):
-                raise AccessError(self.env._("Sie dürfen diesen Vorgang nicht lesen."))
+                raise AccessError(self.env._("You are not allowed to read this opportunity."))
             werte = {'res_model': LEAD_MODELL, 'res_id': lead.id}
         anruf.write(werte)
         if anruf.protokoll_id:

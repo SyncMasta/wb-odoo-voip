@@ -1,0 +1,235 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* wb_voip_crm
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-26 10:21+0000\n"
+"PO-Revision-Date: 2026-11-26 10:21+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#. module: wb_voip_crm
+#. odoo-javascript
+#: code:addons/wb_voip_crm/static/src/bloecke_vorgaenge.xml:0
+msgid "Assign"
+msgstr "Zuordnen"
+
+#. module: wb_voip_crm
+#. odoo-javascript
+#: code:addons/wb_voip_crm/static/src/bloecke_vorgaenge.js:0
+msgid "Assign opportunity %s to the call"
+msgstr "Vorgang %s dem Anruf zuordnen"
+
+#. module: wb_voip_crm
+#. odoo-javascript
+#: code:addons/wb_voip_crm/static/src/bloecke_vorgaenge.xml:0
+msgid "Assigned"
+msgstr "Zugeordnet"
+
+#. module: wb_voip_crm
+#. odoo-python
+#: code:addons/wb_voip_crm/models/wb_voip_aktion.py:0
+msgid "Call"
+msgstr "Anruf"
+
+#. module: wb_voip_crm
+#. odoo-python
+#: code:addons/wb_voip_crm/models/wb_voip_aktion.py:0
+#: model_terms:ir.ui.view,arch_db:wb_voip_crm.wb_voip_aktion_view_form_crm
+msgid "Call from {kontakt}"
+msgstr "Anruf von {kontakt}"
+
+#. module: wb_voip_crm
+#: model:ir.model.fields,field_description:wb_voip_crm.field_crm_lead__wb_voip_protokoll_ids
+#: model_terms:ir.ui.view,arch_db:wb_voip_crm.wb_voip_crm_lead_view_form
+msgid "Call logs"
+msgstr "Anrufprotokolle"
+
+#. module: wb_voip_crm
+#. odoo-python
+#: code:addons/wb_voip_crm/models/crm_lead.py:0
+#: model_terms:ir.ui.view,arch_db:wb_voip_crm.wb_voip_crm_lead_view_form
+msgid "Calls"
+msgstr "Anrufe"
+
+#. module: wb_voip_crm
+#: model:ir.model.fields.selection,name:wb_voip_crm.selection__wb_voip_aktion__art__vorgang
+#: model:wb.voip.aktion,name:wb_voip_crm.wb_voip_aktion_vorgang
+msgid "Create opportunity"
+msgstr "Vorgang anlegen"
+
+#. module: wb_voip_crm
+#: model:ir.model.fields,field_description:wb_voip_crm.field_crm_lead__display_name
+#: model:ir.model.fields,field_description:wb_voip_crm.field_wb_voip_aktion__display_name
+#: model:ir.model.fields,field_description:wb_voip_crm.field_wb_voip_anruf__display_name
+#: model:ir.model.fields,field_description:wb_voip_crm.field_wb_voip_layout__display_name
+#: model:ir.model.fields,field_description:wb_voip_crm.field_wb_voip_layout_block__display_name
+msgid "Display Name"
+msgstr "Anzeigename"
+
+#. module: wb_voip_crm
+#: model:ir.model.fields,field_description:wb_voip_crm.field_crm_lead__id
+#: model:ir.model.fields,field_description:wb_voip_crm.field_wb_voip_aktion__id
+#: model:ir.model.fields,field_description:wb_voip_crm.field_wb_voip_anruf__id
+#: model:ir.model.fields,field_description:wb_voip_crm.field_wb_voip_layout__id
+#: model:ir.model.fields,field_description:wb_voip_crm.field_wb_voip_layout_block__id
+msgid "ID"
+msgstr "ID"
+
+#. module: wb_voip_crm
+#. odoo-python
+#: code:addons/wb_voip_crm/models/wb_voip_anruf.py:0
+msgid "Invalid value: %s."
+msgstr "Ungültige Angabe: %s."
+
+#. module: wb_voip_crm
+#: model:ir.model,name:wb_voip_crm.model_crm_lead
+msgid "Lead"
+msgstr "Lead"
+
+#. module: wb_voip_crm
+#: model:ir.model.fields,field_description:wb_voip_crm.field_crm_lead__wb_voip_anruf_anzahl
+msgid "Number of calls"
+msgstr "Anzahl Anrufe"
+
+#. module: wb_voip_crm
+#. odoo-javascript
+#: code:addons/wb_voip_crm/static/src/bloecke_vorgaenge.xml:0
+msgid "Open"
+msgstr "Öffnen"
+
+#. module: wb_voip_crm
+#. odoo-javascript
+#: code:addons/wb_voip_crm/static/src/bloecke_vorgaenge.js:0
+msgid "Open opportunity %s"
+msgstr "Vorgang %s öffnen"
+
+#. module: wb_voip_crm
+#. odoo-javascript
+#: code:addons/wb_voip_crm/static/src/bloecke_vorgaenge.js:0
+#: code:addons/wb_voip_crm/static/src/bloecke_vorgaenge.xml:0
+#: model:ir.model.fields.selection,name:wb_voip_crm.selection__wb_voip_layout_block__art__vorgaenge
+msgid "Opportunities"
+msgstr "Vorgänge"
+
+#. module: wb_voip_crm
+#. odoo-python
+#: code:addons/wb_voip_crm/models/wb_voip_anruf.py:0
+#: model:ir.model.fields,field_description:wb_voip_crm.field_wb_voip_anruf__lead_id
+#: model:ir.model.fields,field_description:wb_voip_crm.field_wb_voip_anruf__wb_voip_lead_lesbar_id
+msgid "Opportunity"
+msgstr "Vorgang"
+
+#. module: wb_voip_crm
+#: model:ir.model.fields,field_description:wb_voip_crm.field_wb_voip_aktion__titel_vorlage
+msgid "Opportunity title"
+msgstr "Titel des Vorgangs"
+
+#. module: wb_voip_crm
+#: model:ir.model.fields,help:wb_voip_crm.field_wb_voip_aktion__titel_vorlage
+msgid "Plain text, at most 200 characters. Placeholders: {kontakt}, {nummer}, {datum}. Empty = \"Call from {kontakt}\"."
+msgstr "Klartext, höchstens 200 Zeichen. Platzhalter: {kontakt}, {nummer}, {datum}. Leer = „Anruf von {kontakt}“."
+
+#. module: wb_voip_crm
+#. odoo-javascript
+#: code:addons/wb_voip_crm/static/src/bloecke_vorgaenge.js:0
+msgid "Remove assignment to %s"
+msgstr "Zuordnung zu %s lösen"
+
+#. module: wb_voip_crm
+#: model:ir.model.fields,field_description:wb_voip_crm.field_wb_voip_aktion__crm_team_id
+msgid "Sales team"
+msgstr "Verkaufsteam"
+
+#. module: wb_voip_crm
+#: model:ir.model.fields,help:wb_voip_crm.field_wb_voip_aktion__crm_team_id
+msgid "Team of the new opportunity. Empty = the user's default team."
+msgstr "Team des neuen Vorgangs. Leer = Standardteam des Benutzers."
+
+#. module: wb_voip_crm
+#. odoo-javascript
+#: code:addons/wb_voip_crm/static/src/bloecke_vorgaenge.js:0
+msgid "The assignment could not be removed."
+msgstr "Die Zuordnung konnte nicht gelöst werden."
+
+#. module: wb_voip_crm
+#. odoo-javascript
+#: code:addons/wb_voip_crm/static/src/bloecke_vorgaenge.js:0
+msgid "The opportunity could not be assigned."
+msgstr "Der Vorgang konnte nicht zugeordnet werden."
+
+#. module: wb_voip_crm
+#. odoo-python
+#: code:addons/wb_voip_crm/models/wb_voip_aktion.py:0
+msgid "The team belongs to a different company."
+msgstr "Das Team gehört zu einer anderen Firma."
+
+#. module: wb_voip_crm
+#. odoo-python
+#: code:addons/wb_voip_crm/models/wb_voip_aktion.py:0
+msgid "The title may be at most %(max)s characters long."
+msgstr "Der Titel darf höchstens %(max)s Zeichen lang sein."
+
+#. module: wb_voip_crm
+#: model:ir.model.fields,field_description:wb_voip_crm.field_wb_voip_aktion__art
+#: model:ir.model.fields,field_description:wb_voip_crm.field_wb_voip_layout_block__art
+msgid "Type"
+msgstr "Art"
+
+#. module: wb_voip_crm
+#. odoo-javascript
+#: code:addons/wb_voip_crm/static/src/bloecke_vorgaenge.xml:0
+msgid "Unlink"
+msgstr "Lösen"
+
+#. module: wb_voip_crm
+#: model:ir.model,name:wb_voip_crm.model_wb_voip_anruf
+msgid "WB VoIP: Call"
+msgstr "WB VoIP: Anruf"
+
+#. module: wb_voip_crm
+#: model:ir.model,name:wb_voip_crm.model_wb_voip_aktion
+msgid "WB VoIP: Call button"
+msgstr "WB VoIP: Anruf-Button"
+
+#. module: wb_voip_crm
+#: model:ir.model,name:wb_voip_crm.model_wb_voip_layout_block
+msgid "WB VoIP: Layout block"
+msgstr "WB VoIP: Layout-Block"
+
+#. module: wb_voip_crm
+#: model:ir.model,name:wb_voip_crm.model_wb_voip_layout
+msgid "WB VoIP: Window layout"
+msgstr "WB VoIP: Fenster-Layout"
+
+#. module: wb_voip_crm
+#. odoo-python
+#: code:addons/wb_voip_crm/models/wb_voip_aktion.py:0
+msgid "You are not allowed to read the sales team of this button."
+msgstr "Sie dürfen das Verkaufsteam dieses Buttons nicht lesen."
+
+#. module: wb_voip_crm
+#. odoo-python
+#: code:addons/wb_voip_crm/models/wb_voip_anruf.py:0
+msgid "You are not allowed to read this opportunity."
+msgstr "Sie dürfen diesen Vorgang nicht lesen."
+
+#. module: wb_voip_crm
+#. odoo-python
+#: code:addons/wb_voip_crm/models/crm_lead.py:0
+msgid "res_id"
+msgstr "res_id"
+
+#. module: wb_voip_crm
+#. odoo-python
+#: code:addons/wb_voip_crm/models/crm_lead.py:0
+msgid "res_model"
+msgstr "res_model"

@@ -8,7 +8,7 @@
             <field name="url_vorlage" position="after">
                 <field name="crm_team_id" invisible="art != 'vorgang'"/>
                 <field name="titel_vorlage" invisible="art != 'vorgang'"
-                       placeholder="Anruf von {kontakt}"/>
+                       placeholder="Call from {kontakt}"/>
             </field>
         </field>
     </record>

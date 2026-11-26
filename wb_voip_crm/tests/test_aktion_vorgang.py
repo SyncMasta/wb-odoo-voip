@@ -88,7 +88,7 @@ class TestAktionVorgang(WbVoipCrmCase):
         button = self._button(titel_vorlage=False)
         _anruf, ergebnis = self._ausfuehren(self.vertrieb_eigene, button)
         lead = self.env['crm.lead'].sudo().browse(ergebnis['res_id'])
-        self.assertEqual(lead.name, 'Anruf von Erika Vorgang')
+        self.assertEqual(lead.name, 'Call from Erika Vorgang')
         self.assertEqual(lead.user_id, self.vertrieb_eigene)
 
     def test_ohne_kontakt(self):
@@ -191,7 +191,7 @@ class TestAktionVorgang(WbVoipCrmCase):
         anruf = self.env['wb.voip.anruf'].with_user(self.vertrieb_eigene).browse(daten['id'])
         with self.assertRaises(UserError) as fehler:
             anruf.wb_voip_aktion_ausfuehren(button.id)
-        self.assertIn('Das Team gehört zu einer anderen Firma.', str(fehler.exception))
+        self.assertIn('The team belongs to a different company.', str(fehler.exception))
         self.assertEqual(self.env['crm.lead'].sudo().search_count([]), vorher)
 
     def test_team_der_eigenen_firma_und_ohne_firma(self):

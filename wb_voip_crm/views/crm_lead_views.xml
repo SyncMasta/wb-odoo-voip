@@ -9,11 +9,11 @@
                 <button name="action_wb_voip_anrufe" type="object" class="oe_stat_button"
                         icon="fa-phone" groups="wb_voip.group_wb_voip_user"
                         invisible="not id">
-                    <field name="wb_voip_anruf_anzahl" widget="statinfo" string="Anrufe"/>
+                    <field name="wb_voip_anruf_anzahl" widget="statinfo" string="Calls"/>
                 </button>
             </div>
             <notebook position="inside">
-                <page string="Anrufprotokolle" name="wb_voip_protokolle"
+                <page string="Call logs" name="wb_voip_protokolle"
                       groups="wb_voip.group_wb_voip_user" invisible="not id">
                     <field name="wb_voip_protokoll_ids" readonly="1">
                         <list>
