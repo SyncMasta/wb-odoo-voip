@@ -3473,3 +3473,8 @@ msgstr ""
 #: code:addons/wb_voip/static/src/verpasst/verpasst_liste.js:0
 msgid "↪ answered by %s (%s)"
 msgstr ""
+
+#. module: wb_voip
+#: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_protokoll__ergebnis__falsche_nummer
+msgid "Wrong number"
+msgstr ""

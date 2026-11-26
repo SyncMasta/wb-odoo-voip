@@ -55,7 +55,7 @@ am richtigen Datensatz.
 - Je Kundengespräch ein Protokoll-Popup, bei mehreren nacheinander
 
 **Anrufprotokoll**
-- Nach jedem Anruf genau ein Protokolleintrag (erreicht, nicht erreicht, Mailbox, besetzt) mit Dauer und Notiz
+- Nach jedem Anruf genau ein Protokolleintrag (erreicht, nicht erreicht, Mailbox, besetzt, falsche Nummer) mit Dauer und Notiz
 - Breites Popup direkt nach dem Auflegen mit Kontakt, den letzten Anrufen und „Folgeaktivität planen“
 - Hinweis im Chatter des verknüpften Datensatzes bzw. des Kontakts
 - Kontakterkennung über die Rufnummer, unabhängig von der Schreibweise (`0170 1234567` = `+49 170 1234567`)
@@ -110,7 +110,7 @@ am richtigen Datensatz.
   100 %); bei mehreren zählt der zuletzt geänderte eigene, sonst keiner. Manuell zuordnen und lösen im Block „Vorgänge“
 - Smart-Button „Anrufe“ und Reiter „Anrufprotokolle“ am Vorgang, nur mit den Rechten des Benutzers
 - Rückruf-Aktivität bei verpassten Anrufen am offenen Vorgang, sonst am Kontakt
-- Anruf-Button „Vorgang anlegen“ mit Titel-Vorlage (`{kontakt}`, `{nummer}`, `{datum}`) und Verkaufsteam;
+- Anruf-Button „Vorgang anlegen“ mit Titel-Vorlage (`{kontakt}`, `{nummer}`, `{datum}`, `{team}`) und Verkaufsteam;
   angelegt mit den Rechten des Benutzers
 - Vorgangsnamen nur bei Leserecht am Vorgang; das technische Feld Anruf → Vorgang nur für Systemadministratoren
 

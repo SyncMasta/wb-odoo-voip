@@ -10,6 +10,7 @@ export class WbVoipProtokoll extends models.Model {
             ["nicht_erreicht", "Nicht erreicht"],
             ["mailbox", "Mailbox"],
             ["besetzt", "Besetzt"],
+            ["falsche_nummer", "Falsche Nummer"],
         ],
     });
     beschreibung = fields.Html();

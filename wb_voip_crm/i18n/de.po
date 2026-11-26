@@ -140,8 +140,8 @@ msgstr "Titel des Vorgangs"
 
 #. module: wb_voip_crm
 #: model:ir.model.fields,help:wb_voip_crm.field_wb_voip_aktion__titel_vorlage
-msgid "Plain text, at most 200 characters. Placeholders: {kontakt}, {nummer}, {datum}. Empty = \"Call from {kontakt}\"."
-msgstr "Klartext, höchstens 200 Zeichen. Platzhalter: {kontakt}, {nummer}, {datum}. Leer = „Anruf von {kontakt}“."
+msgid "Plain text, at most 200 characters. Placeholders: {kontakt}, {nummer}, {datum}, {team}. Empty = \"Call from {kontakt}\"."
+msgstr "Klartext, höchstens 200 Zeichen. Platzhalter: {kontakt}, {nummer}, {datum}, {team}. Leer = „Anruf von {kontakt}“."
 
 #. module: wb_voip_crm
 #. odoo-javascript

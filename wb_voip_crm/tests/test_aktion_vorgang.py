@@ -126,6 +126,40 @@ class TestAktionVorgang(WbVoipCrmCase):
             anruf.wb_voip_aktion_ausfuehren(button.id)
         self.assertEqual(self.env['crm.lead'].sudo().search_count([]), vorher)
 
+    # --- Platzhalter {team} ---
+
+    def test_platzhalter_team(self):
+        button = self._button(crm_team_id=self.team.id, titel_vorlage='{team}: {kontakt}')
+        _anruf, ergebnis = self._ausfuehren(self.vertrieb_eigene, button)
+        lead = self.env['crm.lead'].sudo().browse(ergebnis['res_id'])
+        self.assertEqual(lead.name, 'Team Vorgangsbutton: Erika Vorgang')
+
+    def test_platzhalter_team_ohne_team_leer(self):
+        button = self._button(titel_vorlage='[{team}] {kontakt}')
+        _anruf, ergebnis = self._ausfuehren(self.vertrieb_eigene, button)
+        lead = self.env['crm.lead'].sudo().browse(ergebnis['res_id'])
+        self.assertEqual(lead.name, '[] Erika Vorgang')
+
+    def test_platzhalter_team_ohne_leserecht_leer(self):
+        # Titel direkt: der Teamname eines unlesbaren Teams gelangt nie in den Text
+        self.env['ir.rule'].sudo().create({
+            'name': 'wb_voip_crm Test: Team nicht lesbar (Titel)',
+            'model_id': self.env.ref('sales_team.model_crm_team').id,
+            'domain_force': '[(0, "=", 1)]',
+            'groups': [(4, self.env.ref('base.group_user').id)]})
+        button = self._button(crm_team_id=self.team.id, titel_vorlage='[{team}] {kontakt}')
+        daten = self._beginnen(self.vertrieb_eigene)
+        anruf = self.env['wb.voip.anruf'].with_user(self.vertrieb_eigene).browse(daten['id'])
+        titel = button.with_user(self.vertrieb_eigene)._wb_voip_titel(anruf, self.kontakt)
+        self.assertEqual(titel, '[] Erika Vorgang')
+
+    def test_platzhalter_team_wird_nicht_erneut_ersetzt(self):
+        team = self.env['crm.team'].create({'name': '{kontakt}{nummer}'})
+        button = self._button(crm_team_id=team.id, titel_vorlage='{team}|{kontakt}')
+        _anruf, ergebnis = self._ausfuehren(self.vertrieb_eigene, button)
+        lead = self.env['crm.lead'].sudo().browse(ergebnis['res_id'])
+        self.assertEqual(lead.name, '{kontakt}{nummer}|Erika Vorgang')
+
     # --- Review Focus 4: Vorlage ist Klartext ---
 
     def _titel(self, vorlage, kontaktname=None):

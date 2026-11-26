@@ -123,6 +123,29 @@ class TestVerpasstRueckruf(WbVoipCase):
         self.assertFalse(neu.active)
         self.assertEqual(len(self._aktivitaeten(self.user_a)), 2)
 
+    def test_falsche_nummer_oeffnet_wieder_wie_nicht_erreicht(self):
+        # „Falsche Nummer“ zählt wie „nicht erreicht“: nur „erreicht“ schließt Verpasst-Einträge
+        feld = self.env['wb.voip.protokoll']._fields['ergebnis']
+        self.assertIn('falsche_nummer', dict(feld.selection))
+        with freeze_time(START) as zeit:
+            alt = self._verpasst(self.user_a)
+            _raus, protokoll = self._rueckruf(self.user_b, zeit)
+            self.assertTrue(alt.sudo().erledigt)
+            protokoll.with_user(self.user_b).write({'ergebnis': 'falsche_nummer'})
+            self.assertFalse(alt.sudo().erledigt)
+            self.assertTrue(alt.sudo().rueckruf_aktivitaet_id.active)
+            protokoll.with_user(self.user_b).write({'ergebnis': 'erreicht'})
+            self.assertTrue(alt.sudo().erledigt)
+
+    def test_falsche_nummer_schliesst_ausgehend_nichts(self):
+        # ein ausgehendes Protokoll mit „falsche Nummer“ von Anfang an erledigt nichts
+        with freeze_time(START) as zeit:
+            alt = self._verpasst(self.user_a)
+            _raus, protokoll = self._rueckruf(self.user_b, zeit, sip_grund='486', angenommen=False)
+            protokoll.with_user(self.user_b).write({'ergebnis': 'falsche_nummer'})
+        self.assertFalse(alt.sudo().erledigt)
+        self.assertEqual(len(self._aktivitaeten(self.user_a)), 1)
+
     def test_wiederoeffnen_nutzt_aktive_aktivitaet(self):
         with freeze_time(START) as zeit:
             alt = self._verpasst(self.user_a)

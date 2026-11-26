@@ -58,7 +58,7 @@ Button „Vorgang anlegen“
 Unter Einstellungen › Technisch › WB VoIP › Anruf-Buttons gibt es die zusätzliche Art „Vorgang anlegen“.
 Ein Klick legt eine Verkaufschance an und ordnet den Anruf ihr zu; danach öffnet sich der Vorgang.
 
-* **Titel-Vorlage** mit den Platzhaltern ``{kontakt}``, ``{nummer}`` und ``{datum}`` (reiner Text, höchstens
+* **Titel-Vorlage** mit den Platzhaltern ``{kontakt}``, ``{nummer}``, ``{datum}`` und ``{team}`` (Name des Teams des Buttons, leer ohne Team oder ohne Leserecht; reiner Text, höchstens
   200 Zeichen, Standard „Anruf von {kontakt}“). Andere Platzhalter bleiben unverändert stehen; es wird nichts
   ausgewertet.
 * **Verkaufsteam** (optional). Das Team muss zur eigenen Firma gehören oder firmenlos sein und für den

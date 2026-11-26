@@ -212,6 +212,9 @@ die offenen Einträge aller Benutzer sofort; ein ausgehender Rückruf schließt 
 Protokoll „erreicht“ lautet. Wird die Rückruf-Aktivität im Chatter als erledigt markiert, ist auch der Eintrag
 erledigt.
 
+Ergebnisse: erreicht, nicht erreicht, Mailbox, besetzt und falsche Nummer. Nur „erreicht“ schließt Verpasst-Einträge;
+alle anderen, auch „falsche Nummer“, lassen sie offen.
+
 Wieder öffnen: Ändert man das Ergebnis eines Rückruf-Protokolls von „erreicht“ auf etwas anderes (z. B.
 Mailbox), öffnen sich genau die Einträge wieder, die dieses Protokoll geschlossen hat, je Benutzer mit neuer
 Rückruf-Aktivität und wieder als ungesehen (der Zähler steigt); zurück auf „erreicht“ schließt sie erneut. Einträge, die auf anderem Weg erledigt wurden,

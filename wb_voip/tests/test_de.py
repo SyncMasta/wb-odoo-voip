@@ -26,6 +26,7 @@ class TestDeutsch(TransactionCase):
         ergebnis = dict(self.de['wb.voip.protokoll'].fields_get(['ergebnis'])['ergebnis']['selection'])
         self.assertEqual(ergebnis['mailbox'], 'Mailbox')
         self.assertEqual(ergebnis['nicht_erreicht'], 'Nicht erreicht')
+        self.assertEqual(ergebnis['falsche_nummer'], 'Falsche Nummer')
         zustand = dict(self.de['wb.voip.anruf'].fields_get(['zustand'])['zustand']['selection'])
         self.assertEqual(zustand['verpasst'], 'Verpasst')
 

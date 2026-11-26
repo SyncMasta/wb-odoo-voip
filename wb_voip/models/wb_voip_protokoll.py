@@ -33,7 +33,8 @@ class WbVoipProtokoll(models.Model):
         [('eingehend', 'Incoming'), ('ausgehend', 'Outgoing')], string='Direction')
     ergebnis = fields.Selection(
         [('erreicht', 'Reached'), ('nicht_erreicht', 'Not reached'),
-         ('mailbox', 'Voicemail'), ('besetzt', 'Busy')],
+         ('mailbox', 'Voicemail'), ('besetzt', 'Busy'),
+         ('falsche_nummer', 'Wrong number')],
         string='Result', default='erreicht', tracking=True)
     dauer_sek = fields.Integer(string='Duration (s)')
     beschreibung = fields.Html(string='Description')

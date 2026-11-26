@@ -1,6 +1,6 @@
 {
     'name': 'WB VoIP CRM',
-    'version': '19.0.2.0.1',
+    'version': '19.0.2.1.0',
     'category': 'Productivity/VoIP',
     'summary': 'Calls and call logs on the CRM opportunity',
     'description': """

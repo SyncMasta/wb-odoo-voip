@@ -8,8 +8,8 @@ from odoo.tools.misc import format_date
 
 LEAD_MODELL = 'crm.lead'
 TITEL_MAX = 200
-# Only these three placeholders exist; they are replaced in one pass, as plain text
-PLATZHALTER = ('kontakt', 'nummer', 'datum')
+# Only these four placeholders exist; they are replaced in one pass, as plain text
+PLATZHALTER = ('kontakt', 'nummer', 'datum', 'team')
 PLATZHALTER_MUSTER = re.compile(r'\{(%s)\}' % '|'.join(PLATZHALTER))
 STEUERZEICHEN_MUSTER = re.compile(r'[\x00-\x1f\x7f-\x9f]')
 
@@ -27,7 +27,7 @@ class WbVoipAktion(models.Model):
         help="Team of the new opportunity. Empty = the user's default team.")
     titel_vorlage = fields.Char(
         string='Opportunity title', translate=True, groups='wb_voip.group_wb_voip_manager',
-        help='Plain text, at most 200 characters. Placeholders: {kontakt}, {nummer}, {datum}. '
+        help='Plain text, at most 200 characters. Placeholders: {kontakt}, {nummer}, {datum}, {team}. '
              'Empty = "Call from {kontakt}".')
 
     @api.constrains('titel_vorlage')
@@ -38,17 +38,22 @@ class WbVoipAktion(models.Model):
                     "The title may be at most %(max)s characters long.", max=TITEL_MAX))
 
     def _wb_voip_titel(self, anruf, partner):
-        """Return the lead title: the template with its three placeholders replaced.
+        """Return the lead title: the template with its four placeholders replaced.
 
-        Plain text only: one ``re.sub`` pass over ``{kontakt}``, ``{nummer}`` and ``{datum}``
-        (a replaced value is never scanned again), no ``format``, no evaluation, no markup.
+        Plain text only: one ``re.sub`` pass over ``{kontakt}``, ``{nummer}``, ``{datum}`` and
+        ``{team}`` (name of the button's team, empty without a team or without read access to
+        it; a replaced value is never scanned again), no ``format``, no evaluation, no markup.
         Control characters and line breaks become blanks, invisible format characters
         (category Cf, e.g. zero-width, bidi) are dropped, the result has at most 200 characters.
         """
         self.ensure_one()
         vorlage = self.sudo().titel_vorlage or self.env._("Call from {kontakt}")
         nummer = anruf.sudo().nummer or ''
+        # Teamname nur, wenn der Benutzer das Team lesen darf (sonst leer, nie ein Fehler)
+        team = self.sudo().crm_team_id
+        team_name = team.sudo().name if team and team.with_user(self.env.user).has_access('read') else ''
         werte = {
+            'team': team_name or '',
             'kontakt': (partner.display_name if partner else '') or nummer,
             'nummer': nummer,
             'datum': format_date(self.env, fields.Date.context_today(self)),
