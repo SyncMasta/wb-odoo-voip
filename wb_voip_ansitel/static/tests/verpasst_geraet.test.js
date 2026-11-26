@@ -104,7 +104,7 @@ test("Kollege geht vor: auch wenn die Zeile ein Gerät hätte, steht der Kollege
     );
     expect(hinweise).toEqual([
         "↪ angenommen von Hans Kollege · Tisch B (1:30)",
-        "↪ angenommen von Hans Kollege (0:30)",
+        "↪ answered by Hans Kollege (0:30)",
     ]);
 });
 
