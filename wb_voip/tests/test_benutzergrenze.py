@@ -136,6 +136,17 @@ class TestBenutzergrenze(WbVoipCase):
             'name': 'wb_voip_i', 'login': 'wb_voip_i', 'wb_voip_sip_benutzer': '800',
             'group_ids': [(6, 0, [self.intern.id, self.gruppe.id])]})
 
+    def test_installmodus_per_kontext_nicht_abschaltbar(self):
+        # Ein Client kann jeden Kontext schicken: nur der Superuser darf install_mode nutzen
+        self._grenze(1)
+        verwalter = self._neu('wb_voip_verwalter', [self.env.ref('base.group_erp_manager'), self.env.ref('base.group_partner_manager'), self.gruppe_manager])
+        env = self.env(user=verwalter, context=dict(self.env.context, install_mode=True, no_reset_password=True))
+        self.assertFalse(env.su)
+        with self.assertRaisesRegex(UserError, 'package allows'):
+            env['res.users'].create({
+                'name': 'wb_voip_k', 'login': 'wb_voip_k', 'wb_voip_sip_benutzer': '900',
+                'group_ids': [(6, 0, [self.intern.id, self.gruppe.id])]})
+
     def test_einstellungen_anzeige(self):
         self._grenze(5)
         einstellung = self.env['res.config.settings'].create({})

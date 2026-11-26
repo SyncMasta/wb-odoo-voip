@@ -118,8 +118,8 @@ class ResUsers(models.Model):
     @api.model
     def _wb_voip_grenze_betroffen(self, vals_list):
         """Return True if one of ``vals_list`` can raise the number of VoIP users."""
-        if self.env.context.get('install_mode'):
-            return False  # Moduldaten, Installation: nie sperren
+        if self.env.su and self.env.context.get('install_mode'):
+            return False  # Moduldaten laden (läuft als su); der Kontext allein genügt nie (RPC)
         return any(
             feld in _GRENZE_FELDER
             for vals in vals_list for feld in vals)

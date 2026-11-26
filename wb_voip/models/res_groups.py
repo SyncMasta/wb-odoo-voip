@@ -7,7 +7,7 @@ class ResGroups(models.Model):
     def write(self, vals):
         # Gruppenseitige Pflege (Benutzerliste, implizierte Gruppen) zählt wie das Benutzerformular
         Benutzer = self.env['res.users']
-        if self.env.context.get('install_mode') or not {'user_ids', 'implied_ids'} & set(vals):
+        if (self.env.su and self.env.context.get('install_mode')) or not {'user_ids', 'implied_ids'} & set(vals):
             return super().write(vals)
         grenze = Benutzer._wb_voip_benutzer_grenze()
         if not grenze:
