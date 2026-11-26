@@ -10,15 +10,22 @@
                 <li t-foreach="lokal.zeilen" t-as="zeile" t-key="zeile.schluessel"
                     class="o_wb_voip_eintrag list-group-item px-1">
                     <div class="d-flex align-items-center gap-2">
-                        <i t-if="zeile.art === 'anderswo'" class="o_wb_voip_art_anderswo fa fa-share text-muted"
-                           title="Answered elsewhere" aria-label="Answered elsewhere" role="img"/>
-                        <i t-else="" class="o_wb_voip_art_verpasst fa fa-long-arrow-down text-danger"
-                           title="Missed" aria-label="Missed" role="img"/>
+                        <t t-if="zeile.art === 'anderswo'">
+                            <i class="o_wb_voip_art_anderswo fa fa-share text-muted"
+                               title="Answered elsewhere" aria-hidden="true"/>
+                            <span class="visually-hidden">Answered elsewhere</span>
+                        </t>
+                        <t t-else="">
+                            <i class="o_wb_voip_art_verpasst fa fa-long-arrow-down text-danger"
+                               title="Missed" aria-hidden="true"/>
+                            <span class="visually-hidden">Missed</span>
+                        </t>
                         <div class="flex-grow-1 text-truncate">
                             <div class="text-truncate fw-bold">
                                 <span t-esc="name(zeile)"/>
                                 <span t-if="zeile.anzahl > 1" class="o_wb_voip_anzahl text-muted fw-normal">
-                                    ×<t t-esc="zeile.anzahl"/></span>
+                                    <span aria-hidden="true">×<t t-esc="zeile.anzahl"/></span>
+                                    <span class="visually-hidden" t-esc="anzahlText(zeile)"/></span>
                             </div>
                             <div class="small text-muted text-truncate">
                                 <span t-esc="zeit(zeile)"/>

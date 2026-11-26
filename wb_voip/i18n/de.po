@@ -39,6 +39,12 @@ msgid "%s, %s unseen missed calls"
 msgstr "%s, %s ungesehene verpasste Anrufe"
 
 #. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.js:0
+msgid "(%s calls)"
+msgstr "(%s Anrufe)"
+
+#. module: wb_voip
 #. odoo-python
 #: code:addons/wb_voip/wizards/wb_voip_aktion_assistent.py:0
 msgid "A button may not set this field."

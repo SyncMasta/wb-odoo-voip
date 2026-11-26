@@ -403,6 +403,29 @@ test("Anderswo-Zeile hat eigenes Symbol und Titel", async () => {
     expect(".o_wb_voip_eintrag:eq(0) .o_wb_voip_art_anderswo").toHaveCount(0);
     expect(".o_wb_voip_eintrag:eq(1) .o_wb_voip_art_anderswo").toHaveClass("fa-share");
     expect(".o_wb_voip_eintrag:eq(1) .o_wb_voip_art_anderswo").toHaveAttribute("title", "Answered elsewhere");
-    expect(".o_wb_voip_eintrag:eq(1) .o_wb_voip_art_anderswo").toHaveAttribute("aria-label", "Answered elsewhere");
     expect(".o_wb_voip_eintrag:eq(1) .o_wb_voip_art_verpasst").toHaveCount(0);
+    // Bildschirmleser: Symbol versteckt, Bedeutung als sichtbar versteckter Text (kein aria-label)
+    for (const [zeile, art, text] of [
+        [0, "verpasst", "Missed"],
+        [1, "anderswo", "Answered elsewhere"],
+    ]) {
+        const symbol = `.o_wb_voip_eintrag:eq(${zeile}) .o_wb_voip_art_${art}`;
+        expect(symbol).toHaveAttribute("aria-hidden", "true");
+        expect(symbol).not.toHaveAttribute("aria-label");
+        expect(symbol).not.toHaveAttribute("role");
+        expect(`${symbol} + .visually-hidden`).toHaveText(text);
+    }
+});
+
+test("Zähler der Zeile: sichtbar ×2, für Bildschirmleser „2 calls“", async () => {
+    vorbereiten({ zeilen: [ZEILE, ANDERSWO] });
+    await mountWithCleanup(Softphone);
+    await reiterOeffnen();
+    expect.verifySteps(["zaehler", "liste", "gesehen"]);
+    const zaehler = ".o_wb_voip_eintrag:eq(0) .o_wb_voip_anzahl";
+    expect(zaehler).not.toHaveAttribute("aria-label");
+    expect(`${zaehler} [aria-hidden=true]`).toHaveText("×2");
+    expect(`${zaehler} .visually-hidden`).toHaveText("(2 calls)");
+    // ein einzelner Anruf hat keinen Zähler
+    expect(".o_wb_voip_eintrag:eq(1) .o_wb_voip_anzahl").toHaveCount(0);
 });

@@ -1,4 +1,4 @@
-import { describe, expect, test } from "@odoo/hoot";
+import { describe, expect, freezeTime, mockDate, test } from "@odoo/hoot";
 import { click, queryAll, queryOne } from "@odoo/hoot-dom";
 import { advanceTime, animationFrame } from "@odoo/hoot-mock";
 import { EventBus, reactive } from "@odoo/owl";
@@ -165,20 +165,35 @@ test("Takt: nur im Telefon-Tab alle 60 s, nicht im Nebentab", async () => {
     expect(w.aufrufe.length).toBe(4);
 });
 
-test("Ohne Schnelltasten (nicht verfügbar, kein Fehler) fragt der Takt nur alle 10 Minuten", async () => {
-    const w = vorbereiten({
-        halter: true,
-        antworten: {
-            wb_voip_tasten_zustand: zustand({ verfuegbar: false, tasten: [] }),
-        },
-    });
-    await dienstStarten();
-    const start = w.aufrufe.length;
-    await advanceTime(300_000);
-    expect(w.aufrufe.length).toBe(start);
-    await advanceTime(300_000);
-    expect(w.aufrufe.length).toBe(start + 1);
-});
+// mehrfach ausgeführt: das Ergebnis darf nicht von der echten Laufzeit des Tests abhängen
+test.multi(10);
+test(
+    "Ohne Schnelltasten (nicht verfügbar, kein Fehler) fragt der Takt nur alle 10 Minuten",
+    async () => {
+        // Uhr fest: ``Date.now()`` (Ruhe-Abstand) und der Takt bewegen sich nur mit ``advanceTime``
+        mockDate("2026-01-05 09:00:00");
+        freezeTime();
+        const w = vorbereiten({
+            halter: true,
+            antworten: {
+                wb_voip_tasten_zustand: zustand({ verfuegbar: false, tasten: [] }),
+            },
+        });
+        await dienstStarten();
+        const start = w.aufrufe.length;
+        expect(start).toBe(1);
+        // neun Takte in Ruhe: kein Abruf
+        await advanceTime(9 * 60_000);
+        expect(w.aufrufe.length).toBe(start);
+        // der zehnte Takt liegt genau 10 Minuten nach dem Lesen: Abruf
+        await advanceTime(60_000);
+        expect(w.aufrufe.length).toBe(start + 1);
+        await advanceTime(9 * 60_000);
+        expect(w.aufrufe.length).toBe(start + 1);
+        await advanceTime(60_000);
+        expect(w.aufrufe.length).toBe(start + 2);
+    }
+);
 
 test("Start: der Halter-Wechsel gleich nach dem ersten Lesen liest nicht ein zweites Mal", async () => {
     const w = vorbereiten({ halter: false });

@@ -119,6 +119,11 @@ export class Verpasstliste extends Component {
         return zeile.partner ? zeile.partner[1] : zeile.nummer || _t("Unknown");
     }
 
+    /** Zähler für Bildschirmleser: „(2 calls)“ statt des sichtbaren „×2“. */
+    anzahlText(zeile) {
+        return _t("(%s calls)", zeile.anzahl);
+    }
+
     zeit(zeile) {
         return zeile.letzter_beginn
             ? formatDateTime(deserializeDateTime(zeile.letzter_beginn))
