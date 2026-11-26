@@ -144,7 +144,7 @@ test("Verbinden: ohne NOTIFY nach 15 s gilt es als gescheitert", async () => {
     await uhr.vorspulen(0);
     expect(fertig).toBe(false);
     await uhr.vorspulen(1000);
-    expect(await ergebnis).toMatch(/Anlage/);
+    expect(await ergebnis).toMatch(/PBX/);
 });
 
 // --- Halten und Stumm: Mikrofon-Spur (Fake-peerConnection) -----------------------------------

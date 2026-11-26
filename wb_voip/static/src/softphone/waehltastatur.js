@@ -53,7 +53,7 @@ export class Waehltastatur extends Component {
 }
 
 registry.category("wb_voip_reiter").add("waehlen", {
-    titel: _t("Wählen"),
+    titel: _t("Dial"),
     Component: Waehltastatur,
     sequence: 10,
 });

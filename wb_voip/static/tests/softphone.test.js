@@ -106,7 +106,7 @@ test("Statuspunkt: anderer Tab gelb", async () => {
     await mountWithCleanup(WbVoipSystray);
     expect(".o_wb_voip_punkt").toHaveClass("text-warning");
     await mountWithCleanup(Softphone);
-    expect(".o_wb_voip_status").toHaveText(/anderen Tab/);
+    expect(".o_wb_voip_status").toHaveText(/another tab/);
 });
 
 test("Statuspunkt: getrennt rot mit „Neu verbinden“", async () => {
@@ -130,7 +130,7 @@ test("Statuspunkt: ohne Lizenz rot mit Hinweis und Aktivierung", async () => {
     await mountWithCleanup(WbVoipSystray);
     expect(".o_wb_voip_punkt").toHaveClass("text-danger");
     await mountWithCleanup(Softphone);
-    expect(".o_wb_voip_status").toHaveText(/Lizenz fehlt oder abgelaufen/);
+    expect(".o_wb_voip_status").toHaveText(/License missing or expired/);
     expect(".o_wb_voip_neu_verbinden").toHaveCount(0);
     await click(".o_wb_voip_lizenz");
     expect(aktionen).toEqual(["wb_license_client.wb_license_activate_wizard_action"]);
@@ -140,7 +140,7 @@ test("ohne Lizenz: kein Aktivierungslink für Nicht-Administratoren", async () =
     patchWithCleanup(user, { isSystem: false });
     mockService("wb_voip_telefon", () => attrappe("ohne_lizenz"));
     await mountWithCleanup(Softphone);
-    expect(".o_wb_voip_status").toHaveText(/Lizenz fehlt oder abgelaufen/);
+    expect(".o_wb_voip_status").toHaveText(/License missing or expired/);
     expect(".o_wb_voip_lizenz").toHaveCount(0);
 });
 
@@ -149,7 +149,7 @@ test("nicht konfiguriert: Hinweis, für Administratoren mit WB_VOIP_FERNET_KEY",
     mockService("wb_voip_telefon", () => attrappe("nicht_konfiguriert"));
     await mountWithCleanup(Softphone);
     expect(".o_wb_voip_punkt").toHaveClass("text-danger");
-    expect(".o_wb_voip_status").toHaveText(/Telefonie ist noch nicht eingerichtet\./);
+    expect(".o_wb_voip_status").toHaveText(/Telephony is not set up yet\./);
     expect(".o_wb_voip_status").not.toHaveText(/WB_VOIP_FERNET_KEY/);
 });
 
@@ -191,7 +191,7 @@ test("Neben-Tab: Hinweis „An das Telefon im anderen Tab übergeben“", async 
     await animationFrame();
     await click(".o_wb_voip_anrufen");
     await animationFrame();
-    expect(".o_notification").toHaveText(/An das Telefon im anderen Tab übergeben/);
+    expect(".o_notification").toHaveText(/Hand over to the phone in the other tab/);
 });
 
 test("Neben-Tab ohne Halter: Fehler wird angezeigt", async () => {
@@ -234,7 +234,7 @@ test("Eingehend: Hinweis an der Notiz, dass Kollegen sie sehen", async () => {
     await animationFrame();
     expect(".o_wb_voip_notiz_hinweis").toHaveCount(1);
     expect(".o_wb_voip_notiz_hinweis").toHaveText(
-        "Kollegen, die diesen Anruf verpasst haben, sehen diese Notiz."
+        "Colleagues who missed this call see this note."
     );
     expect(".o_wb_voip_notiz_hinweis").toHaveClass("text-muted");
     expect(".o_wb_voip_notiz").toHaveAttribute("aria-describedby", "wb_voip_notiz_hinweis");
@@ -350,7 +350,7 @@ test("Reiter Anrufe zeigt eigene Anrufe und wählt zurück", async () => {
     });
     const dienst = attrappe("verbunden");
     await softphoneMit(dienst);
-    await click(".o_wb_voip_reiter button:contains(Anrufe)");
+    await click(".o_wb_voip_reiter button:contains(Calls)");
     await animationFrame();
     expect.verifySteps(["liste 50"]);
     expect(".o_wb_voip_anrufliste .o_wb_voip_eintrag").toHaveCount(1);
@@ -373,7 +373,7 @@ test("Reiter Kontakte sucht und wählt", async () => {
     });
     const dienst = attrappe("verbunden");
     await softphoneMit(dienst);
-    await click(".o_wb_voip_reiter button:contains(Kontakte)");
+    await click(".o_wb_voip_reiter button:contains(Contacts)");
     await animationFrame();
     expect.verifySteps(["suche "]);
     await click(".o_wb_voip_kontaktsuche");
@@ -402,7 +402,7 @@ test("Reiter Aufgaben wählt mit Datensatz der Aufgabe", async () => {
     ]);
     const dienst = attrappe("verbunden");
     await softphoneMit(dienst);
-    await click(".o_wb_voip_reiter button:contains(Aufgaben)");
+    await click(".o_wb_voip_reiter button:contains(Tasks)");
     await animationFrame();
     expect(".o_wb_voip_aufgabenliste .o_wb_voip_eintrag").toHaveText(/Angebot besprechen/);
     await click(".o_wb_voip_aufgabenliste .o_wb_voip_eintrag_waehlen");
@@ -512,9 +512,9 @@ test("Softphone: Knopf fragt Desktop-Benachrichtigung an", async () => {
 });
 
 test("Fehler des Dienstes wird im Softphone angezeigt", async () => {
-    const dienst = attrappe("verbunden", { fehler: "Es läuft bereits ein Anruf." });
+    const dienst = attrappe("verbunden", { fehler: "A call is already in progress." });
     await softphoneMit(dienst);
-    expect(".o_wb_voip_fehler").toHaveText("Es läuft bereits ein Anruf.");
+    expect(".o_wb_voip_fehler").toHaveText("A call is already in progress.");
     expect(queryAll(".o_wb_voip_softphone button[aria-label]").length).toBeGreaterThan(5);
     expect(queryOne(".o_wb_voip_softphone")).not.toBe(null);
 });
@@ -522,10 +522,10 @@ test("Fehler des Dienstes wird im Softphone angezeigt", async () => {
 test("Benutzer ohne Nebenstelle: „nicht eingerichtet“ mit Hinweis für Administratoren", async () => {
     patchWithCleanup(session, { wb_voip_manager: true });
     mockService("wb_voip_telefon", () =>
-        attrappe("aus", { fehler: "Telefon ist für diesen Benutzer nicht eingerichtet." })
+        attrappe("aus", { fehler: "The phone is not set up for this user." })
     );
     await mountWithCleanup(Softphone);
-    expect(".o_wb_voip_status").toHaveText(/Telefonie ist noch nicht eingerichtet\./);
-    expect(".o_wb_voip_hinweis_manager").toHaveText(/SIP-Benutzer/);
+    expect(".o_wb_voip_status").toHaveText(/Telephony is not set up yet\./);
+    expect(".o_wb_voip_hinweis_manager").toHaveText(/SIP user/);
     expect(".o_wb_voip_fehler").toHaveCount(0);
 });

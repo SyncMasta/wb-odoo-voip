@@ -24,9 +24,9 @@ export class WbVoipSystray extends Component {
     }
 
     get titel() {
-        const titel = _t("Telefon: %s", this.info.text);
+        const titel = _t("Phone: %s", this.info.text);
         return this.verpasst.zaehler > 0
-            ? _t("%s, %s ungesehene verpasste Anrufe", titel, this.verpasst.zaehler)
+            ? _t("%s, %s unseen missed calls", titel, this.verpasst.zaehler)
             : titel;
     }
 

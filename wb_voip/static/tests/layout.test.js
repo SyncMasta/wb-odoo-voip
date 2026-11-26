@@ -363,10 +363,10 @@ test("unbekannte Nummer: „Zuordnen“ und „Neuer Kontakt“ fest im Kopf, au
     await fensterMit(() => layout([]), {
         extra: () => ({ kontakt: false, protokolle: [], aktionen: [NEUER_KONTAKT, WEB] }),
     });
-    expect(".o_wb_voip_af_name").toHaveText("Unbekannte Nummer");
+    expect(".o_wb_voip_af_name").toHaveText("Unknown number");
     expect(".o_wb_voip_af_kopf .o_wb_voip_af_zuordnen").toHaveCount(1);
     expect(".o_wb_voip_af_kopf .o_wb_voip_af_neuer_kontakt").toHaveCount(1);
-    expect(".o_wb_voip_af_kopf .o_wb_voip_af_neuer_kontakt").toHaveText("Neuer Kontakt");
+    expect(".o_wb_voip_af_kopf .o_wb_voip_af_neuer_kontakt").toHaveText("New contact");
     // kein Buttons-Block: der Web-Button fehlt
     expect(".o_wb_voip_lb_buttons").toHaveCount(0);
 });
@@ -380,7 +380,7 @@ test("„Neuer Kontakt“ im Kopf auch ohne eingerichtete Buttons, eigener Serve
         extra: () => ({ kontakt: false, protokolle: [], aktionen: [] }),
     });
     expect(".o_wb_voip_af_kopf .o_wb_voip_af_neuer_kontakt").toHaveCount(1);
-    expect(".o_wb_voip_af_kopf .o_wb_voip_af_neuer_kontakt").toHaveText("Neuer Kontakt");
+    expect(".o_wb_voip_af_kopf .o_wb_voip_af_neuer_kontakt").toHaveText("New contact");
     expect(".o_wb_voip_lb_buttons").toHaveCount(0);
     await click(".o_wb_voip_af_neuer_kontakt");
     await animationFrame();
@@ -395,7 +395,7 @@ test("Buttons-Block zeigt weder „Zuordnen“ noch „Neuer Kontakt“", async 
     expect(".o_wb_voip_lb_buttons .o_wb_voip_af_aktion").toHaveText("Web");
     expect(".o_wb_voip_lb_buttons .o_wb_voip_af_zuordnen").toHaveCount(0);
     expect(".o_wb_voip_af_kopf .o_wb_voip_af_zuordnen").toHaveCount(1);
-    expect(".o_wb_voip_af_kopf .o_wb_voip_af_neuer_kontakt").toHaveText("Neuer Kontakt");
+    expect(".o_wb_voip_af_kopf .o_wb_voip_af_neuer_kontakt").toHaveText("New contact");
 });
 
 test("bekannter Kontakt: kein „Zuordnen“ im Kopf", async () => {
@@ -422,11 +422,11 @@ test("Blöcke haben einen zugänglichen Namen, das Fenster eine Überschrift", a
     expect(queryOne(`#${titelId}`)).toHaveText("Hinweis");
     expect(queryOne(`#${titelId}`).tagName).toBe("H3");
     // ohne Titel: Name der Art
-    expect(".o_wb_voip_lb_kontaktkopf").toHaveAttribute("aria-label", "Kontakt");
+    expect(".o_wb_voip_lb_kontaktkopf").toHaveAttribute("aria-label", "Contact");
     expect(".o_wb_voip_lb_kontaktkopf").not.toHaveAttribute("aria-labelledby");
     // Protokolle haben immer eine Überschrift
     const protokolle = queryOne(".o_wb_voip_lb_protokolle");
-    expect(queryOne(`#${protokolle.getAttribute("aria-labelledby")}`)).toHaveText("Letzte Gespräche");
+    expect(queryOne(`#${protokolle.getAttribute("aria-labelledby")}`)).toHaveText("Recent calls");
 });
 
 test("Softphone wird nie aus dem Bild geschoben", async () => {

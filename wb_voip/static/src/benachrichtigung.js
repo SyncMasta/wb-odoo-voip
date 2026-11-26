@@ -53,7 +53,7 @@ export class Benachrichtiger {
         }
         const body = partner ? `${partner[1]} (${nummer})` : String(nummer || "");
         try {
-            const meldung = new this.api(_t("Eingehender Anruf"), { body, tag: TAG });
+            const meldung = new this.api(_t("Incoming call"), { body, tag: TAG });
             meldung.onclick = () => {
                 window.focus();
                 this.schliessen();

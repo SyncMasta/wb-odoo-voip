@@ -589,7 +589,7 @@ test("Neu verbinden während eines Anrufs wird abgelehnt", async () => {
     const anruf = dienst.state.anruf;
     await dienst.neuVerbinden();
     await welt.uhr.vorspulen(0);
-    expect(dienst.state.fehler).toBe("Bitte erst auflegen.");
+    expect(dienst.state.fehler).toBe("Please hang up first.");
     expect(dienst.state.status).toBe("verbunden");
     expect(dienst.state.anruf).toBe(anruf);
     expect(dienst.state.anruf.zustand).toBe("laeuft");

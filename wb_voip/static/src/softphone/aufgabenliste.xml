@@ -4,13 +4,13 @@
         <div class="o_wb_voip_aufgabenliste">
             <div class="d-flex justify-content-end mb-1">
                 <button type="button" class="o_wb_voip_aktualisieren btn btn-sm btn-link"
-                        title="Aktualisieren" aria-label="Aktualisieren" t-on-click="laden">
+                        title="Refresh" aria-label="Refresh" t-on-click="laden">
                     <i class="fa fa-refresh" aria-hidden="true"/>
                 </button>
             </div>
             <div t-if="lokal.fehler" class="alert alert-warning small" t-esc="lokal.fehler"/>
             <div t-elif="!lokal.aufgaben.length" class="text-muted small p-2">
-                Keine offenen Aufgaben mit Telefonnummer.
+                No open tasks with a phone number.
             </div>
             <ul class="list-group list-group-flush">
                 <li t-foreach="lokal.aufgaben" t-as="aufgabe" t-key="aufgabe.id"
@@ -24,7 +24,7 @@
                         <div class="small text-muted" t-esc="aufgabe.nummer"/>
                     </div>
                     <button type="button" class="o_wb_voip_eintrag_waehlen btn btn-sm btn-outline-success"
-                            title="Anrufen" aria-label="Anrufen" t-on-click="() => this.waehlen(aufgabe)">
+                            title="Place call" aria-label="Place call" t-on-click="() => this.waehlen(aufgabe)">
                         <i class="fa fa-phone" aria-hidden="true"/>
                     </button>
                 </li>

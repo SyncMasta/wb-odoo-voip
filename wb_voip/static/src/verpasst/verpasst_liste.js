@@ -108,7 +108,7 @@ export class Verpasstliste extends Component {
             this.lokal.fehler = false;
         } catch (fehler) {
             this.lokal.fehler =
-                fehler?.data?.message || _t("Verpasste Anrufe konnten nicht geladen werden.");
+                fehler?.data?.message || _t("Missed calls could not be loaded.");
             ok = false;
         }
         this.lokal.geladen = true;
@@ -116,7 +116,7 @@ export class Verpasstliste extends Component {
     }
 
     name(zeile) {
-        return zeile.partner ? zeile.partner[1] : zeile.nummer || _t("Unbekannt");
+        return zeile.partner ? zeile.partner[1] : zeile.nummer || _t("Unknown");
     }
 
     zeit(zeile) {
@@ -131,10 +131,10 @@ export class Verpasstliste extends Component {
         if (zeile.art !== "anderswo" || !kollege) {
             return "";
         }
-        const name = kollege.name || _t("Kollege");
+        const name = kollege.name || _t("Colleague");
         return kollege.dauer_sek
-            ? _t("↪ angenommen von %s (%s)", name, formatDauer(kollege.dauer_sek))
-            : _t("↪ angenommen von %s", name);
+            ? _t("↪ answered by %s (%s)", name, formatDauer(kollege.dauer_sek))
+            : _t("↪ answered by %s", name);
     }
 
     anrufbar(zeile) {
@@ -186,7 +186,7 @@ export class Verpasstliste extends Component {
                 text,
             ]);
         } catch (fehler) {
-            this.lokal.fehler = fehler?.data?.message || _t("Erledigen ist fehlgeschlagen.");
+            this.lokal.fehler = fehler?.data?.message || _t("Marking as done failed.");
             return;
         }
         this.lokal.fehler = false;
@@ -208,7 +208,7 @@ export class Verpasstliste extends Component {
 }
 
 registry.category("wb_voip_reiter").add("verpasst", {
-    titel: _t("Verpasst"),
+    titel: _t("Missed"),
     Component: Verpasstliste,
     sequence: 25,
 });

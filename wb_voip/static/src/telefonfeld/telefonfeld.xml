@@ -4,7 +4,7 @@
         <xpath expr="//div[hasclass('o_phone_content')]" position="inside">
             <button t-if="wbVoipZeigen" type="button"
                     class="o_wb_voip_waehlen btn btn-link p-0 ms-2 d-inline-flex align-items-center"
-                    title="Mit dem Softphone anrufen" aria-label="Mit dem Softphone anrufen"
+                    title="Call with the softphone" aria-label="Call with the softphone"
                     t-on-click="wbVoipWaehlen">
                 <i class="fa fa-phone" aria-hidden="true"/>
             </button>
@@ -15,7 +15,7 @@
         <xpath expr="//div[hasclass('o_phone_content')]" position="inside">
             <button t-if="wbVoipZeigen" type="button"
                     class="o_wb_voip_waehlen btn btn-link p-0 ms-2 d-inline-flex align-items-center"
-                    title="Mit dem Softphone anrufen" aria-label="Mit dem Softphone anrufen"
+                    title="Call with the softphone" aria-label="Call with the softphone"
                     t-on-click="wbVoipWaehlen">
                 <i class="fa fa-phone" aria-hidden="true"/>
             </button>

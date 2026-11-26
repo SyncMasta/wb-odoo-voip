@@ -89,7 +89,7 @@ export class Anrufansicht extends Component {
 
     /** „Zurück“ legt die aktive Leitung auf: eine Rückfrage oder den angenommenen zweiten Anruf. */
     get zurueckText() {
-        return this.state.anruf?.rueckfrage ? _t("Rückfrage beenden") : _t("Auflegen und zurück");
+        return this.state.anruf?.rueckfrage ? _t("End consult call") : _t("Hang up and go back");
     }
 
     async aktionenLaden(id) {
@@ -164,17 +164,17 @@ export class Anrufansicht extends Component {
 
     get zustandText() {
         if (this.verbindet) {
-            return _t("Verbinde …");
+            return _t("Connecting …");
         }
         switch (this.anruf.zustand) {
             case "laeuft":
-                return _t("Im Gespräch");
+                return _t("In a call");
             case "klingelt":
                 return this.anruf.richtung === "eingehend"
-                    ? _t("Eingehender Anruf")
-                    : _t("Klingelt …");
+                    ? _t("Incoming call")
+                    : _t("Ringing …");
             default:
-                return _t("Wählt …");
+                return _t("Dialing …");
         }
     }
 
@@ -241,13 +241,13 @@ export class Anrufansicht extends Component {
 
     async verbinden() {
         if (!(await this.telefon.verbinden())) {
-            this._fehler(_t("Verbinden nicht möglich."));
+            this._fehler(_t("Connecting not possible."));
         }
     }
 
     async konferenzStarten() {
         if (!(await this.telefon.konferenz())) {
-            this._fehler(_t("Konferenz nicht möglich."));
+            this._fehler(_t("Conference not possible."));
         }
     }
 
@@ -264,7 +264,7 @@ export class Anrufansicht extends Component {
             this.lokal.weiterleiten = false;
             this.lokal.ziel = "";
         } else {
-            this._fehler(_t("Rückfrage nicht möglich."));
+            this._fehler(_t("Consult call not possible."));
         }
     }
 
@@ -292,7 +292,7 @@ export class Anrufansicht extends Component {
             this.lokal.weiterleiten = false;
             this.lokal.ziel = "";
         } else {
-            this._fehler(_t("Weiterleiten nicht möglich."));
+            this._fehler(_t("Forwarding not possible."));
         }
     }
 }

@@ -26,7 +26,7 @@ export class Aufgabenliste extends Component {
             });
             this.lokal.fehler = false;
         } catch (fehler) {
-            this.lokal.fehler = fehler?.data?.message || _t("Aufgaben konnten nicht geladen werden.");
+            this.lokal.fehler = fehler?.data?.message || _t("Tasks could not be loaded.");
         }
     }
 
@@ -43,7 +43,7 @@ export class Aufgabenliste extends Component {
 }
 
 registry.category("wb_voip_reiter").add("aufgaben", {
-    titel: _t("Aufgaben"),
+    titel: _t("Tasks"),
     Component: Aufgabenliste,
     sequence: 40,
 });

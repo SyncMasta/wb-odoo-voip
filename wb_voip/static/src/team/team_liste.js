@@ -109,7 +109,7 @@ export class TeamListe extends Component {
                 : false;
             this.lokal.fehler = false;
         } catch (fehler) {
-            this.lokal.fehler = fehler?.data?.message || _t("Team konnte nicht geladen werden.");
+            this.lokal.fehler = fehler?.data?.message || _t("The team could not be loaded.");
         }
         this.lokal.geladen = true;
     }
@@ -123,15 +123,15 @@ export class TeamListe extends Component {
     statusText(kollege) {
         switch (kollege.status) {
             case "frei":
-                return _t("Frei");
+                return _t("Free");
             case "klingelt":
-                return _t("Klingelt");
+                return _t("Ringing");
             case "telefoniert": {
                 const dauer = this.dauer(kollege);
-                return dauer ? _t("Telefoniert %s", dauer) : _t("Telefoniert");
+                return dauer ? _t("On a call %s", dauer) : _t("On a call");
             }
             default:
-                return _t("Abgemeldet");
+                return _t("Signed out");
         }
     }
 
@@ -152,15 +152,15 @@ export class TeamListe extends Component {
         const name = kollege.name;
         switch (art) {
             case "anrufen":
-                return _t("Anrufen: %s", name);
+                return _t("Call: %s", name);
             case "heranholen":
-                return _t("Heranholen: %s", name);
+                return _t("Pick up: %s", name);
             case "uebergeben":
-                return _t("Übergeben: %s", name);
+                return _t("Transfer: %s", name);
             case "rueckfrage":
-                return _t("Mit Rückfrage: %s", name);
+                return _t("With consult call: %s", name);
             default:
-                return _t("Konferenz: %s", name);
+                return _t("Conference: %s", name);
         }
     }
 
@@ -229,7 +229,7 @@ export class TeamListe extends Component {
             this.props.onFertig?.();
         } else {
             this.env.services.notification?.add(
-                this.telefonState.fehler || _t("Aktion konnte nicht ausgeführt werden."),
+                this.telefonState.fehler || _t("The action could not be executed."),
                 { type: "danger" }
             );
         }

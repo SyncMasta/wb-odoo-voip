@@ -10,15 +10,15 @@ import { formatDauer, rueckrufZiel, waehlenMitHinweis } from "./waehlen_hilfe";
 export const ANRUFE_LIMIT = 50;
 
 const ZUSTAENDE = {
-    neu: _t("Neu"),
-    klingelt: _t("Klingelt"),
-    laeuft: _t("Läuft"),
-    beendet: _t("Beendet"),
-    abgelehnt: _t("Abgelehnt"),
-    besetzt: _t("Besetzt"),
-    fehlgeschlagen: _t("Nicht erreicht"),
-    verpasst: _t("Verpasst"),
-    anderswo: _t("Anderswo angenommen"),
+    neu: _t("New"),
+    klingelt: _t("Ringing"),
+    laeuft: _t("Running"),
+    beendet: _t("Ended"),
+    abgelehnt: _t("Rejected"),
+    besetzt: _t("Busy"),
+    fehlgeschlagen: _t("Not reached"),
+    verpasst: _t("Missed"),
+    anderswo: _t("Answered elsewhere"),
 };
 
 /** Reiter „Anrufe“: die letzten eigenen Anrufe, neu geladen nach jedem Anrufende. */
@@ -41,13 +41,13 @@ export class Anrufliste extends Component {
             });
             this.lokal.fehler = false;
         } catch (fehler) {
-            this.lokal.fehler = fehler?.data?.message || _t("Anrufe konnten nicht geladen werden.");
+            this.lokal.fehler = fehler?.data?.message || _t("Calls could not be loaded.");
         }
         this.lokal.geladen = true;
     }
 
     name(anruf) {
-        return anruf.partner ? anruf.partner[1] : anruf.nummer || _t("Unbekannt");
+        return anruf.partner ? anruf.partner[1] : anruf.nummer || _t("Unknown");
     }
 
     zeit(anruf) {
@@ -72,7 +72,7 @@ export class Anrufliste extends Component {
 }
 
 registry.category("wb_voip_reiter").add("anrufe", {
-    titel: _t("Anrufe"),
+    titel: _t("Calls"),
     Component: Anrufliste,
     sequence: 20,
 });

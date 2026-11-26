@@ -67,21 +67,21 @@ function blockDaten(b, gezaehlt) {
 /** Platzhalter der Vorschau, solange kein Beispielkontakt Daten liefert. */
 function beispiele() {
     return {
-        kontakt: { id: false, name: _t("Beispielkontakt"), firma: false, telefon: "+49 …", email: false },
+        kontakt: { id: false, name: _t("Example contact"), firma: false, telefon: "+49 …", email: false },
         protokolle: [
             {
                 id: 0,
                 datum: false,
-                ergebnis_label: _t("Beispiel"),
+                ergebnis_label: _t("Example"),
                 dauer_sek: 0,
-                beschreibung_text: _t("Letztes Gespräch"),
+                beschreibung_text: _t("Last call"),
             },
         ],
-        aufgaben: [{ id: 0, titel: _t("Beispielaufgabe"), faellig: false }],
+        aufgaben: [{ id: 0, titel: _t("Example task"), faellig: false }],
         aktionen: [
             {
                 id: 0,
-                name: _t("Beispiel-Button"),
+                name: _t("Example button"),
                 icon: false,
                 farbe: "secondary",
                 art: "url",
@@ -173,9 +173,9 @@ export class LayoutDesigner extends Component {
             this.dialog.add(
                 ConfirmationDialog,
                 {
-                    title: _t("Ungespeicherte Änderungen"),
-                    body: _t("Die Änderungen am Layout sind nicht gespeichert. Verwerfen?"),
-                    confirmLabel: _t("Verwerfen"),
+                    title: _t("Unsaved changes"),
+                    body: _t("The layout changes are not saved. Discard?"),
+                    confirmLabel: _t("Discard"),
                     confirm: () => resolve(true),
                     cancel: () => resolve(false),
                 },
@@ -188,8 +188,8 @@ export class LayoutDesigner extends Component {
     _ariaSetzen() {
         const wurzel = this.wurzel.el;
         for (const [klasse, name] of [
-            [".o_wb_voip_ds_gruppen", _t("Gruppen")],
-            [".o_wb_voip_ds_beispiel", _t("Beispielkontakt")],
+            [".o_wb_voip_ds_gruppen", _t("Groups")],
+            [".o_wb_voip_ds_beispiel", _t("Example contact")],
         ]) {
             const eingabe = wurzel?.querySelector(`${klasse} input`);
             if (eingabe && eingabe.getAttribute("aria-label") !== name) {
@@ -264,7 +264,7 @@ export class LayoutDesigner extends Component {
             this.state.speichert = false;
         }
         this.uebernehmen(daten);
-        this.notification.add(_t("Layout gespeichert."), { type: "success" });
+        this.notification.add(_t("Layout saved."), { type: "success" });
     }
 
     verwerfen() {
@@ -276,8 +276,8 @@ export class LayoutDesigner extends Component {
     zuruecksetzen() {
         const id = this.state.entwurf?.id;
         this.dialog.add(ConfirmationDialog, {
-            title: _t("Auf Standard zurücksetzen"),
-            body: _t("Alle Blöcke werden auf den Auslieferungszustand zurückgesetzt. Fortfahren?"),
+            title: _t("Reset to default"),
+            body: _t("All blocks will be reset to the delivered state. Continue?"),
             confirm: async () => {
                 try {
                     await this.orm.call("wb.voip.layout", "action_auf_standard_zuruecksetzen", [[id]]);
@@ -362,11 +362,11 @@ export class LayoutDesigner extends Component {
     get spalten() {
         const bloecke = this.entwurf.bloecke;
         if (!this.zweispaltig) {
-            return [{ spalte: "alle", titel: _t("Blöcke"), bloecke }];
+            return [{ spalte: "alle", titel: _t("Blocks"), bloecke }];
         }
         return [
-            { spalte: "1", titel: _t("Spalte 1"), bloecke: bloecke.filter((b) => b.spalte !== "2") },
-            { spalte: "2", titel: _t("Spalte 2"), bloecke: bloecke.filter((b) => b.spalte === "2") },
+            { spalte: "1", titel: _t("Column 1"), bloecke: bloecke.filter((b) => b.spalte !== "2") },
+            { spalte: "2", titel: _t("Column 2"), bloecke: bloecke.filter((b) => b.spalte === "2") },
         ];
     }
 
@@ -381,16 +381,16 @@ export class LayoutDesigner extends Component {
     /** Fehlertext eines Blocks (leer, wenn er gespeichert werden kann). */
     blockFehler(block) {
         if (!this.erlaubt(block)) {
-            return _t("In diesem Fenster nicht erlaubt.");
+            return _t("Not allowed in this window.");
         }
         if (block.titel.length > TITEL_MAX) {
-            return _t("Titel zu lang.");
+            return _t("Title too long.");
         }
         if (block.art === "felder" && !block.feld_ids.length) {
-            return _t("Bitte mindestens ein Feld wählen.");
+            return _t("Please choose at least one field.");
         }
         if (block.art === "felder" && block.feld_ids.length > MAX_FELDER) {
-            return _t("Zu viele Felder.");
+            return _t("Too many fields.");
         }
         if (
             this.istGezaehlt(block.art) &&
@@ -400,10 +400,10 @@ export class LayoutDesigner extends Component {
                 block.anzahl <= ANZAHL_MAX
             )
         ) {
-            return _t("Anzahl 1 bis 20.");
+            return _t("Count 1 to 20.");
         }
         if (block.art === "text" && block.text.length > TEXT_MAX) {
-            return _t("Text zu lang.");
+            return _t("Text too long.");
         }
         return "";
     }
@@ -512,12 +512,12 @@ export class LayoutDesigner extends Component {
         const pos = this.nachbarn(block).findIndex((b) => b.uid === uid) + 1;
         const art = this.artName(block.art);
         this.state.meldung = this.zweispaltig
-            ? _t("Block %(art)s an Position %(pos)s in Spalte %(spalte)s", {
+            ? _t("Block %(art)s at position %(pos)s in column %(spalte)s", {
                   art,
                   pos,
                   spalte: block.spalte,
               })
-            : _t("Block %(art)s an Position %(pos)s", { art, pos });
+            : _t("Block %(art)s at position %(pos)s", { art, pos });
     }
 
     /** Erster Fehler eines Blocks für den Live-Bereich (leer, wenn alles gültig ist). */
@@ -584,7 +584,7 @@ export class LayoutDesigner extends Component {
     }
 
     get alleBenutzerText() {
-        return _t("Alle Benutzer");
+        return _t("All users");
     }
 
     gruppenSetzen(ids) {
@@ -747,12 +747,12 @@ export class LayoutDesigner extends Component {
     knopfLabel(knopf, block) {
         const name = this.artName(block.art);
         if (knopf === "hoch") {
-            return _t("Nach oben: %s", name);
+            return _t("Move up: %s", name);
         }
         if (knopf === "runter") {
-            return _t("Nach unten: %s", name);
+            return _t("Move down: %s", name);
         }
-        return _t("Entfernen: %s", name);
+        return _t("Remove: %s", name);
     }
 
     get istPopup() {

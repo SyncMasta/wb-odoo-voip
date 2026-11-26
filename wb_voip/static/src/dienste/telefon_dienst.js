@@ -26,7 +26,7 @@ export const MAX_NOTIZ = 10_000;
 /** Höchstlänge der Anrufer-Kennung (wie die Nummer auf dem Server geprüft). */
 export const MAX_NUMMER = 64;
 /** Meldung, wenn dem Benutzer Anlage oder SIP-Benutzer fehlt (Zustand „aus“). */
-export const NICHT_EINGERICHTET = _t("Telefon ist für diesen Benutzer nicht eingerichtet.");
+export const NICHT_EINGERICHTET = _t("The phone is not set up for this user.");
 /** Höchstens so viele mit 480 abgewiesene Anrufe je Minute an den Server melden. */
 export const ABGEWIESEN_MAX_JE_MINUTE = 10;
 const ABGEWIESEN_FENSTER_MS = 60_000;
@@ -63,7 +63,7 @@ function fehlertext(fehler) {
     return (
         fehler?.data?.message ||
         fehler?.message ||
-        (fehler ? String(fehler) : _t("Unbekannter Fehler"))
+        (fehler ? String(fehler) : _t("Unknown error"))
     );
 }
 
@@ -296,7 +296,7 @@ export class TelefonDienst {
     async neuVerbinden() {
         if (this._leitungen().length) {
             // Ein neuer Agent würde den laufenden Anruf abbrechen
-            this.state.fehler = _t("Bitte erst auflegen.");
+            this.state.fehler = _t("Please hang up first.");
             return;
         }
         this._versuch = 0;
@@ -333,7 +333,7 @@ export class TelefonDienst {
         if (status.konfiguriert === false) {
             this.state.status = "nicht_konfiguriert";
             this.state.fehler =
-                status.meldung || _t("Softphone ist auf dem Server nicht konfiguriert.");
+                status.meldung || _t("The softphone is not configured on the server.");
             return;
         }
         if (!status.lizenz_gueltig) {
@@ -378,7 +378,7 @@ export class TelefonDienst {
         });
         agent.on("getrennt", (grund) => {
             if (this._agent === agent) {
-                this._fehlschlag(this._lauf, grund || _t("Verbindung zur Anlage getrennt"));
+                this._fehlschlag(this._lauf, grund || _t("Connection to the PBX lost"));
             }
         });
         try {
@@ -443,7 +443,7 @@ export class TelefonDienst {
         this._alleBeenden((kontext) => this._anrufAbbrechen(kontext));
         this._agentBeenden();
         this.state.status = "ohne_lizenz";
-        this.state.fehler = meldung || _t("Lizenz fehlt oder abgelaufen");
+        this.state.fehler = meldung || _t("License missing or expired");
     }
 
     /**
@@ -599,7 +599,7 @@ export class TelefonDienst {
         }
         const ziel = await this._halterErfragen();
         if (!ziel) {
-            this.state.fehler = _t("Kein Telefon-Tab gefunden.");
+            this.state.fehler = _t("No phone tab found.");
             return false;
         }
         this._senden({
@@ -625,15 +625,15 @@ export class TelefonDienst {
         }
         const ziel = waehlbar(nummer);
         if (!ziel) {
-            this.state.fehler = _t("Keine wählbare Nummer.");
+            this.state.fehler = _t("No dialable number.");
             return false;
         }
         if (this.state.status !== "verbunden" || !this._agent) {
-            this.state.fehler = _t("Telefon ist nicht verbunden.");
+            this.state.fehler = _t("The phone is not connected.");
             return false;
         }
         if (this._leitungen().length || this._verbindet) {
-            this.state.fehler = _t("Es läuft bereits ein Anruf.");
+            this.state.fehler = _t("A call is already in progress.");
             return false;
         }
         let sitzung;
@@ -835,7 +835,7 @@ export class TelefonDienst {
                     if (!ok && !kontext.beendet && !this._konferenz) {
                         // feste Meldung statt Fehlertext: „bitte erneut klicken“ passt hier nicht
                         const text = _t(
-                            "Konferenz konnte nicht aufgebaut werden – bitte im Gespräch „Konferenz“ drücken."
+                            "The conference could not be set up – please press \"Conference\" during the call."
                         );
                         this.state.fehler = text;
                         this._melden(text);
@@ -1213,19 +1213,19 @@ export class TelefonDienst {
         const kontext = this._laufend();
         const ziel = waehlbar(nummer);
         if (!kontext) {
-            this.state.fehler = _t("Rückfrage nur während eines Gesprächs.");
+            this.state.fehler = _t("A consult call is only possible during a call.");
             return false;
         }
         if (this._gehalten || this._klopfend || this._rueckfrageLaeuft) {
-            this.state.fehler = _t("Es sind bereits zwei Leitungen belegt.");
+            this.state.fehler = _t("Two lines are already in use.");
             return false;
         }
         if (!ziel) {
-            this.state.fehler = _t("Keine wählbare Nummer.");
+            this.state.fehler = _t("No dialable number.");
             return false;
         }
         if (this.state.status !== "verbunden" || !this._agent) {
-            this.state.fehler = _t("Telefon ist nicht verbunden.");
+            this.state.fehler = _t("The phone is not connected.");
             return false;
         }
         this._rueckfrageLaeuft = true;
@@ -1241,7 +1241,7 @@ export class TelefonDienst {
             this._rueckfrageLaeuft = false;
         }
         if (kontext.beendet || this._aktiv !== kontext || !this._agent) {
-            this.state.fehler = _t("Das Gespräch ist inzwischen beendet.");
+            this.state.fehler = _t("The call has ended in the meantime.");
             return false;
         }
         let sitzung;
@@ -1283,7 +1283,7 @@ export class TelefonDienst {
         const aktiv = this._laufend();
         const gehalten = this._gehalten;
         if (!aktiv || !gehalten || gehalten.beendet) {
-            this.state.fehler = _t("Verbinden geht erst, wenn die Rückfrage angenommen ist.");
+            this.state.fehler = _t("Connecting is possible only once the consult call has been answered.");
             return false;
         }
         const verbinden = { aktiv, gehalten, beideBeendet: null };
@@ -1296,7 +1296,7 @@ export class TelefonDienst {
         try {
             refer = Promise.resolve(gehalten.sitzung.refer(aktiv.sitzung)).then(
                 () => null,
-                (f) => f || new Error(_t("Verbinden fehlgeschlagen."))
+                (f) => f || new Error(_t("Connecting failed."))
             );
         } catch (f) {
             refer = Promise.resolve(f);
@@ -1351,11 +1351,11 @@ export class TelefonDienst {
         const aktiv = this._laufend();
         const gehalten = this._gehalten;
         if (!aktiv || !gehalten || gehalten.beendet || !gehalten.angenommen || this._klopfend) {
-            this.state.fehler = _t("Konferenz geht erst mit zwei angenommenen Leitungen.");
+            this.state.fehler = _t("A conference needs two answered lines.");
             return false;
         }
         if (this.state.status !== "verbunden" || !this._agent) {
-            this.state.fehler = _t("Telefon ist nicht verbunden.");
+            this.state.fehler = _t("The phone is not connected.");
             return false;
         }
         // Simulation (Modus „test“): Konferenz ohne Ton
@@ -1363,7 +1363,7 @@ export class TelefonDienst {
         const medienA = simuliert ? null : aktiv.sitzung.konferenzMedien?.();
         const medienB = simuliert ? null : gehalten.sitzung.konferenzMedien?.();
         if (!simuliert && (!medienA || !medienB)) {
-            this.state.fehler = _t("Konferenz nicht möglich: Ton einer Leitung fehlt.");
+            this.state.fehler = _t("Conference not possible: the audio of one line is missing.");
             return false;
         }
         // AudioContext noch im Klick anlegen und starten (Autoplay-Regeln der Browser);
@@ -1620,7 +1620,7 @@ export const telefonDienst = {
             if (unterstuetzt) {
                 dienst.start();
             } else {
-                dienst.state.fehler = _t("Dieser Browser unterstützt das Softphone nicht.");
+                dienst.state.fehler = _t("This browser does not support the softphone.");
             }
         }
         return dienst;

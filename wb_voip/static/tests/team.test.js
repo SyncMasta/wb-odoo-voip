@@ -117,7 +117,7 @@ test("Reiter „Team“ steht nach „Verpasst“ und lädt beim Öffnen", async
     const titel = [...document.querySelectorAll(".o_wb_voip_reiter button")].map((b) =>
         b.textContent.trim()
     );
-    const verpasst = titel.findIndex((t) => t.startsWith("Verpasst"));
+    const verpasst = titel.findIndex((t) => t.startsWith("Missed"));
     expect(titel[verpasst + 1]).toMatch(/^Team/);
     expect.verifySteps([]);
     await reiterOeffnen();
@@ -136,9 +136,9 @@ test("Darstellung je Status: Text, Farbe und Dauer", async () => {
     // Name, Nebenstelle und Status als Text (nicht nur Farbe)
     expect(zeile("Anna Frei")).toHaveText(/Anna Frei/);
     expect(zeile("Anna Frei")).toHaveText(/102/);
-    expect(zeile("Anna Frei").querySelector(".o_wb_voip_team_status")).toHaveText("Frei");
+    expect(zeile("Anna Frei").querySelector(".o_wb_voip_team_status")).toHaveText("Free");
     expect(zeile("Anna Frei").querySelector(".o_wb_voip_team_punkt")).toHaveClass("text-success");
-    expect(zeile("Karl Klingelt").querySelector(".o_wb_voip_team_status")).toHaveText("Klingelt");
+    expect(zeile("Karl Klingelt").querySelector(".o_wb_voip_team_status")).toHaveText("Ringing");
     expect(zeile("Karl Klingelt").querySelector(".o_wb_voip_team_punkt")).toHaveClass(
         "o_wb_voip_team_blinkt"
     );
@@ -146,11 +146,11 @@ test("Darstellung je Status: Text, Farbe und Dauer", async () => {
         "o_wb_voip_team_blinkt"
     );
     expect(zeile("Tina Telefon").querySelector(".o_wb_voip_team_status")).toHaveText(
-        /Telefoniert 2:0[5-6]/
+        /On a call 2:0[5-6]/
     );
     expect(zeile("Tina Telefon").querySelector(".o_wb_voip_team_punkt")).toHaveClass("text-danger");
     expect(zeile("Abel Abgemeldet").querySelector(".o_wb_voip_team_status")).toHaveText(
-        "Abgemeldet"
+        "Signed out"
     );
     expect(zeile("Abel Abgemeldet").querySelector(".o_wb_voip_team_punkt")).toHaveClass(
         "text-muted"
@@ -164,7 +164,7 @@ test("Name und Nebenstelle sind sichtbar getrennt (Liste und Auswahl)", async ()
     expect.verifySteps(["team"]);
     const titel = (name) => zeile(name).querySelector(".fw-bold").textContent;
     expect(titel("Anna Frei")).not.toMatch(/Frei\s*102/);
-    expect(titel("Anna Frei")).toMatch(/Anna Frei\s*·\s*Nebenstelle\s*102/);
+    expect(titel("Anna Frei")).toMatch(/Anna Frei\s*·\s*Extension\s*102/);
     expect(zeile("Anna Frei").querySelector(".o_wb_voip_team_nebenstelle")).toHaveText(/102/);
 });
 
@@ -174,7 +174,7 @@ test("Auch in der Auswahl steht ein Trenner zwischen Name und Nebenstelle", asyn
     await animationFrame();
     expect.verifySteps(["team"]);
     expect(zeile("Karl Klingelt").querySelector(".fw-bold").textContent).toMatch(
-        /Karl Klingelt\s*·\s*Nebenstelle\s*103/
+        /Karl Klingelt\s*·\s*Extension\s*103/
     );
 });
 
@@ -184,12 +184,12 @@ test("Die Dauer zählt im Browser weiter", async () => {
     await mountWithCleanup(TeamListe);
     await animationFrame();
     expect.verifySteps(["team"]);
-    expect(".o_wb_voip_team_status").toHaveText(/Telefoniert 0:1\d/);
+    expect(".o_wb_voip_team_status").toHaveText(/On a call 0:1\d/);
     await advanceTime(60_000);
     await animationFrame();
     // das 60-s-Neuladen ist ein zweiter Abruf
     expect.verifySteps(["team"]);
-    expect(".o_wb_voip_team_status").toHaveText(/Telefoniert 1:[1-2]\d/);
+    expect(".o_wb_voip_team_status").toHaveText(/On a call 1:[1-2]\d/);
 });
 
 test("Knopf-Sichtbarkeit: Anrufen, Heranholen, Übergeben, Rückfrage, Konferenz", async () => {
@@ -322,7 +322,7 @@ test("Offener, sichtbarer Reiter lädt alle 60 s neu; versteckt oder geschlossen
     expect.verifySteps([]);
     patchWithCleanup(seite, { sichtbar: () => true });
     // anderen Reiter öffnen: der Team-Reiter ist weg, kein Takt mehr
-    await click(".o_wb_voip_reiter button:contains(Verpasst)");
+    await click(".o_wb_voip_reiter button:contains(Missed)");
     await animationFrame();
     await advanceTime(120_000);
     await animationFrame();
@@ -344,7 +344,7 @@ test("Team-Übersicht ausgeschaltet: Hinweis statt Liste", async () => {
     await mountWithCleanup(TeamListe);
     await animationFrame();
     expect.verifySteps(["team"]);
-    expect(".o_wb_voip_team_aus").toHaveText("Die Team-Übersicht ist ausgeschaltet.");
+    expect(".o_wb_voip_team_aus").toHaveText("The team overview is switched off.");
     expect(".o_wb_voip_team_zeile").toHaveCount(0);
     expect(".o_wb_voip_team").not.toHaveText(/Keine Kollegen/);
 });

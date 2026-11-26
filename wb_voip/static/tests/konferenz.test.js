@@ -504,7 +504,7 @@ test("Mischung: angehaltener AudioContext – Fehler und Rücknahme", async () =
     const p = seiten();
     const mikA = p.a.sender.track;
     p.ctx.resume = () => Promise.resolve(); // bleibt „suspended“
-    await expect(konferenzAufbauen(p)).rejects.toThrow(/Ton für die Konferenz nicht verfügbar/);
+    await expect(konferenzAufbauen(p)).rejects.toThrow(/Audio for the conference is not available/);
     expect(p.a.sender.track).toBe(mikA);
     expect(p.a.sender.ersetzungen.length).toBe(0);
     expect(p.ctx.geschlossen).toBe(true);
@@ -624,7 +624,7 @@ test("Konferenz mit Kollegen: Mischung scheitert nach der Annahme – Hinweis, R
     await welt.uhr.vorspulen(0);
     expect(welt.dienst.state.konferenz).toBe(false);
     expect(welt.meldungen.length).toBe(1);
-    expect(welt.meldungen[0]).toMatch(/Konferenz/);
+    expect(welt.meldungen[0]).toMatch(/Conference/);
     expect(welt.dienst.state.anruf.nummer).toBe("102");
     expect(welt.dienst.state.anruf.zustand).toBe("laeuft");
     welt.dienst.stop();
@@ -676,10 +676,10 @@ test("Konferenz mit Kollegen: angehaltener Ton – Meldung verweist auf den Knop
     welt.agent.invites.at(-1).gegenstelleNimmtAn();
     await welt.uhr.vorspulen(0);
     expect(welt.meldungen).toEqual([
-        "Konferenz konnte nicht aufgebaut werden – bitte im Gespräch „Konferenz“ drücken.",
+        "The conference could not be set up – please press \"Conference\" during the call.",
     ]);
     expect(welt.dienst.state.fehler).toBe(welt.meldungen[0]);
-    expect(welt.dienst.state.fehler).not.toMatch(/erneut klicken/);
+    expect(welt.dienst.state.fehler).not.toMatch(/click again/);
     welt.dienst.stop();
 });
 
@@ -694,8 +694,8 @@ test("Konferenz mit Kollegen: früher Abbruch im Dienst – feste Meldung statt 
     welt.agent.invites.at(-1).gegenstelleNimmtAn();
     await welt.uhr.vorspulen(0);
     expect(welt.meldungen.length).toBe(1);
-    expect(welt.meldungen[0]).toMatch(/bitte im Gespräch „Konferenz“ drücken/);
-    expect(welt.meldungen[0]).not.toMatch(/Unbekannter Fehler/);
+    expect(welt.meldungen[0]).toMatch(/please press "Conference" during the call/);
+    expect(welt.meldungen[0]).not.toMatch(/Unknown error/);
     expect(welt.dienst.state.fehler).toBe(welt.meldungen[0]);
     welt.dienst.stop();
 });

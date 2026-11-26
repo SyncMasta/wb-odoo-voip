@@ -197,7 +197,7 @@ test("Softphone: nur Softphone-Buttons, höchstens 4, Rest unter „Mehr“, ein
     expect(".o_wb_voip_anrufansicht .o_wb_voip_aktion_mehr").toHaveCount(1);
     // zugänglicher Name = sichtbarer Text (kein abweichendes aria-label)
     expect(".o_wb_voip_anrufansicht .o_wb_voip_aktion_mehr").not.toHaveAttribute("aria-label");
-    expect(".o_wb_voip_anrufansicht .o_wb_voip_aktion_mehr").toHaveText("Mehr");
+    expect(".o_wb_voip_anrufansicht .o_wb_voip_aktion_mehr").toHaveText("More");
     expect(abrufe).toBe(2);
     // kein Polling: Anruf ohne Änderung fragt nicht noch einmal
     const vorher = abrufe;

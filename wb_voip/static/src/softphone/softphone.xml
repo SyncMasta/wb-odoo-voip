@@ -7,28 +7,28 @@
                 <span class="fw-bold" t-att-class="info.farbe" t-esc="info.text"/>
                 <button t-if="state.status === 'getrennt'" type="button"
                         class="o_wb_voip_neu_verbinden btn btn-sm btn-outline-secondary ms-auto"
-                        title="Neu verbinden" aria-label="Neu verbinden" t-on-click="neuVerbinden">
-                    <i class="fa fa-refresh me-1" aria-hidden="true"/>Neu verbinden
+                        title="Reconnect" aria-label="Reconnect" t-on-click="neuVerbinden">
+                    <i class="fa fa-refresh me-1" aria-hidden="true"/>Reconnect
                 </button>
             </div>
             <div t-if="fehler" class="o_wb_voip_fehler text-muted mt-1" t-esc="fehler"/>
             <t t-if="state.status === 'ohne_lizenz'">
                 <button t-if="lizenzAktivierbar" type="button"
                         class="o_wb_voip_lizenz btn btn-link btn-sm p-0 mt-1"
-                        title="Lizenz aktivieren" aria-label="Lizenz aktivieren"
-                        t-on-click="lizenzAktivieren">Lizenz aktivieren</button>
-                <div t-else="" class="text-muted mt-1">Bitte wenden Sie sich an Ihren Administrator.</div>
+                        title="Activate license" aria-label="Activate license"
+                        t-on-click="lizenzAktivieren">Activate license</button>
+                <div t-else="" class="text-muted mt-1">Please contact your administrator.</div>
             </t>
             <t t-if="state.status === 'nicht_konfiguriert' or nichtEingerichtet">
                 <div t-if="state.status !== 'nicht_konfiguriert'" class="text-muted mt-1">
-                    Telefonie ist noch nicht eingerichtet.
+                    Telephony is not set up yet.
                 </div>
                 <div t-if="istManager" class="o_wb_voip_hinweis_manager text-muted mt-1">
                     <t t-if="state.status === 'nicht_konfiguriert'">
-                        Administrator: Umgebungsvariable WB_VOIP_FERNET_KEY im Odoo-Server setzen und
-                        Odoo neu starten.
+                        Administrator: set the environment variable WB_VOIP_FERNET_KEY on the Odoo server and
+                        restart Odoo.
                     </t>
-                    Telefonanlage und SIP-Benutzer im Benutzerformular (Reiter Telefonie) zuordnen.
+                    Assign the PBX and SIP user in the user form (Telephony tab).
                 </div>
             </t>
         </div>
@@ -38,9 +38,9 @@
         <section class="o_wb_voip_softphone card shadow h-100" aria-label="Softphone">
             <header class="o_wb_voip_kopf card-header d-flex align-items-center gap-2">
                 <i class="fa fa-phone" aria-hidden="true"/>
-                <span class="fw-bold flex-grow-1">Telefon</span>
+                <span class="fw-bold flex-grow-1">Phone</span>
                 <button type="button" class="o_wb_voip_schliessen btn btn-sm"
-                        title="Softphone schließen" aria-label="Softphone schließen"
+                        title="Close softphone" aria-label="Close softphone"
                         t-on-click="schliessen">
                     <i class="fa fa-times" aria-hidden="true"/>
                 </button>
@@ -60,7 +60,7 @@
                                 <t t-if="plakette(r) > 0">
                                     <span class="o_wb_voip_plakette badge rounded-pill text-bg-danger ms-1"
                                           t-esc="plakette(r) > 99 ? '99+' : plakette(r)"/>
-                                    <span class="visually-hidden"> ungesehen</span>
+                                    <span class="visually-hidden"> unseen</span>
                                 </t>
                             </button>
                         </t>
@@ -73,10 +73,10 @@
             </div>
             <footer t-if="lokal.erlaubnis === 'default'" class="card-footer py-1 px-2 small">
                 <button type="button" class="o_wb_voip_benachrichtigung_erlauben btn btn-link btn-sm p-0"
-                        title="Desktop-Benachrichtigung für eingehende Anrufe erlauben"
-                        aria-label="Desktop-Benachrichtigung für eingehende Anrufe erlauben"
+                        title="Allow desktop notification for incoming calls"
+                        aria-label="Allow desktop notification for incoming calls"
                         t-on-click="benachrichtigungErlauben">
-                    <i class="fa fa-bell me-1" aria-hidden="true"/>Desktop-Benachrichtigung erlauben
+                    <i class="fa fa-bell me-1" aria-hidden="true"/>Allow desktop notification
                 </button>
             </footer>
         </section>

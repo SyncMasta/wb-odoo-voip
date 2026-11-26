@@ -74,7 +74,7 @@ function vorbereiten(zeilen) {
 }
 
 async function reiterOeffnen() {
-    await click(".o_wb_voip_reiter button:contains(Verpasst)");
+    await click(".o_wb_voip_reiter button:contains(Missed)");
     await animationFrame();
 }
 

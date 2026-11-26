@@ -27,7 +27,7 @@ export const protokollPopupDienst = {
             dialog.add(FormViewDialog, {
                 resModel: "wb.voip.protokoll",
                 resId: id,
-                title: _t("Anruf protokollieren"),
+                title: _t("Log call"),
                 size: POPUP_GROESSE[letzteBreite],
                 canExpand: false,
                 preventCreate: true,

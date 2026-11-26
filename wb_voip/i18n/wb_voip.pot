@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0-20261112\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-26 09:28+0000\n"
-"PO-Revision-Date: 2026-11-26 09:28+0000\n"
+"POT-Creation-Date: 2026-11-26 09:52+0000\n"
+"PO-Revision-Date: 2026-11-26 09:52+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -39,13 +39,31 @@ msgstr ""
 #. module: wb_voip
 #. odoo-javascript
 #: code:addons/wb_voip/static/src/softphone/systray.js:0
-msgid "%s, %s ungesehene verpasste Anrufe"
+msgid "%s, %s unseen missed calls"
 msgstr ""
 
 #. module: wb_voip
 #. odoo-python
 #: code:addons/wb_voip/wizards/wb_voip_aktion_assistent.py:0
 msgid "A button may not set this field."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
+msgid "A call is already in progress."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
+msgid "A conference needs two answered lines."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
+msgid "A consult call is only possible during a call."
 msgstr ""
 
 #. module: wb_voip
@@ -63,27 +81,15 @@ msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
-#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.xml:0
-msgid "Abbrechen"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/anrufliste.js:0
-msgid "Abgelehnt"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/team/team_liste.js:0
-msgid "Abgemeldet"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
 #: code:addons/wb_voip/static/src/anrufer_fenster/anrufer_fenster.xml:0
 #: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
-msgid "Ablehnen"
+msgid "Accept"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+msgid "Accept and hold the current call"
 msgstr ""
 
 #. module: wb_voip
@@ -99,6 +105,12 @@ msgstr ""
 #. module: wb_voip
 #: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__message_needaction
 msgid "Action Needed"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/softphone.xml:0
+msgid "Activate license"
 msgstr ""
 
 #. module: wb_voip
@@ -142,8 +154,8 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/wb_voip/static/src/softphone/softphone.xml:0
 msgid ""
-"Administrator: Umgebungsvariable WB_VOIP_FERNET_KEY im Odoo-Server setzen und\n"
-"                        Odoo neu starten."
+"Administrator: set the environment variable WB_VOIP_FERNET_KEY on the Odoo server and\n"
+"                        restart Odoo."
 msgstr ""
 
 #. module: wb_voip
@@ -154,17 +166,7 @@ msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
-#: code:addons/wb_voip/static/src/team/team_liste.js:0
-msgid "Aktion konnte nicht ausgeführt werden."
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/aufgabenliste.xml:0
-msgid "Aktualisieren"
-msgstr ""
-
-#. module: wb_voip
+#: code:addons/wb_voip/static/src/designer/designer.js:0
 #: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_layout_view_form
 msgid "All blocks will be reset to the delivered state. Continue?"
 msgstr ""
@@ -172,109 +174,25 @@ msgstr ""
 #. module: wb_voip
 #. odoo-javascript
 #: code:addons/wb_voip/static/src/designer/designer.js:0
-msgid "Alle Benutzer"
+msgid "All users"
 msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
-#: code:addons/wb_voip/static/src/designer/designer.js:0
-msgid ""
-"Alle Blöcke werden auf den Auslieferungszustand zurückgesetzt. Fortfahren?"
+#: code:addons/wb_voip/static/src/softphone/softphone.xml:0
+msgid "Allow desktop notification"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/softphone.xml:0
+msgid "Allow desktop notification for incoming calls"
 msgstr ""
 
 #. module: wb_voip
 #: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion__zustand__immer
 #: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion_assistent__zustand__immer
 msgid "Always"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/waehlen_hilfe.js:0
-msgid "An das Telefon im anderen Tab übergeben"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/anrufliste.js:0
-#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.xml:0
-msgid "Anderswo angenommen"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/dienste/sip_agent.js:0
-msgid "Anlage antwortet nicht auf REGISTER."
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/anrufer_fenster/anrufer_fenster.xml:0
-#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
-msgid "Annehmen"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
-msgid "Annehmen und laufendes Gespräch halten"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/anrufer_fenster/anrufer_fenster.xml:0
-msgid "Anruf beendet"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/waehlen_hilfe.js:0
-msgid "Anruf konnte nicht gestartet werden."
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/protokoll_popup.js:0
-msgid "Anruf protokollieren"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/anrufliste.js:0
-msgid "Anrufe"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/anrufliste.js:0
-msgid "Anrufe konnten nicht geladen werden."
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/anrufliste.xml:0
-#: code:addons/wb_voip/static/src/softphone/aufgabenliste.xml:0
-#: code:addons/wb_voip/static/src/softphone/kontaktliste.xml:0
-#: code:addons/wb_voip/static/src/softphone/waehltastatur.xml:0
-msgid "Anrufen"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/team/team_liste.js:0
-msgid "Anrufen: %s"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/anrufer_fenster/anrufer_fenster.xml:0
-msgid "Anrufer-Fenster"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/anrufer_fenster/anrufer_fenster.xml:0
-msgid "Anrufer-Fenster schließen"
 msgstr ""
 
 #. module: wb_voip
@@ -295,6 +213,9 @@ msgid "Answered by %s"
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufliste.js:0
+#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.xml:0
 #: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_anruf__zustand__anderswo
 msgid "Answered elsewhere"
 msgstr ""
@@ -302,18 +223,6 @@ msgstr ""
 #. module: wb_voip
 #: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anruf__angenommen_anruf_id
 msgid "Answered with"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/designer/designer.xml:0
-msgid "Anzahl"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/designer/designer.js:0
-msgid "Anzahl 1 bis 20."
 msgstr ""
 
 #. module: wb_voip
@@ -329,6 +238,8 @@ msgid "Archived"
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/anrufer_fenster/anrufer_fenster.xml:0
 #: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_zuordnen_view_form
 msgid "Assign"
 msgstr ""
@@ -337,6 +248,12 @@ msgstr ""
 #. odoo-python
 #: code:addons/wb_voip/models/wb_voip_anruf.py:0
 msgid "Assign phone number"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/softphone.xml:0
+msgid "Assign the PBX and SIP user in the user form (Telephony tab)."
 msgstr ""
 
 #. module: wb_voip
@@ -353,112 +270,13 @@ msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
-#: code:addons/wb_voip/static/src/designer/designer.js:0
-#: code:addons/wb_voip/static/src/designer/designer.xml:0
-msgid "Auf Standard zurücksetzen"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/designer/designer.xml:0
-msgid "Aufbau"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/aufgabenliste.js:0
-msgid "Aufgaben"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/aufgabenliste.js:0
-msgid "Aufgaben konnten nicht geladen werden."
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/anrufer_fenster/anrufer_fenster.xml:0
-#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
-msgid "Auflegen"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/anrufansicht.js:0
-msgid "Auflegen und zurück"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/status.js:0
-msgid "Aus"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/anrufliste.xml:0
-msgid "Ausgehend"
+#: code:addons/wb_voip/static/src/dienste/konferenz.js:0
+msgid "Audio for the conference is not available – please click again."
 msgstr ""
 
 #. module: wb_voip
 #: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_aktion_assistent_view_form
 msgid "Back"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/anrufliste.js:0
-msgid "Beendet"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/designer/designer.js:0
-msgid "Beispiel"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/designer/designer.js:0
-msgid "Beispiel-Button"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/designer/designer.js:0
-msgid "Beispielaufgabe"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/designer/designer.js:0
-#: code:addons/wb_voip/static/src/designer/designer.xml:0
-msgid "Beispielkontakt"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/anrufliste.js:0
-msgid "Besetzt"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
-msgid "Bitte erst auflegen."
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/designer/designer.js:0
-msgid "Bitte mindestens ein Feld wählen."
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/softphone.xml:0
-msgid "Bitte wenden Sie sich an Ihren Administrator."
 msgstr ""
 
 #. module: wb_voip
@@ -470,19 +288,13 @@ msgstr ""
 #. module: wb_voip
 #. odoo-javascript
 #: code:addons/wb_voip/static/src/designer/designer.js:0
-msgid "Block %(art)s an Position %(pos)s"
+msgid "Block %(art)s at position %(pos)s"
 msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
 #: code:addons/wb_voip/static/src/designer/designer.js:0
-msgid "Block %(art)s an Position %(pos)s in Spalte %(spalte)s"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/designer/designer.xml:0
-msgid "Block in der Mitte wählen."
+msgid "Block %(art)s at position %(pos)s in column %(spalte)s"
 msgstr ""
 
 #. module: wb_voip
@@ -494,20 +306,16 @@ msgstr ""
 #. module: wb_voip
 #. odoo-javascript
 #: code:addons/wb_voip/static/src/designer/designer.xml:0
-msgid "Blockarten"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-python
-#: code:addons/wb_voip/models/wb_voip_layout.py:0
-#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_layout__block_ids
-msgid "Blocks"
+msgid "Block types"
 msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
+#. odoo-python
+#: code:addons/wb_voip/models/wb_voip_layout.py:0
 #: code:addons/wb_voip/static/src/designer/designer.js:0
-msgid "Blöcke"
+#: model:ir.model.fields,field_description:wb_voip.field_wb_voip_layout__block_ids
+msgid "Blocks"
 msgstr ""
 
 #. module: wb_voip
@@ -518,11 +326,7 @@ msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
-#: code:addons/wb_voip/static/src/designer/designer.xml:0
-msgid "Breite"
-msgstr ""
-
-#. module: wb_voip
+#: code:addons/wb_voip/static/src/softphone/anrufliste.js:0
 #: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_anruf__zustand__besetzt
 #: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_protokoll__ergebnis__besetzt
 msgid "Busy"
@@ -575,6 +379,12 @@ msgid "Call contact"
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/anrufer_fenster/anrufer_fenster.xml:0
+msgid "Call ended"
+msgstr ""
+
+#. module: wb_voip
 #: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anruf__protokoll_id
 msgid "Call log"
 msgstr ""
@@ -596,14 +406,39 @@ msgid "Call logs/tasks, 1 to 20."
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/layout/bloecke.xml:0
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+msgid "Call note"
+msgstr ""
+
+#. module: wb_voip
 #: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_protokoll_view_form
 #: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_protokoll_view_form_popup
 msgid "Call notes"
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.xml:0
+msgid "Call now"
+msgstr ""
+
+#. module: wb_voip
 #: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion_assistent__ziel__datensatz
 msgid "Call record"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/telefonfeld/telefonfeld.xml:0
+msgid "Call with the softphone"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/team/team_liste.js:0
+msgid "Call: %s"
 msgstr ""
 
 #. module: wb_voip
@@ -630,6 +465,8 @@ msgid "Called back by %s"
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/anrufer_fenster/anrufer_fenster.xml:0
 #: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_layout__ort__anrufer_fenster
 msgid "Caller window"
 msgstr ""
@@ -642,8 +479,10 @@ msgid ""
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
 #. odoo-python
 #: code:addons/wb_voip/models/res_partner.py:0
+#: code:addons/wb_voip/static/src/softphone/anrufliste.js:0
 #: model:ir.actions.act_window,name:wb_voip.wb_voip_anruf_action
 #: model:ir.model.fields,field_description:wb_voip.field_res_partner__wb_voip_protokoll_anzahl
 #: model:ir.model.fields,field_description:wb_voip.field_res_users__wb_voip_protokoll_anzahl
@@ -653,6 +492,14 @@ msgid "Calls"
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufliste.js:0
+msgid "Calls could not be loaded."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.xml:0
 #: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_aktion_assistent_view_form
 #: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_zuordnen_view_form
 msgid "Cancel"
@@ -669,24 +516,63 @@ msgid "Choose fields in the designer."
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/anrufer_fenster/anrufer_fenster.xml:0
+msgid "Close caller window"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/softphone.xml:0
+msgid "Close softphone"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.js:0
+msgid "Colleague"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.xml:0
+msgid "Colleague's note"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/layout/bloecke.xml:0
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+msgid "Colleagues who missed this call see this note."
+msgstr ""
+
+#. module: wb_voip
 #: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion__farbe
 #: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__farbe
 msgid "Color"
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
 #. odoo-python
 #: code:addons/wb_voip/models/wb_voip_layout.py:0
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
 #: model:ir.model.fields,field_description:wb_voip.field_wb_voip_layout_block__spalte
 msgid "Column"
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
 #: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_layout_block__spalte__1
 msgid "Column 1"
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
 #: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_layout_block__spalte__2
 msgid "Column 2"
 msgstr ""
@@ -707,8 +593,100 @@ msgid "Condition for contacts"
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+#: code:addons/wb_voip/static/src/team/team_liste.xml:0
+msgid "Conference"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.js:0
+msgid "Conference not possible."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
+msgid "Conference not possible: the audio of one line is missing."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/team/team_liste.js:0
+msgid "Conference: %s"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/konferenz.js:0
+msgid "Conference: no audio track for the mix."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/konferenz.js:0
+msgid "Conference: the audio of one line is missing."
+msgstr ""
+
+#. module: wb_voip
 #: model:ir.model,name:wb_voip.model_res_config_settings
 msgid "Config Settings"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+msgid "Connect"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+msgid "Connect the held call with this one"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/status.js:0
+msgid "Connected"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/sip_agent.js:0
+msgid "Connecting failed (%s)"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
+msgid "Connecting failed."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
+msgid "Connecting is possible only once the consult call has been answered."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.js:0
+msgid "Connecting not possible."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.js:0
+#: code:addons/wb_voip/static/src/softphone/status.js:0
+msgid "Connecting …"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/sip_agent.js:0
+msgid "Connecting: no confirmation from the PBX."
 msgstr ""
 
 #. module: wb_voip
@@ -717,8 +695,30 @@ msgid "Connection data locked"
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/sip_agent.js:0
+#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
+msgid "Connection to the PBX lost"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+msgid "Consult call"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.js:0
+msgid "Consult call not possible."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
 #. odoo-python
 #: code:addons/wb_voip/models/wb_voip_layout.py:0
+#: code:addons/wb_voip/static/src/layout/bloecke.js:0
+#: code:addons/wb_voip/static/src/layout/popup_layout.xml:0
 #: model:ir.model,name:wb_voip.model_res_partner
 #: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anruf__partner_id
 #: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__partner_id
@@ -727,6 +727,8 @@ msgid "Contact"
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/layout/bloecke.js:0
 #: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_layout_block__art__felder
 msgid "Contact fields"
 msgstr ""
@@ -737,11 +739,31 @@ msgid "Contact header"
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/kontaktliste.js:0
+msgid "Contacts"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/kontaktliste.js:0
+msgid "Contacts could not be loaded."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
 #. odoo-python
 #: code:addons/wb_voip/models/wb_voip_layout.py:0
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
 #: code:addons/wb_voip/tools/eingaben.py:0
 #: model:ir.model.fields,field_description:wb_voip.field_wb_voip_layout_block__anzahl
 msgid "Count"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+msgid "Count 1 to 20."
 msgstr ""
 
 #. module: wb_voip
@@ -788,22 +810,9 @@ msgid "Created with wizard"
 msgstr ""
 
 #. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
-msgid "Das Gespräch ist inzwischen beendet."
-msgstr ""
-
-#. module: wb_voip
 #: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__wert_date
 #: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__datum
 msgid "Date"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/designer/designer.xml:0
-msgid ""
-"Daten des Beispielkontakts nicht verfügbar, die Vorschau zeigt Platzhalter:"
 msgstr ""
 
 #. module: wb_voip
@@ -840,6 +849,12 @@ msgid ""
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/waehltastatur.xml:0
+msgid "Delete last digit"
+msgstr ""
+
+#. module: wb_voip
 #: model:ir.model.fields,help:wb_voip.field_wb_voip_layout__ist_standard
 msgid ""
 "Delivered with the module; applies when no matching custom layout exists. "
@@ -853,14 +868,8 @@ msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/softphone.xml:0
-msgid "Desktop-Benachrichtigung erlauben"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/softphone.xml:0
-msgid "Desktop-Benachrichtigung für eingehende Anrufe erlauben"
+#: code:addons/wb_voip/static/src/softphone/waehltastatur.js:0
+msgid "Dial"
 msgstr ""
 
 #. module: wb_voip
@@ -872,20 +881,8 @@ msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
-#: code:addons/wb_voip/static/src/team/team_liste.xml:0
-msgid "Die Team-Übersicht ist ausgeschaltet."
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/designer/designer.js:0
-msgid "Die Änderungen am Layout sind nicht gespeichert. Verwerfen?"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
-msgid "Dieser Browser unterstützt das Softphone nicht."
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.js:0
+msgid "Dialing …"
 msgstr ""
 
 #. module: wb_voip
@@ -894,6 +891,13 @@ msgstr ""
 #: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anruf__richtung
 #: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__richtung
 msgid "Direction"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+msgid "Discard"
 msgstr ""
 
 #. module: wb_voip
@@ -931,8 +935,10 @@ msgid ""
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
 #. odoo-python
 #: code:addons/wb_voip/models/wb_voip_anruf.py:0
+#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.xml:0
 #: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anruf__erledigt
 msgid "Done"
 msgstr ""
@@ -954,8 +960,8 @@ msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
-msgid "Dreier-Konferenz mit beiden Gesprächen"
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+msgid "Drag to move"
 msgstr ""
 
 #. module: wb_voip
@@ -982,25 +988,6 @@ msgid "Edit with wizard"
 msgstr ""
 
 #. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/designer/designer.xml:0
-msgid "Eigenschaften"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/anrufliste.xml:0
-msgid "Eingehend"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/benachrichtigung.js:0
-#: code:addons/wb_voip/static/src/softphone/anrufansicht.js:0
-msgid "Eingehender Anruf"
-msgstr ""
-
-#. module: wb_voip
 #: model:ir.model.fields,help:wb_voip.field_wb_voip_aktion__group_ids
 #: model:ir.model.fields,help:wb_voip.field_wb_voip_aktion_assistent__group_ids
 msgid "Empty = all WB VoIP users."
@@ -1019,6 +1006,26 @@ msgid "End"
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+msgid "End conference"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+msgid "End conference (hang up both)"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.js:0
+msgid "End consult call"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufliste.js:0
 #: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_anruf__zustand__beendet
 msgid "Ended"
 msgstr ""
@@ -1031,61 +1038,44 @@ msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
-#: code:addons/wb_voip/static/src/designer/designer.xml:0
-msgid "Entfernen"
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+msgid "Example"
 msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
 #: code:addons/wb_voip/static/src/designer/designer.js:0
-msgid "Entfernen: %s"
+msgid "Example button"
 msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
-#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.js:0
-msgid "Erledigen ist fehlgeschlagen."
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+msgid "Example contact"
 msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
-#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.xml:0
-msgid "Erledigt"
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+msgid "Example contact data not available, the preview shows placeholders:"
 msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
-#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
-msgid "Es läuft bereits ein Anruf."
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+msgid "Example task"
 msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
-#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
-msgid "Es sind bereits zwei Leitungen belegt."
+#: code:addons/wb_voip/static/src/team/team_liste.xml:0
+msgid "Extension"
 msgstr ""
 
 #. module: wb_voip
 #: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_anruf__zustand__fehlgeschlagen
 msgid "Failed"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/designer/designer.xml:0
-msgid "Feld suchen …"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/designer/designer.xml:0
-msgid "Felder"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/designer/designer.xml:0
-msgid "Fenster"
 msgstr ""
 
 #. module: wb_voip
@@ -1102,8 +1092,10 @@ msgid "Field type"
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
 #. odoo-python
 #: code:addons/wb_voip/models/wb_voip_layout.py:0
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
 #: model:ir.model.fields,field_description:wb_voip.field_wb_voip_layout_block__feld_ids
 msgid "Fields"
 msgstr ""
@@ -1164,20 +1156,32 @@ msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+msgid "Forward"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+msgid "Forward now"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+msgid "Forward to"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.js:0
+msgid "Forwarding not possible."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
 #: code:addons/wb_voip/static/src/team/team_liste.js:0
-msgid "Frei"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
-msgid "Gehalten:"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
-msgid "Gehaltenes Gespräch mit diesem verbinden"
+msgid "Free"
 msgstr ""
 
 #. module: wb_voip
@@ -1187,19 +1191,15 @@ msgid "Green"
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
 #. odoo-python
 #: code:addons/wb_voip/models/wb_voip_layout.py:0
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
 #: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion__group_ids
 #: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__group_ids
 #: model:ir.model.fields,field_description:wb_voip.field_wb_voip_layout__group_ids
 msgid "Groups"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/designer/designer.js:0
-#: code:addons/wb_voip/static/src/designer/designer.xml:0
-msgid "Gruppen"
 msgstr ""
 
 #. module: wb_voip
@@ -1209,8 +1209,21 @@ msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/waehlen_hilfe.js:0
+msgid "Hand over to the phone in the other tab"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/anrufer_fenster/anrufer_fenster.xml:0
 #: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
-msgid "Halten"
+msgid "Hang up"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.js:0
+msgid "Hang up and go back"
 msgstr ""
 
 #. module: wb_voip
@@ -1220,14 +1233,20 @@ msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
-#: code:addons/wb_voip/static/src/team/team_liste.js:0
-msgid "Heranholen: %s"
+#: code:addons/wb_voip/static/src/layout/bloecke.js:0
+msgid "Hint"
 msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
-#: code:addons/wb_voip/static/src/layout/bloecke.js:0
-msgid "Hinweis"
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+msgid "Hold"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.xml:0
+msgid "How was it resolved?"
 msgstr ""
 
 #. module: wb_voip
@@ -1291,13 +1310,7 @@ msgstr ""
 #. module: wb_voip
 #. odoo-javascript
 #: code:addons/wb_voip/static/src/softphone/anrufansicht.js:0
-msgid "Im Gespräch"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/designer/designer.js:0
-msgid "In diesem Fenster nicht erlaubt."
+msgid "In a call"
 msgstr ""
 
 #. module: wb_voip
@@ -1319,6 +1332,8 @@ msgid "In the softphone"
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufliste.xml:0
 #: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion__richtung__eingehend
 #: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion_assistent__richtung__eingehend
 #: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_anruf__richtung__eingehend
@@ -1328,8 +1343,21 @@ msgid "Incoming"
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/benachrichtigung.js:0
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.js:0
+msgid "Incoming call"
+msgstr ""
+
+#. module: wb_voip
 #: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__wert_integer
 msgid "Integer"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/sip_agent.js:0
+msgid "Invalid SIP address."
 msgstr ""
 
 #. module: wb_voip
@@ -1371,176 +1399,8 @@ msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
-#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.xml:0
-msgid "Jetzt anrufen"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
 #: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
-msgid "Jetzt weiterleiten"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/designer/designer.xml:0
-msgid "Kein Beispielkontakt gewählt, die Vorschau zeigt Platzhalter."
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
-msgid "Kein Telefon-Tab gefunden."
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/team/team_liste.xml:0
-msgid "Keine Kollegen im Team."
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/aufgabenliste.xml:0
-msgid "Keine offenen Aufgaben mit Telefonnummer."
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.xml:0
-msgid "Keine offenen verpassten Anrufe."
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
-msgid "Keine wählbare Nummer."
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/anrufliste.js:0
-#: code:addons/wb_voip/static/src/team/team_liste.js:0
-msgid "Klingelt"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/anrufansicht.js:0
-msgid "Klingelt …"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.js:0
-msgid "Kollege"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/layout/bloecke.xml:0
-#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
-msgid "Kollegen, die diesen Anruf verpasst haben, sehen diese Notiz."
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
-#: code:addons/wb_voip/static/src/team/team_liste.xml:0
-msgid "Konferenz"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
-msgid "Konferenz beenden"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
-msgid "Konferenz beenden (beide auflegen)"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
-msgid "Konferenz geht erst mit zwei angenommenen Leitungen."
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
-msgid ""
-"Konferenz konnte nicht aufgebaut werden – bitte im Gespräch „Konferenz“ "
-"drücken."
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/anrufansicht.js:0
-msgid "Konferenz nicht möglich."
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
-msgid "Konferenz nicht möglich: Ton einer Leitung fehlt."
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/team/team_liste.js:0
-msgid "Konferenz: %s"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/dienste/konferenz.js:0
-msgid "Konferenz: Ton einer Leitung fehlt."
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/dienste/konferenz.js:0
-msgid "Konferenz: keine Audiospur für die Mischung."
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/layout/bloecke.js:0
-#: code:addons/wb_voip/static/src/layout/popup_layout.xml:0
-msgid "Kontakt"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/layout/bloecke.xml:0
-msgid "Kontakt öffnen"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/kontaktliste.js:0
-msgid "Kontakte"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/kontaktliste.js:0
-msgid "Kontakte konnten nicht geladen werden."
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/kontaktliste.xml:0
-msgid "Kontakte suchen"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/layout/bloecke.js:0
-msgid "Kontaktfelder"
+msgid "Keypad"
 msgstr ""
 
 #. module: wb_voip
@@ -1581,6 +1441,12 @@ msgid "Last Updated on"
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+msgid "Last call"
+msgstr ""
+
+#. module: wb_voip
 #: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anruf__zuletzt_gesehen
 msgid "Last seen"
 msgstr ""
@@ -1595,8 +1461,10 @@ msgid "Layout"
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
 #. odoo-python
 #: code:addons/wb_voip/models/wb_voip_layout.py:0
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
 #: model:ir.actions.client,name:wb_voip.wb_voip_layout_designer_action
 #: model:ir.ui.menu,name:wb_voip.wb_voip_menu_layout_designer
 msgid "Layout designer"
@@ -1605,51 +1473,22 @@ msgstr ""
 #. module: wb_voip
 #. odoo-javascript
 #: code:addons/wb_voip/static/src/designer/designer.js:0
-msgid "Layout gespeichert."
+msgid "Layout saved."
 msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
-#: code:addons/wb_voip/static/src/designer/designer.xml:0
-msgid "Layout-Designer"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/layout/bloecke.js:0
-#: code:addons/wb_voip/static/src/layout/bloecke.xml:0
-msgid "Letzte Gespräche"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/waehltastatur.xml:0
-msgid "Letzte Ziffer löschen"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/designer/designer.js:0
-msgid "Letztes Gespräch"
-msgstr ""
-
-#. module: wb_voip
 #. odoo-python
 #: code:addons/wb_voip/models/res_users.py:0
+#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
+#: code:addons/wb_voip/static/src/softphone/status.js:0
 msgid "License missing or expired"
 msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/softphone.xml:0
-msgid "Lizenz aktivieren"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
-#: code:addons/wb_voip/static/src/softphone/status.js:0
-msgid "Lizenz fehlt oder abgelaufen"
+#: code:addons/wb_voip/static/src/anrufer_fenster/anrufer_fenster.xml:0
+msgid "Loading …"
 msgstr ""
 
 #. module: wb_voip
@@ -1660,14 +1499,8 @@ msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
-#: code:addons/wb_voip/static/src/anrufer_fenster/anrufer_fenster.xml:0
-msgid "Lädt …"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/anrufliste.js:0
-msgid "Läuft"
+#: code:addons/wb_voip/static/src/protokoll_popup.js:0
+msgid "Log call"
 msgstr ""
 
 #. module: wb_voip
@@ -1676,14 +1509,14 @@ msgid "Manages PBXs and sees all calls."
 msgstr ""
 
 #. module: wb_voip
-#: model:res.groups,comment:wb_voip.group_wb_voip_user
-msgid "May use the softphone and log own calls."
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.js:0
+msgid "Marking as done failed."
 msgstr ""
 
 #. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/aktionen/aktions_leiste.xml:0
-msgid "Mehr"
+#: model:res.groups,comment:wb_voip.group_wb_voip_user
+msgid "May use the softphone and log own calls."
 msgstr ""
 
 #. module: wb_voip
@@ -1697,6 +1530,10 @@ msgid "Messages"
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufliste.js:0
+#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.js:0
+#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.xml:0
 #: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_anruf__zustand__verpasst
 msgid "Missed"
 msgstr ""
@@ -1709,21 +1546,8 @@ msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
-#: code:addons/wb_voip/static/src/team/team_liste.xml:0
-msgid "Mit Rückfrage"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/team/team_liste.js:0
-msgid "Mit Rückfrage: %s"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/telefonfeld/telefonfeld.xml:0
-msgid "Mit dem Softphone anrufen"
+#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.js:0
+msgid "Missed calls could not be loaded."
 msgstr ""
 
 #. module: wb_voip
@@ -1737,32 +1561,51 @@ msgid "Model"
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/aktionen/aktions_leiste.xml:0
+msgid "More"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/aktionen/aktions_leiste.xml:0
+msgid "More actions"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+msgid "Move down"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+msgid "Move down: %s"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+msgid "Move up"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+msgid "Move up: %s"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/anrufer_fenster/anrufer_fenster.xml:0
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+msgid "Mute"
+msgstr ""
+
+#. module: wb_voip
 #: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__my_activity_date_deadline
 msgid "My Activity Deadline"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/designer/designer.xml:0
-msgid "Nach oben"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/designer/designer.js:0
-msgid "Nach oben: %s"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/designer/designer.xml:0
-msgid "Nach unten"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/designer/designer.js:0
-msgid "Nach unten: %s"
 msgstr ""
 
 #. module: wb_voip
@@ -1779,13 +1622,7 @@ msgstr ""
 #. module: wb_voip
 #. odoo-javascript
 #: code:addons/wb_voip/static/src/softphone/kontaktliste.xml:0
-msgid "Name, E-Mail oder Nummer"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/team/team_liste.xml:0
-msgid "Nebenstelle"
+msgid "Name, email or number"
 msgstr ""
 
 #. module: wb_voip
@@ -1796,29 +1633,15 @@ msgstr ""
 #. module: wb_voip
 #. odoo-javascript
 #: code:addons/wb_voip/static/src/softphone/anrufliste.js:0
-msgid "Neu"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/softphone.xml:0
-msgid "Neu verbinden"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/anrufer_fenster/anrufer_fenster.xml:0
-msgid "Neuer Kontakt"
-msgstr ""
-
-#. module: wb_voip
 #: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_anruf__zustand__neu
 msgid "New"
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
 #. odoo-python
 #: code:addons/wb_voip/models/wb_voip_anruf.py:0
+#: code:addons/wb_voip/static/src/anrufer_fenster/anrufer_fenster.xml:0
 #: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion__art__neuer_kontakt
 #: model:wb.voip.aktion,name:wb_voip.wb_voip_aktion_neuer_kontakt
 msgid "New contact"
@@ -1850,18 +1673,6 @@ msgid "Next Activity Type"
 msgstr ""
 
 #. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/anrufliste.js:0
-msgid "Nicht erreicht"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/status.js:0
-msgid "Nicht verbunden"
-msgstr ""
-
-#. module: wb_voip
 #. odoo-python
 #: code:addons/wb_voip/models/wb_voip_layout.py:0
 msgid "No"
@@ -1870,7 +1681,43 @@ msgstr ""
 #. module: wb_voip
 #. odoo-javascript
 #: code:addons/wb_voip/static/src/softphone/anrufliste.xml:0
-msgid "Noch keine Anrufe."
+msgid "No calls yet."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/team/team_liste.xml:0
+msgid "No colleagues in the team."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
+msgid "No dialable number."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+msgid "No example contact chosen, the preview shows placeholders."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.xml:0
+msgid "No open missed calls."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/aufgabenliste.xml:0
+msgid "No open tasks with a phone number."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
+msgid "No phone tab found."
 msgstr ""
 
 #. module: wb_voip
@@ -1879,14 +1726,32 @@ msgid "Normal"
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+msgid "Not allowed in this window."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/status.js:0
+msgid "Not connected"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufliste.js:0
 #: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_protokoll__ergebnis__nicht_erreicht
 msgid "Not reached"
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
 #. odoo-python
 #: code:addons/wb_voip/models/wb_voip_anruf.py:0
 #: code:addons/wb_voip/models/wb_voip_layout.py:0
+#: code:addons/wb_voip/static/src/layout/bloecke.js:0
+#: code:addons/wb_voip/static/src/layout/bloecke.xml:0
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
 #: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anruf__notiz
 #: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_layout_block__art__notiz
 msgid "Note"
@@ -1894,28 +1759,9 @@ msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
-#: code:addons/wb_voip/static/src/layout/bloecke.js:0
-#: code:addons/wb_voip/static/src/layout/bloecke.xml:0
-#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
-msgid "Notiz"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.xml:0
-msgid "Notiz des Kollegen"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/layout/bloecke.xml:0
-#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
-msgid "Notiz zum Gespräch"
-msgstr ""
-
-#. module: wb_voip
 #. odoo-python
 #: code:addons/wb_voip/models/wb_voip_anruf.py:0
+#: code:addons/wb_voip/static/src/softphone/waehltastatur.xml:0
 #: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anruf__nummer
 msgid "Number"
 msgstr ""
@@ -1947,15 +1793,26 @@ msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/waehltastatur.xml:0
-msgid "Nummer"
+#: code:addons/wb_voip/static/src/softphone/status.js:0
+msgid "Off"
 msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
-#: code:addons/wb_voip/static/src/layout/bloecke.js:0
-#: code:addons/wb_voip/static/src/layout/bloecke.xml:0
-msgid "Offene Aufgaben"
+#: code:addons/wb_voip/static/src/team/team_liste.js:0
+msgid "On a call"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/team/team_liste.js:0
+msgid "On a call %s"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+msgid "On hold:"
 msgstr ""
 
 #. module: wb_voip
@@ -2020,11 +1877,20 @@ msgid "Only the server sets these fields: %s"
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/layout/bloecke.xml:0
+msgid "Open contact"
+msgstr ""
+
+#. module: wb_voip
 #: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_layout_view_form
 msgid "Open designer"
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/layout/bloecke.js:0
+#: code:addons/wb_voip/static/src/layout/bloecke.xml:0
 #: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_layout_block__art__aufgaben
 msgid "Open tasks"
 msgstr ""
@@ -2053,6 +1919,8 @@ msgid ""
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufliste.xml:0
 #: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion__richtung__ausgehend
 #: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion_assistent__richtung__ausgehend
 #: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_anruf__richtung__ausgehend
@@ -2079,6 +1947,18 @@ msgid "PBXs"
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/softphone.xml:0
+msgid "Phone"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/status.js:0
+msgid "Phone is running in another tab"
+msgstr ""
+
+#. module: wb_voip
 #: model:ir.model.fields,field_description:wb_voip.field_wb_voip_zuordnen__nummer
 msgid "Phone number"
 msgstr ""
@@ -2090,6 +1970,18 @@ msgid "Phone numbers (E.164)"
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/systray.js:0
+msgid "Phone: %s"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/team/team_liste.js:0
+msgid "Pick up: %s"
+msgstr ""
+
+#. module: wb_voip
 #: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anlage__heranholen_praefix
 msgid "Pick-up prefix"
 msgstr ""
@@ -2098,6 +1990,15 @@ msgstr ""
 #. odoo-python
 #: code:addons/wb_voip/models/wb_voip_anlage.py:0
 msgid "Pick-up prefix: at most 8 characters, digits, * and # only."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufliste.xml:0
+#: code:addons/wb_voip/static/src/softphone/aufgabenliste.xml:0
+#: code:addons/wb_voip/static/src/softphone/kontaktliste.xml:0
+#: code:addons/wb_voip/static/src/softphone/waehltastatur.xml:0
+msgid "Place call"
 msgstr ""
 
 #. module: wb_voip
@@ -2160,8 +2061,10 @@ msgid "Please choose an allowed model."
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
 #. odoo-python
 #: code:addons/wb_voip/models/wb_voip_layout.py:0
+#: code:addons/wb_voip/static/src/designer/designer.js:0
 msgid "Please choose at least one field."
 msgstr ""
 
@@ -2182,6 +2085,12 @@ msgstr ""
 #. odoo-python
 #: code:addons/wb_voip/wizards/wb_voip_aktion_assistent.py:0
 msgid "Please choose what should happen."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/softphone.xml:0
+msgid "Please contact your administrator."
 msgstr ""
 
 #. module: wb_voip
@@ -2209,6 +2118,18 @@ msgid "Please enter a web address."
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
+msgid "Please hang up first."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+msgid "Preview"
+msgstr ""
+
+#. module: wb_voip
 #: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion__farbe__primary
 #: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion_assistent__farbe__primary
 msgid "Primary"
@@ -2217,6 +2138,12 @@ msgstr ""
 #. module: wb_voip
 #: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_anlage__modus__prod
 msgid "Production"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+msgid "Properties"
 msgstr ""
 
 #. module: wb_voip
@@ -2234,6 +2161,19 @@ msgstr ""
 #. module: wb_voip
 #: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_layout_block__art__protokolle
 msgid "Recent call logs"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/layout/bloecke.js:0
+#: code:addons/wb_voip/static/src/layout/bloecke.xml:0
+msgid "Recent calls"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/softphone.xml:0
+msgid "Reconnect"
 msgstr ""
 
 #. module: wb_voip
@@ -2261,13 +2201,46 @@ msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
-#: code:addons/wb_voip/static/src/dienste/sip_agent.js:0
-msgid "Registrierung an der Anlage verloren"
+#: code:addons/wb_voip/static/src/softphone/aufgabenliste.xml:0
+msgid "Refresh"
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/sip_agent.js:0
+msgid "Registration on the PBX lost"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/anrufer_fenster/anrufer_fenster.xml:0
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+msgid "Reject"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+msgid "Reject second call"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufliste.js:0
 #: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_anruf__zustand__abgelehnt
 msgid "Rejected"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+msgid "Remove"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+msgid "Remove: %s"
 msgstr ""
 
 #. module: wb_voip
@@ -2276,6 +2249,9 @@ msgid "Replace"
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
 #: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_layout_view_form
 msgid "Reset to default"
 msgstr ""
@@ -2302,37 +2278,30 @@ msgid "Retention period for call data"
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufliste.js:0
+#: code:addons/wb_voip/static/src/team/team_liste.js:0
 #: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_anruf__zustand__klingelt
 msgid "Ringing"
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.js:0
+msgid "Ringing …"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufliste.js:0
 #: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_anruf__zustand__laeuft
 msgid "Running"
 msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
-msgid "Rückfrage"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/anrufansicht.js:0
-msgid "Rückfrage beenden"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/anrufansicht.js:0
-msgid "Rückfrage nicht möglich."
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
-msgid "Rückfrage nur während eines Gesprächs."
+#: code:addons/wb_voip/static/src/dienste/sip_agent.js:0
+msgid "SIP access incomplete (WebSocket, domain or user is missing)."
 msgstr ""
 
 #. module: wb_voip
@@ -2386,23 +2355,14 @@ msgid "SIP user"
 msgstr ""
 
 #. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/dienste/sip_agent.js:0
-msgid "SIP-Bibliothek konnte nicht geladen werden."
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/dienste/sip_agent.js:0
-msgid "SIP-Zugang unvollständig (WebSocket, Domain oder Benutzer fehlt)."
-msgstr ""
-
-#. module: wb_voip
 #: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__message_has_sms_error
 msgid "SMS Delivery error"
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.xml:0
 #: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_aktion_assistent_view_form
 msgid "Save"
 msgstr ""
@@ -2426,9 +2386,27 @@ msgid "Schedule follow-up activity"
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/kontaktliste.xml:0
+msgid "Search contacts"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+msgid "Search field …"
+msgstr ""
+
+#. module: wb_voip
 #. odoo-python
 #: code:addons/wb_voip/tools/eingaben.py:0
 msgid "Search text"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+msgid "Second call:"
 msgstr ""
 
 #. module: wb_voip
@@ -2440,6 +2418,12 @@ msgstr ""
 #. module: wb_voip
 #: model:ir.model.fields,field_description:wb_voip.field_wb_voip_anruf__gesehen
 msgid "Seen"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+msgid "Select a block in the middle."
 msgstr ""
 
 #. module: wb_voip
@@ -2505,47 +2489,14 @@ msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
+#: code:addons/wb_voip/static/src/team/team_liste.js:0
+msgid "Signed out"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
 #: code:addons/wb_voip/static/src/softphone/softphone.xml:0
 msgid "Softphone"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
-msgid "Softphone ist auf dem Server nicht konfiguriert."
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/softphone.xml:0
-msgid "Softphone schließen"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/designer/designer.xml:0
-msgid "Spalte"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/designer/designer.js:0
-#: code:addons/wb_voip/static/src/designer/designer.xml:0
-msgid "Spalte 1"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/designer/designer.js:0
-#: code:addons/wb_voip/static/src/designer/designer.xml:0
-msgid "Spalte 2"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/designer/designer.xml:0
-#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.xml:0
-msgid "Speichern"
 msgstr ""
 
 #. module: wb_voip
@@ -2594,9 +2545,8 @@ msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
-#: code:addons/wb_voip/static/src/anrufer_fenster/anrufer_fenster.xml:0
-#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
-msgid "Stumm"
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
+msgid "Structure"
 msgstr ""
 
 #. module: wb_voip
@@ -2612,8 +2562,14 @@ msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
-msgid "Tastatur"
+#: code:addons/wb_voip/static/src/softphone/aufgabenliste.js:0
+msgid "Tasks"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/aufgabenliste.js:0
+msgid "Tasks could not be loaded."
 msgstr ""
 
 #. module: wb_voip
@@ -2625,14 +2581,8 @@ msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
-#: code:addons/wb_voip/static/src/team/team_liste.js:0
-msgid "Team konnte nicht geladen werden."
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
 #: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
-msgid "Team: Übergeben oder Rückfrage"
+msgid "Team: transfer or consult call"
 msgstr ""
 
 #. module: wb_voip
@@ -2658,66 +2608,16 @@ msgid "Technical selection value"
 msgstr ""
 
 #. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/softphone.xml:0
-msgid "Telefon"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
-msgid "Telefon ist für diesen Benutzer nicht eingerichtet."
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
-msgid "Telefon ist nicht verbunden."
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/status.js:0
-msgid "Telefon läuft in einem anderen Tab"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/systray.js:0
-msgid "Telefon: %s"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/softphone.xml:0
-msgid ""
-"Telefonanlage und SIP-Benutzer im Benutzerformular (Reiter Telefonie) "
-"zuordnen."
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/softphone.xml:0
-#: code:addons/wb_voip/static/src/softphone/status.js:0
-msgid "Telefonie ist noch nicht eingerichtet."
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/team/team_liste.js:0
-msgid "Telefoniert"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/team/team_liste.js:0
-msgid "Telefoniert %s"
-msgstr ""
-
-#. module: wb_voip
 #: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_res_users_view_form
 #: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_res_users_view_form_simple
 msgid "Telephony"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/softphone.xml:0
+#: code:addons/wb_voip/static/src/softphone/status.js:0
+msgid "Telephony is not set up yet."
 msgstr ""
 
 #. module: wb_voip
@@ -2745,13 +2645,25 @@ msgstr ""
 #. module: wb_voip
 #. odoo-javascript
 #: code:addons/wb_voip/static/src/designer/designer.xml:0
-msgid "Text (nur Klartext)"
+msgid "Text (plain text only)"
 msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
 #: code:addons/wb_voip/static/src/designer/designer.js:0
-msgid "Text zu lang."
+msgid "Text too long."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/sip_agent.js:0
+msgid "The PBX does not respond to REGISTER."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/sip_agent.js:0
+msgid "The SIP library could not be loaded."
 msgstr ""
 
 #. module: wb_voip
@@ -2759,6 +2671,12 @@ msgstr ""
 #: code:addons/wb_voip/models/wb_voip_anlage.py:0
 msgid ""
 "The WebSocket URL must start with wss://, e.g. wss://anlage.example/ws."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/team/team_liste.js:0
+msgid "The action could not be executed."
 msgstr ""
 
 #. module: wb_voip
@@ -2789,6 +2707,18 @@ msgid "The button no longer exists."
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/waehlen_hilfe.js:0
+msgid "The call could not be started."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
+msgid "The call has ended in the meantime."
+msgstr ""
+
+#. module: wb_voip
 #. odoo-python
 #: code:addons/wb_voip/wizards/wb_voip_zuordnen.py:0
 msgid "The call is missing."
@@ -2797,6 +2727,14 @@ msgstr ""
 #. module: wb_voip
 #: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_aktion_assistent_view_form
 msgid "The chosen record is added; existing ones are kept."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
+msgid ""
+"The conference could not be set up – please press \"Conference\" during the "
+"call."
 msgstr ""
 
 #. module: wb_voip
@@ -2869,9 +2807,27 @@ msgid "The icon must be a Font Awesome class, e.g. fa-user."
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+msgid "The layout changes are not saved. Discard?"
+msgstr ""
+
+#. module: wb_voip
 #. odoo-python
 #: code:addons/wb_voip/models/res_users.py:0
 msgid "The license could not be checked."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
+msgid "The phone is not connected."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
+msgid "The phone is not set up for this user."
 msgstr ""
 
 #. module: wb_voip
@@ -2890,6 +2846,24 @@ msgstr ""
 #. odoo-python
 #: code:addons/wb_voip/models/wb_voip_anruf.py:0
 msgid "The server action of the button is faulty."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
+msgid "The softphone is not configured on the server."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/team/team_liste.js:0
+msgid "The team could not be loaded."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/team/team_liste.xml:0
+msgid "The team overview is switched off."
 msgstr ""
 
 #. module: wb_voip
@@ -2946,6 +2920,12 @@ msgstr ""
 #. module: wb_voip
 #: model:ir.model.constraint,message:wb_voip.constraint_wb_voip_anruf_sip_call_id_je_benutzer
 msgid "This SIP call ID already exists for the user."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
+msgid "This browser does not support the softphone."
 msgstr ""
 
 #. module: wb_voip
@@ -3009,32 +2989,52 @@ msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
-#: code:addons/wb_voip/static/src/designer/designer.xml:0
-msgid "Titel"
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+msgid "Three-way conference with both calls"
 msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
-#: code:addons/wb_voip/static/src/designer/designer.js:0
-msgid "Titel zu lang."
-msgstr ""
-
-#. module: wb_voip
 #. odoo-python
 #: code:addons/wb_voip/models/wb_voip_layout.py:0
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
 #: model:ir.model.fields,field_description:wb_voip.field_wb_voip_layout_block__titel
 msgid "Title"
 msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
-#: code:addons/wb_voip/static/src/dienste/konferenz.js:0
-msgid "Ton für die Konferenz nicht verfügbar – bitte erneut klicken."
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+msgid "Title too long."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+msgid "Too many fields."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/team/team_liste.xml:0
+msgid "Transfer"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/team/team_liste.js:0
+msgid "Transfer: %s"
 msgstr ""
 
 #. module: wb_voip
 #: model:ir.model.fields,help:wb_voip.field_wb_voip_layout_block__spalte
 msgid "Two columns are available from the width \"Wide\"."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
+msgid "Two lines are already in use."
 msgstr ""
 
 #. module: wb_voip
@@ -3053,38 +3053,32 @@ msgstr ""
 #. odoo-javascript
 #: code:addons/wb_voip/static/src/softphone/anrufliste.js:0
 #: code:addons/wb_voip/static/src/verpasst/verpasst_liste.js:0
-msgid "Unbekannt"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/anrufer_fenster/anrufer_fenster.xml:0
-msgid "Unbekannte Nummer"
+msgid "Unknown"
 msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
 #: code:addons/wb_voip/static/src/aktionen/aktions_leiste.js:0
 #: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
-msgid "Unbekannter Fehler"
+msgid "Unknown error"
 msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
-#: code:addons/wb_voip/static/src/designer/designer.js:0
-msgid "Ungespeicherte Änderungen"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/dienste/sip_agent.js:0
-msgid "Ungültige SIP-Adresse."
+#: code:addons/wb_voip/static/src/anrufer_fenster/anrufer_fenster.xml:0
+msgid "Unknown number"
 msgstr ""
 
 #. module: wb_voip
 #. odoo-python
 #: code:addons/wb_voip/models/res_users.py:0
 msgid "Unknown window."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/designer/designer.js:0
+msgid "Unsaved changes"
 msgstr ""
 
 #. module: wb_voip
@@ -3106,83 +3100,6 @@ msgid "Value model"
 msgstr ""
 
 #. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/anrufansicht.js:0
-#: code:addons/wb_voip/static/src/softphone/status.js:0
-msgid "Verbinde …"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
-msgid "Verbinden"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/dienste/sip_agent.js:0
-msgid "Verbinden fehlgeschlagen (%s)"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
-msgid "Verbinden fehlgeschlagen."
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
-msgid "Verbinden geht erst, wenn die Rückfrage angenommen ist."
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/anrufansicht.js:0
-msgid "Verbinden nicht möglich."
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/dienste/sip_agent.js:0
-msgid "Verbinden: keine Bestätigung der Anlage."
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/dienste/sip_agent.js:0
-#: code:addons/wb_voip/static/src/dienste/telefon_dienst.js:0
-msgid "Verbindung zur Anlage getrennt"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/status.js:0
-msgid "Verbunden"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/anrufliste.js:0
-#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.js:0
-#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.xml:0
-msgid "Verpasst"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.js:0
-msgid "Verpasste Anrufe konnten nicht geladen werden."
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/designer/designer.js:0
-#: code:addons/wb_voip/static/src/designer/designer.xml:0
-msgid "Verwerfen"
-msgstr ""
-
-#. module: wb_voip
 #: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_layout__breite__sehr_breit
 msgid "Very wide"
 msgstr ""
@@ -3200,12 +3117,6 @@ msgstr ""
 #. module: wb_voip
 #: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_protokoll__ergebnis__mailbox
 msgid "Voicemail"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/designer/designer.xml:0
-msgid "Vorschau"
 msgstr ""
 
 #. module: wb_voip
@@ -3318,30 +3229,6 @@ msgid "Website communication history"
 msgstr ""
 
 #. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/aktionen/aktions_leiste.xml:0
-msgid "Weitere Aktionen"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
-msgid "Weiterleiten"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
-msgid "Weiterleiten an"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/anrufansicht.js:0
-msgid "Weiterleiten nicht möglich."
-msgstr ""
-
-#. module: wb_voip
 #: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_aktion_view_form
 msgid "What happens?"
 msgstr ""
@@ -3375,21 +3262,19 @@ msgid "Wide"
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
 #. odoo-python
 #: code:addons/wb_voip/models/wb_voip_layout.py:0
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
 #: model:ir.model.fields,field_description:wb_voip.field_wb_voip_layout__breite
 msgid "Width"
 msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
-#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.xml:0
-msgid "Wie erledigt?"
-msgstr ""
-
-#. module: wb_voip
 #. odoo-python
 #: code:addons/wb_voip/models/wb_voip_layout.py:0
+#: code:addons/wb_voip/static/src/designer/designer.xml:0
 #: model:ir.model.fields,field_description:wb_voip.field_wb_voip_layout__ort
 msgid "Window"
 msgstr ""
@@ -3406,20 +3291,21 @@ msgid "Window layouts"
 msgstr ""
 
 #. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
+#: code:addons/wb_voip/static/src/team/team_liste.xml:0
+msgid "With consult call"
+msgstr ""
+
+#. module: wb_voip
+#. odoo-javascript
+#: code:addons/wb_voip/static/src/team/team_liste.js:0
+msgid "With consult call: %s"
+msgstr ""
+
+#. module: wb_voip
 #: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent_option__assistent_id
 msgid "Wizard"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/waehltastatur.js:0
-msgid "Wählen"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/anrufansicht.js:0
-msgid "Wählt …"
 msgstr ""
 
 #. module: wb_voip
@@ -3462,36 +3348,6 @@ msgstr ""
 #. odoo-python
 #: code:addons/wb_voip/models/wb_voip_anruf.py:0
 msgid "You are not allowed to run this server action."
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/designer/designer.xml:0
-msgid "Ziehen zum Verschieben"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/designer/designer.js:0
-msgid "Zu viele Felder."
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/anrufer_fenster/anrufer_fenster.xml:0
-msgid "Zuordnen"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
-msgid "Zweiten Anruf ablehnen"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/softphone/anrufansicht.xml:0
-msgid "Zweiter Anruf:"
 msgstr ""
 
 #. module: wb_voip
@@ -3544,7 +3400,7 @@ msgstr ""
 #. module: wb_voip
 #. odoo-javascript
 #: code:addons/wb_voip/static/src/softphone/softphone.xml:0
-msgid "ungesehen"
+msgid "unseen"
 msgstr ""
 
 #. module: wb_voip
@@ -3555,24 +3411,12 @@ msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
-#: code:addons/wb_voip/static/src/team/team_liste.xml:0
-msgid "Übergeben"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/team/team_liste.js:0
-msgid "Übergeben: %s"
+#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.js:0
+msgid "↪ answered by %s"
 msgstr ""
 
 #. module: wb_voip
 #. odoo-javascript
 #: code:addons/wb_voip/static/src/verpasst/verpasst_liste.js:0
-msgid "↪ angenommen von %s"
-msgstr ""
-
-#. module: wb_voip
-#. odoo-javascript
-#: code:addons/wb_voip/static/src/verpasst/verpasst_liste.js:0
-msgid "↪ angenommen von %s (%s)"
+msgid "↪ answered by %s (%s)"
 msgstr ""

@@ -33,7 +33,7 @@
             <button t-if="props.daten.onKontaktOeffnen" type="button"
                     class="o_wb_voip_af_kontakt_oeffnen btn btn-link p-0"
                     t-on-click="() => props.daten.onKontaktOeffnen()">
-                <i class="fa fa-external-link me-1" aria-hidden="true"/>Kontakt öffnen
+                <i class="fa fa-external-link me-1" aria-hidden="true"/>Open contact
             </button>
         </section>
     </t>
@@ -54,7 +54,7 @@
     <t t-name="wb_voip.LayoutBlockProtokolle">
         <section t-if="protokolle.length" class="o_wb_voip_lb_block o_wb_voip_lb_protokolle o_wb_voip_af_protokolle mb-3"
                  t-att-aria-labelledby="titelId">
-            <h3 t-att-id="titelId" class="o_wb_voip_lb_titel h6 text-muted"><t t-if="titel" t-esc="titel"/><t t-else="">Letzte Gespräche</t></h3>
+            <h3 t-att-id="titelId" class="o_wb_voip_lb_titel h6 text-muted"><t t-if="titel" t-esc="titel"/><t t-else="">Recent calls</t></h3>
             <ul class="list-unstyled mb-0">
                 <li t-foreach="protokolle" t-as="protokoll" t-key="protokoll.id"
                     class="o_wb_voip_af_protokoll border-top py-2">
@@ -72,7 +72,7 @@
     <t t-name="wb_voip.LayoutBlockAufgaben">
         <section t-if="aufgaben.length" class="o_wb_voip_lb_block o_wb_voip_lb_aufgaben o_wb_voip_af_aufgaben mb-3"
                  t-att-aria-labelledby="titelId">
-            <h3 t-att-id="titelId" class="o_wb_voip_lb_titel h6 text-muted"><t t-if="titel" t-esc="titel"/><t t-else="">Offene Aufgaben</t></h3>
+            <h3 t-att-id="titelId" class="o_wb_voip_lb_titel h6 text-muted"><t t-if="titel" t-esc="titel"/><t t-else="">Open tasks</t></h3>
             <ul class="list-unstyled mb-0">
                 <li t-foreach="aufgaben" t-as="aufgabe" t-key="aufgabe.id">
                     <button t-if="props.daten.onAufgabeOeffnen" type="button"
@@ -92,13 +92,13 @@
 
     <t t-name="wb_voip.LayoutBlockNotiz">
         <section t-if="anruf" class="o_wb_voip_lb_block o_wb_voip_lb_notiz mb-3" t-att-aria-labelledby="titelId">
-            <label t-att-id="titelId" class="form-label small text-muted mb-1" t-att-for="feldId"><t t-if="titel" t-esc="titel"/><t t-else="">Notiz</t></label>
+            <label t-att-id="titelId" class="form-label small text-muted mb-1" t-att-for="feldId"><t t-if="titel" t-esc="titel"/><t t-else="">Note</t></label>
             <textarea t-att-id="feldId" class="o_wb_voip_af_notiz form-control" rows="4"
-                      t-att-maxlength="props.daten.maxNotiz" placeholder="Notiz zum Gespräch"
+                      t-att-maxlength="props.daten.maxNotiz" placeholder="Call note"
                       t-att-aria-describedby="anruf.richtung === 'eingehend' ? feldId + '_hinweis' : false"
                       t-model="anruf.notiz"/>
             <div t-if="anruf.richtung === 'eingehend'" t-att-id="feldId + '_hinweis'"
-                 class="o_wb_voip_notiz_hinweis small text-muted mt-1">Kollegen, die diesen Anruf verpasst haben, sehen diese Notiz.</div>
+                 class="o_wb_voip_notiz_hinweis small text-muted mt-1">Colleagues who missed this call see this note.</div>
         </section>
     </t>
 

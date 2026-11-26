@@ -458,7 +458,7 @@ test("Anrufansicht: Leiste „Gehalten“ mit Zurück und Verbinden", async () =
     const welt = await ansicht();
     const { erste, zweite } = await mitRueckfrage(welt);
     await animationFrame();
-    expect(".o_wb_voip_gehalten").toHaveText(/Gehalten: 0170 1111/);
+    expect(".o_wb_voip_gehalten").toHaveText(/On hold: 0170 1111/);
     expect(".o_wb_voip_name").toHaveText("102");
     await click(".o_wb_voip_verbinden");
     await welt.uhr.vorspulen(0);
@@ -764,7 +764,7 @@ test("Anrufansicht: während Verbinden Knöpfe gesperrt", async () => {
     for (const knopf of [".o_wb_voip_verbinden", ".o_wb_voip_zurueck", ".o_wb_voip_auflegen", ".o_wb_voip_halten"]) {
         expect(knopf).toHaveAttribute("disabled");
     }
-    expect(".o_wb_voip_zustand").toHaveText(/Verbinde/);
+    expect(".o_wb_voip_zustand").toHaveText(/Connecting/);
     expect(".o_notification").toHaveCount(0);
     refer.resolve();
     await welt.uhr.vorspulen(0);
@@ -777,7 +777,7 @@ test("Anrufansicht: Zurück beschriftet nach Herkunft der aktiven Leitung", asyn
     const welt = await ansicht();
     await mitRueckfrage(welt);
     await animationFrame();
-    expect(".o_wb_voip_zurueck").toHaveAttribute("aria-label", "Rückfrage beenden");
+    expect(".o_wb_voip_zurueck").toHaveAttribute("aria-label", "End consult call");
     await welt.dienst.zurueck();
     await welt.uhr.vorspulen(0);
     welt.agent.eingehend("0170 2222");
@@ -785,8 +785,8 @@ test("Anrufansicht: Zurück beschriftet nach Herkunft der aktiven Leitung", asyn
     await welt.dienst.annehmen();
     await welt.uhr.vorspulen(0);
     await animationFrame();
-    expect(".o_wb_voip_zurueck").toHaveAttribute("aria-label", "Auflegen und zurück");
-    expect(".o_wb_voip_zurueck").toHaveText("Auflegen und zurück");
+    expect(".o_wb_voip_zurueck").toHaveAttribute("aria-label", "Hang up and go back");
+    expect(".o_wb_voip_zurueck").toHaveText("Hang up and go back");
     welt.dienst.stop();
 });
 

@@ -14,7 +14,7 @@ registry.category("web_tour.tours").add("wb_voip_softphone_tour", {
         },
         {
             content: "Anruf läuft",
-            trigger: ".o_wb_voip_anrufansicht .o_wb_voip_zustand:contains(Im Gespräch)",
+            trigger: ".o_wb_voip_anrufansicht .o_wb_voip_zustand:contains(In a call)",
         },
         {
             content: "Notiz schreiben",
@@ -55,7 +55,7 @@ registry.category("web_tour.tours").add("wb_voip_softphone_tour", {
         },
         {
             content: "Reiter Anrufe öffnen",
-            trigger: ".o_wb_voip_reiter button:contains(Anrufe)",
+            trigger: ".o_wb_voip_reiter button:contains(Calls)",
             run: "click",
         },
         {
@@ -65,7 +65,7 @@ registry.category("web_tour.tours").add("wb_voip_softphone_tour", {
         // Anrufer-Fenster: unbekannte Nummer einem Kontakt zuordnen
         {
             content: "Reiter Wählen öffnen",
-            trigger: ".o_wb_voip_reiter button:contains(Wählen)",
+            trigger: ".o_wb_voip_reiter button:contains(Dial)",
             run: "click",
         },
         {
@@ -80,7 +80,7 @@ registry.category("web_tour.tours").add("wb_voip_softphone_tour", {
         },
         {
             content: "Anrufer-Fenster zeigt die unbekannte Nummer",
-            trigger: ".o_wb_voip_anrufer_fenster .o_wb_voip_af_name:contains(Unbekannte Nummer)",
+            trigger: ".o_wb_voip_anrufer_fenster .o_wb_voip_af_name:contains(Unknown number)",
         },
         {
             content: "Zuordnen",
@@ -118,7 +118,7 @@ registry.category("web_tour.tours").add("wb_voip_softphone_tour", {
         },
         {
             content: "Zweiter Anruf läuft",
-            trigger: ".o_wb_voip_anrufansicht .o_wb_voip_zustand:contains(Im Gespräch)",
+            trigger: ".o_wb_voip_anrufansicht .o_wb_voip_zustand:contains(In a call)",
         },
         {
             content: "Auflegen",

@@ -4,11 +4,11 @@
         <section t-if="fenster.offen" t-ref="panel"
                  class="o_wb_voip_anrufer_fenster position-fixed d-flex flex-column bg-view shadow-lg"
                  t-att-class="breiteKlasse"
-                 role="dialog" aria-label="Anrufer-Fenster" tabindex="-1" t-on-keydown="onKeydown"
+                 role="dialog" aria-label="Caller window" tabindex="-1" t-on-keydown="onKeydown"
                  t-on-mouseenter="onZeigerEin" t-on-mouseleave="onZeigerAus"
                  t-on-focusin="onFokusEin" t-on-focusout="onFokusAus">
             <!-- Überschrift für Screenreader: die Blocktitel (h3) hängen darunter -->
-            <h2 class="o_wb_voip_af_ueberschrift visually-hidden">Anrufer-Fenster<t t-if="kontakt">: <t t-esc="kontakt.name"/></t></h2>
+            <h2 class="o_wb_voip_af_ueberschrift visually-hidden">Caller window<t t-if="kontakt">: <t t-esc="kontakt.name"/></t></h2>
             <header class="o_wb_voip_af_kopf p-3">
                 <div class="d-flex align-items-center gap-3">
                 <img t-if="bildUrl" class="o_wb_voip_af_bild rounded" t-att-src="bildUrl"
@@ -21,25 +21,25 @@
                         <div class="o_wb_voip_af_name fs-4 fw-bold text-truncate" t-esc="kontakt.name"/>
                         <div t-if="kontakt.firma" class="o_wb_voip_af_firma text-truncate" t-esc="kontakt.firma"/>
                     </t>
-                    <div t-elif="daten" class="o_wb_voip_af_name fs-4 fw-bold">Unbekannte Nummer</div>
+                    <div t-elif="daten" class="o_wb_voip_af_name fs-4 fw-bold">Unknown number</div>
                     <div t-if="nummer" class="o_wb_voip_af_nummer small text-truncate" t-esc="nummer"/>
                     <!-- Live-Bereich: Statuswechsel („Lädt …“, „Anruf beendet“) liest ein Screenreader vor -->
                     <div class="o_wb_voip_af_status" role="status">
                         <div t-if="!kontakt and !daten" class="o_wb_voip_af_laedt text-truncate">
-                            <i class="fa fa-spinner fa-spin me-1" aria-hidden="true"/>Lädt …
+                            <i class="fa fa-spinner fa-spin me-1" aria-hidden="true"/>Loading …
                         </div>
-                        <div t-if="fenster.beendet" class="o_wb_voip_af_beendet small">Anruf beendet</div>
+                        <div t-if="fenster.beendet" class="o_wb_voip_af_beendet small">Call ended</div>
                     </div>
                 </div>
                 <!-- Gesprächsknöpfe immer im Kopf: das Panel kann die Anrufansicht verdecken -->
                 <div t-if="laufenderAnruf" class="o_wb_voip_af_gespraech d-flex gap-2 flex-shrink-0">
                     <t t-if="klingeltEingehend">
                         <button type="button" class="o_wb_voip_af_annehmen btn btn-success"
-                                title="Annehmen" aria-label="Annehmen" t-on-click="annehmen">
+                                title="Accept" aria-label="Accept" t-on-click="annehmen">
                             <i class="fa fa-phone" aria-hidden="true"/>
                         </button>
                         <button type="button" class="o_wb_voip_af_ablehnen btn btn-danger"
-                                title="Ablehnen" aria-label="Ablehnen" t-on-click="ablehnen">
+                                title="Reject" aria-label="Reject" t-on-click="ablehnen">
                             <i class="fa fa-times" aria-hidden="true"/>
                         </button>
                     </t>
@@ -47,17 +47,17 @@
                         <button type="button" class="o_wb_voip_af_stumm btn btn-outline-light"
                                 t-att-class="{active: laufenderAnruf.stumm}" t-att-disabled="!imGespraech"
                                 t-att-aria-pressed="laufenderAnruf.stumm ? 'true' : 'false'"
-                                title="Stumm" aria-label="Stumm" t-on-click="stumm">
+                                title="Mute" aria-label="Mute" t-on-click="stumm">
                             <i class="fa fa-microphone-slash" aria-hidden="true"/>
                         </button>
                         <button type="button" class="o_wb_voip_af_auflegen btn btn-danger"
-                                title="Auflegen" aria-label="Auflegen" t-on-click="auflegen">
+                                title="Hang up" aria-label="Hang up" t-on-click="auflegen">
                             <i class="fa fa-phone o_wb_voip_auflegen_symbol" aria-hidden="true"/>
                         </button>
                     </t>
                 </div>
                 <button type="button" class="o_wb_voip_af_schliessen btn btn-sm"
-                        title="Anrufer-Fenster schließen" aria-label="Anrufer-Fenster schließen"
+                        title="Close caller window" aria-label="Close caller window"
                         t-on-click="schliessen">
                     <i class="fa fa-times" aria-hidden="true"/>
                 </button>
@@ -66,11 +66,11 @@
                 <div t-if="unbekannt" class="o_wb_voip_af_kopf_aktionen d-flex flex-wrap gap-2 mt-2">
                     <button type="button" class="o_wb_voip_af_zuordnen btn btn-sm btn-light"
                             t-on-click="zuordnen">
-                        <i class="fa fa-link me-1" aria-hidden="true"/>Zuordnen
+                        <i class="fa fa-link me-1" aria-hidden="true"/>Assign
                     </button>
                     <button type="button" class="o_wb_voip_af_neuer_kontakt btn btn-sm btn-primary"
                             t-on-click="neuerKontakt">
-                        <i class="fa fa-user-plus me-1" aria-hidden="true"/>Neuer Kontakt
+                        <i class="fa fa-user-plus me-1" aria-hidden="true"/>New contact
                     </button>
                 </div>
             </header>

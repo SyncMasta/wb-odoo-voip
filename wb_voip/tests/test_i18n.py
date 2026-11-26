@@ -37,12 +37,9 @@ class TestI18n(TransactionCase):
                 self.assertTrue(eintrag.msgstr)
                 self.assertEqual(_platzhalter(eintrag.msgid), _platzhalter(eintrag.msgstr))
 
-    def test_de_po_deckt_python_und_xml(self):
-        """Every msgid from Python/XML (not only static/) has a German translation."""
+    def test_de_po_vollstaendig(self):
+        """Every msgid of the template (Python, XML, JS and QWeb) has a German translation."""
         deutsch = {eintrag.msgid: eintrag.msgstr for eintrag in self._de()}
         for eintrag in self._pot():
-            orte = [ort for ort, _zeile in eintrag.occurrences]
-            if orte and all('/static/' in ort for ort in orte):
-                continue
             with self.subTest(msgid=eintrag.msgid):
                 self.assertTrue(deutsch.get(eintrag.msgid))

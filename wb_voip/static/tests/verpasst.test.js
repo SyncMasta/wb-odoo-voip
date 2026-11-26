@@ -95,7 +95,7 @@ function vorbereiten({ zeilen = [ZEILE], zaehler = 2, status = "verbunden" } = {
 }
 
 async function reiterOeffnen() {
-    await click(".o_wb_voip_reiter button:contains(Verpasst)");
+    await click(".o_wb_voip_reiter button:contains(Missed)");
     await animationFrame();
 }
 
@@ -120,12 +120,12 @@ test("Reiter „Verpasst“ steht nach „Anrufe“ und trägt die Plakette", as
     const titel = [...document.querySelectorAll(".o_wb_voip_reiter button")].map((b) =>
         b.textContent.trim()
     );
-    const anrufe = titel.findIndex((t) => t.startsWith("Anrufe"));
-    expect(titel[anrufe + 1]).toMatch(/^Verpasst/);
+    const anrufe = titel.findIndex((t) => t.startsWith("Calls"));
+    expect(titel[anrufe + 1]).toMatch(/^Missed/);
     expect(".o_wb_voip_reiter .o_wb_voip_plakette").toHaveText("2");
     // Bildschirmleser: übersetzter, sichtbar versteckter Text statt aria-label aus einem Literal
     expect(".o_wb_voip_reiter .o_wb_voip_plakette").not.toHaveAttribute("aria-label");
-    expect(".o_wb_voip_reiter .o_wb_voip_plakette + .visually-hidden").toHaveText("ungesehen");
+    expect(".o_wb_voip_reiter .o_wb_voip_plakette + .visually-hidden").toHaveText("unseen");
     expect.verifySteps(["zaehler"]);
 });
 
@@ -149,7 +149,7 @@ test("Leere Liste zeigt einen Hinweis", async () => {
     await mountWithCleanup(Softphone);
     await reiterOeffnen();
     expect.verifySteps(["zaehler", "liste", "gesehen"]);
-    expect(".o_wb_voip_verpasstliste").toHaveText(/Keine offenen verpassten Anrufe/);
+    expect(".o_wb_voip_verpasstliste").toHaveText(/No open missed calls/);
 });
 
 test("Erledigen: Text eingeben, speichern, Zeile verschwindet", async () => {
@@ -235,7 +235,7 @@ test("Kollege hat angenommen: Hinweis und Notiz als Text", async () => {
     await reiterOeffnen();
     expect.verifySteps(["zaehler", "liste", "gesehen"]);
     expect(".o_wb_voip_anderswo").toHaveCount(1);
-    expect(".o_wb_voip_anderswo").toHaveText("↪ angenommen von Hans Kollege (2:05)");
+    expect(".o_wb_voip_anderswo").toHaveText("↪ answered by Hans Kollege (2:05)");
     // 📋 nur bei anderswo mit Notiz
     expect(".o_wb_voip_kollegen_notiz_knopf").toHaveCount(1);
     expect(".o_wb_voip_kollegen_notiz").toHaveCount(0);
@@ -399,10 +399,10 @@ test("Anderswo-Zeile hat eigenes Symbol und Titel", async () => {
     await mountWithCleanup(Softphone);
     await reiterOeffnen();
     expect.verifySteps(["zaehler", "liste", "gesehen"]);
-    expect(".o_wb_voip_eintrag:eq(0) .o_wb_voip_art_verpasst").toHaveAttribute("title", "Verpasst");
+    expect(".o_wb_voip_eintrag:eq(0) .o_wb_voip_art_verpasst").toHaveAttribute("title", "Missed");
     expect(".o_wb_voip_eintrag:eq(0) .o_wb_voip_art_anderswo").toHaveCount(0);
     expect(".o_wb_voip_eintrag:eq(1) .o_wb_voip_art_anderswo").toHaveClass("fa-share");
-    expect(".o_wb_voip_eintrag:eq(1) .o_wb_voip_art_anderswo").toHaveAttribute("title", "Anderswo angenommen");
-    expect(".o_wb_voip_eintrag:eq(1) .o_wb_voip_art_anderswo").toHaveAttribute("aria-label", "Anderswo angenommen");
+    expect(".o_wb_voip_eintrag:eq(1) .o_wb_voip_art_anderswo").toHaveAttribute("title", "Answered elsewhere");
+    expect(".o_wb_voip_eintrag:eq(1) .o_wb_voip_art_anderswo").toHaveAttribute("aria-label", "Answered elsewhere");
     expect(".o_wb_voip_eintrag:eq(1) .o_wb_voip_art_verpasst").toHaveCount(0);
 });

@@ -184,7 +184,7 @@ test("öffnet bei anruf-aktiv im Telefon-Tab, Fokus und Escape", async () => {
     expect.verifySteps(["kontext 10"]);
     expect(".o_wb_voip_anrufer_fenster").toHaveCount(1);
     expect(".o_wb_voip_anrufer_fenster").toHaveAttribute("role", "dialog");
-    expect(".o_wb_voip_anrufer_fenster").toHaveAttribute("aria-label", "Anrufer-Fenster");
+    expect(".o_wb_voip_anrufer_fenster").toHaveAttribute("aria-label", "Caller window");
     expect(".o_wb_voip_anrufer_fenster").toBeFocused();
     expect(".o_wb_voip_af_name").toHaveText("Erika Muster");
     expect(".o_wb_voip_af_firma").toHaveText("Muster GmbH");
@@ -288,11 +288,11 @@ test("unbekannte Nummer: „Zuordnen“ und „Neuer Kontakt“", async () => {
     const { aktionen } = await fensterMit(dienst);
     w.fabrik.letzterAgent.eingehend("0170 5555");
     await weiter(w.uhr);
-    expect(".o_wb_voip_af_name").toHaveText("Unbekannte Nummer");
+    expect(".o_wb_voip_af_name").toHaveText("Unknown number");
     expect(".o_wb_voip_af_bild").toHaveCount(0);
     expect(".o_wb_voip_af_zuordnen").toHaveCount(1);
     expect(".o_wb_voip_af_neuer_kontakt").toHaveCount(1);
-    expect(".o_wb_voip_af_neuer_kontakt").toHaveText("Neuer Kontakt");
+    expect(".o_wb_voip_af_neuer_kontakt").toHaveText("New contact");
     expect(".o_wb_voip_af_neuer_kontakt").toHaveClass("btn-primary");
     expect(".o_wb_voip_af_neuer_kontakt i").toHaveClass("fa-user-plus");
     // der eingerichtete Button gleicher Art erscheint nicht doppelt
@@ -422,7 +422,7 @@ test("Notiz ist dieselbe wie in der Anrufansicht", async () => {
     expect(".o_wb_voip_af_notiz").toHaveAttribute("maxlength", String(MAX_NOTIZ));
     // eingehend: Hinweis, dass Kollegen die Notiz sehen
     expect(".o_wb_voip_lb_notiz .o_wb_voip_notiz_hinweis").toHaveText(
-        "Kollegen, die diesen Anruf verpasst haben, sehen diese Notiz."
+        "Colleagues who missed this call see this note."
     );
     await click(".o_wb_voip_af_notiz");
     await edit("Will Angebot");
@@ -481,13 +481,13 @@ test("Kopf-Status steht in einem Live-Bereich", async () => {
     const sitzung = w.fabrik.letzterAgent.eingehend("0170 5555");
     await weiter(w.uhr);
     expect(".o_wb_voip_af_kopf [role=status]").toHaveCount(1);
-    expect(".o_wb_voip_af_kopf [role=status]").toHaveText(/Lädt/);
+    expect(".o_wb_voip_af_kopf [role=status]").toHaveText(/Loading/);
     fertig();
     await weiter(w.uhr);
     sitzung.gegenstelleLegtAuf("487");
     await weiter(w.uhr);
     expect(".o_wb_voip_af_kopf [role=status]").toHaveCount(1);
-    expect(".o_wb_voip_af_kopf [role=status]").toHaveText(/Anruf beendet/);
+    expect(".o_wb_voip_af_kopf [role=status]").toHaveText(/Call ended/);
     w.aufraeumen();
 });
 
@@ -671,9 +671,9 @@ test("Kopf: Annehmen beim Klingeln, danach Stumm und Auflegen", async () => {
     const sitzung = w.fabrik.letzterAgent.eingehend("0170 5555");
     await weiter(w.uhr);
     expect(".o_wb_voip_af_kopf .o_wb_voip_af_annehmen").toHaveCount(1);
-    expect(".o_wb_voip_af_annehmen").toHaveAttribute("title", "Annehmen");
-    expect(".o_wb_voip_af_annehmen").toHaveAttribute("aria-label", "Annehmen");
-    expect(".o_wb_voip_af_ablehnen").toHaveAttribute("aria-label", "Ablehnen");
+    expect(".o_wb_voip_af_annehmen").toHaveAttribute("title", "Accept");
+    expect(".o_wb_voip_af_annehmen").toHaveAttribute("aria-label", "Accept");
+    expect(".o_wb_voip_af_ablehnen").toHaveAttribute("aria-label", "Reject");
     expect(".o_wb_voip_af_auflegen").toHaveCount(0);
     await click(".o_wb_voip_af_annehmen");
     await weiter(w.uhr);
@@ -681,14 +681,14 @@ test("Kopf: Annehmen beim Klingeln, danach Stumm und Auflegen", async () => {
     expect.verifySteps(["annehmen"]);
     expect(sitzung.hat("accept").length).toBe(1);
     expect(".o_wb_voip_af_annehmen").toHaveCount(0);
-    expect(".o_wb_voip_af_kopf .o_wb_voip_af_stumm").toHaveAttribute("aria-label", "Stumm");
+    expect(".o_wb_voip_af_kopf .o_wb_voip_af_stumm").toHaveAttribute("aria-label", "Mute");
     expect(".o_wb_voip_af_stumm").toHaveAttribute("aria-pressed", "false");
     await click(".o_wb_voip_af_stumm");
     await animationFrame();
     expect.verifySteps(["stumm"]);
     expect(dienst.state.anruf.stumm).toBe(true);
     expect(".o_wb_voip_af_stumm").toHaveAttribute("aria-pressed", "true");
-    expect(".o_wb_voip_af_auflegen").toHaveAttribute("title", "Auflegen");
+    expect(".o_wb_voip_af_auflegen").toHaveAttribute("title", "Hang up");
     await click(".o_wb_voip_af_auflegen");
     await weiter(w.uhr);
     expect.verifySteps(["auflegen"]);

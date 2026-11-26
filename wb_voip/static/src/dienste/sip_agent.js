@@ -377,7 +377,7 @@ export class SipJsSitzung extends Sender {
                                 } else {
                                     ende(
                                         reject,
-                                        new Error(_t("Verbinden: keine Bestätigung der Anlage."))
+                                        new Error(_t("Connecting: no confirmation from the PBX."))
                                     );
                                 }
                             }, VERBINDEN_NOTIFY_MS);
@@ -398,7 +398,7 @@ export class SipJsSitzung extends Sender {
                         if (code >= 200 && code < 300) {
                             ende(resolve);
                         } else if (code >= 300) {
-                            ende(reject, new Error(_t("Verbinden fehlgeschlagen (%s)", code)));
+                            ende(reject, new Error(_t("Connecting failed (%s)", code)));
                         }
                     },
                 })
@@ -444,7 +444,7 @@ export class SipJsAgent extends Sender {
                 onInvite: (invitation) => this._eingehend(invitation),
                 onDisconnect: (fehler) => {
                     if (!this._gestoppt) {
-                        this.emit("getrennt", fehler?.message || _t("Verbindung zur Anlage getrennt"));
+                        this.emit("getrennt", fehler?.message || _t("Connection to the PBX lost"));
                     }
                 },
             },
@@ -453,7 +453,7 @@ export class SipJsAgent extends Sender {
     _uri(benutzer) {
         const uri = this.SIP.UserAgent.makeURI(`sip:${benutzer}@${this._domain}`);
         if (!uri) {
-            throw new Error(_t("Ungültige SIP-Adresse."));
+            throw new Error(_t("Invalid SIP address."));
         }
         return uri;
     }
@@ -463,7 +463,7 @@ export class SipJsAgent extends Sender {
         this._registerer = new Registerer(this._ua, { expires: REGISTER_EXPIRES_S });
         await new Promise((resolve, reject) => {
             const timer = setTimeout(
-                () => reject(new Error(_t("Anlage antwortet nicht auf REGISTER."))),
+                () => reject(new Error(_t("The PBX does not respond to REGISTER."))),
                 REGISTER_TIMEOUT_MS
             );
             const fertig = (fn) => (arg) => {
@@ -488,7 +488,7 @@ export class SipJsAgent extends Sender {
         // Registrierung geht später verloren (Auffrischung scheitert)
         this._registerer.stateChange.addListener((zustand) => {
             if (zustand === RegistererState.Unregistered && !this._gestoppt) {
-                this.emit("getrennt", _t("Registrierung an der Anlage verloren"));
+                this.emit("getrennt", _t("Registration on the PBX lost"));
             }
         });
     }
@@ -639,10 +639,10 @@ export function erzeugeAgentFabrik({ bibliothekLaden, sipBibliothek = () => wind
         await bibliothekLaden();
         const SIP = sipBibliothek();
         if (!SIP?.UserAgent) {
-            throw new Error(_t("SIP-Bibliothek konnte nicht geladen werden."));
+            throw new Error(_t("The SIP library could not be loaded."));
         }
         if (!zugang.ws_url || !zugang.sip_domain || !zugang.sip_benutzer) {
-            throw new Error(_t("SIP-Zugang unvollständig (WebSocket, Domain oder Benutzer fehlt)."));
+            throw new Error(_t("SIP access incomplete (WebSocket, domain or user is missing)."));
         }
         return new SipJsAgent(zugang, SIP, { uhr });
     };

@@ -21,9 +21,9 @@ export async function waehlenMitHinweis(env, nummer, { resModel = false, resId =
         resId: resId || false,
     });
     if (ok && nebenTab) {
-        notification?.add(_t("An das Telefon im anderen Tab übergeben"), { type: "info" });
+        notification?.add(_t("Hand over to the phone in the other tab"), { type: "info" });
     } else if (!ok) {
-        notification?.add(telefon.state.fehler || _t("Anruf konnte nicht gestartet werden."), {
+        notification?.add(telefon.state.fehler || _t("The call could not be started."), {
             type: "danger",
         });
     }

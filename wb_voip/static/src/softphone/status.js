@@ -8,15 +8,15 @@ import { NICHT_EINGERICHTET } from "../dienste/telefon_dienst";
 
 /** Farbe (Odoo-Klasse) und Text je Zustand des Telefon-Dienstes. */
 export const STATUS = {
-    verbunden: { farbe: "text-success", text: _t("Verbunden") },
-    verbinde: { farbe: "text-muted", text: _t("Verbinde …") },
-    aus: { farbe: "text-muted", text: _t("Aus") },
-    anderer_tab: { farbe: "text-warning", text: _t("Telefon läuft in einem anderen Tab") },
-    getrennt: { farbe: "text-danger", text: _t("Nicht verbunden") },
-    ohne_lizenz: { farbe: "text-danger", text: _t("Lizenz fehlt oder abgelaufen") },
+    verbunden: { farbe: "text-success", text: _t("Connected") },
+    verbinde: { farbe: "text-muted", text: _t("Connecting …") },
+    aus: { farbe: "text-muted", text: _t("Off") },
+    anderer_tab: { farbe: "text-warning", text: _t("Phone is running in another tab") },
+    getrennt: { farbe: "text-danger", text: _t("Not connected") },
+    ohne_lizenz: { farbe: "text-danger", text: _t("License missing or expired") },
     nicht_konfiguriert: {
         farbe: "text-danger",
-        text: _t("Telefonie ist noch nicht eingerichtet."),
+        text: _t("Telephony is not set up yet."),
     },
 };
 

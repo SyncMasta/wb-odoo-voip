@@ -47,13 +47,13 @@ export const STANDARD_LAYOUT = {
 export function artLabel(art) {
     return (
         {
-            kontaktkopf: _t("Kontakt"),
-            felder: _t("Kontaktfelder"),
-            protokolle: _t("Letzte Gespräche"),
-            aufgaben: _t("Offene Aufgaben"),
-            notiz: _t("Notiz"),
+            kontaktkopf: _t("Contact"),
+            felder: _t("Contact fields"),
+            protokolle: _t("Recent calls"),
+            aufgaben: _t("Open tasks"),
+            notiz: _t("Note"),
             buttons: _t("Buttons"),
-            text: _t("Hinweis"),
+            text: _t("Hint"),
         }[art] ||
         // Arten anderer Module: Name aus ihrem Registry-Eintrag (Text oder übersetzbarer ``_t``-Text)
         (typeof art === "string" && blockRegistry.get(art, null)?.label

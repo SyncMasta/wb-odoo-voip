@@ -4,15 +4,15 @@
         <div class="o_wb_voip_anrufliste">
             <div t-if="lokal.fehler" class="alert alert-warning small" t-esc="lokal.fehler"/>
             <div t-elif="lokal.geladen and !lokal.anrufe.length" class="text-muted small p-2">
-                Noch keine Anrufe.
+                No calls yet.
             </div>
             <ul class="list-group list-group-flush">
                 <li t-foreach="lokal.anrufe" t-as="anruf" t-key="anruf.id"
                     class="o_wb_voip_eintrag list-group-item d-flex align-items-center gap-2 px-1">
                     <i t-if="anruf.richtung === 'eingehend'" class="fa fa-long-arrow-down text-muted"
-                       title="Eingehend" aria-label="Eingehend" role="img"/>
+                       title="Incoming" aria-label="Incoming" role="img"/>
                     <i t-else="" class="fa fa-long-arrow-up text-muted"
-                       title="Ausgehend" aria-label="Ausgehend" role="img"/>
+                       title="Outgoing" aria-label="Outgoing" role="img"/>
                     <div class="flex-grow-1 text-truncate">
                         <div class="text-truncate fw-bold" t-esc="name(anruf)"/>
                         <div class="small text-muted text-truncate">
@@ -22,7 +22,7 @@
                     </div>
                     <button t-if="waehlbar(anruf)" type="button"
                             class="o_wb_voip_eintrag_waehlen btn btn-sm btn-outline-success"
-                            title="Anrufen" aria-label="Anrufen" t-on-click="() => this.waehlen(anruf)">
+                            title="Place call" aria-label="Place call" t-on-click="() => this.waehlen(anruf)">
                         <i class="fa fa-phone" aria-hidden="true"/>
                     </button>
                 </li>

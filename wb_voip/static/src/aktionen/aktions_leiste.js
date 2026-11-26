@@ -14,7 +14,7 @@ export const ORT_SOFTPHONE = "softphone";
 
 /** Server-Fehlertext für die Meldung. */
 export function fehlertext(fehler) {
-    return fehler?.data?.message || fehler?.message || _t("Unbekannter Fehler");
+    return fehler?.data?.message || fehler?.message || _t("Unknown error");
 }
 
 /**

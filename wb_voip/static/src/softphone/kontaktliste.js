@@ -40,7 +40,7 @@ export class Kontaktliste extends Component {
             }
         } catch (fehler) {
             this._letzte = null;
-            this.lokal.fehler = fehler?.data?.message || _t("Kontakte konnten nicht geladen werden.");
+            this.lokal.fehler = fehler?.data?.message || _t("Contacts could not be loaded.");
         }
     }
 
@@ -60,7 +60,7 @@ export class Kontaktliste extends Component {
 }
 
 registry.category("wb_voip_reiter").add("kontakte", {
-    titel: _t("Kontakte"),
+    titel: _t("Contacts"),
     Component: Kontaktliste,
     sequence: 30,
 });

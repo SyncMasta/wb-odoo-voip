@@ -158,8 +158,8 @@ test("lädt das Layout: Palette je Ort, Blöcke und Vorschau", async () => {
     expect(".o_wb_voip_ds_zuruecksetzen").toHaveCount(0);
     expect(".o_wb_voip_ds_speichern").toHaveAttribute("disabled");
     // Auswahlfelder von Gruppen und Beispielkontakt haben einen Namen
-    expect(".o_wb_voip_ds_gruppen input").toHaveAttribute("aria-label", "Gruppen");
-    expect(".o_wb_voip_ds_beispiel input").toHaveAttribute("aria-label", "Beispielkontakt");
+    expect(".o_wb_voip_ds_gruppen input").toHaveAttribute("aria-label", "Groups");
+    expect(".o_wb_voip_ds_beispiel input").toHaveAttribute("aria-label", "Example contact");
     expect(".o_wb_voip_ds_gruppen").toHaveAttribute("role", "group");
     expect(".o_wb_voip_ds_status").toHaveAttribute("role", "status");
     expect(".o_wb_voip_ds_vorschau_hinweis").toHaveCount(0);
@@ -216,7 +216,7 @@ test("Feldblock: Suche, Auswahl, Vorschau lädt die Werte", async () => {
     await animationFrame();
     // ohne Feld nicht speicherbar, kein Vorschau-Aufruf für den leeren Block
     expect(".o_wb_voip_ds_speichern").toHaveAttribute("disabled");
-    expect(".o_wb_voip_ds_fehlermeldung").toHaveText(/Kontaktfelder: Bitte mindestens ein Feld/);
+    expect(".o_wb_voip_ds_fehlermeldung").toHaveText(/Kontaktfelder: Please choose at least one field/);
     expect(".o_wb_voip_ds_feld").toHaveCount(3);
     await click(".o_wb_voip_ds_feldsuche");
     await edit("mail");
@@ -245,7 +245,7 @@ test("Verschieben per Knopf (Tastatur), Fokus bleibt am Block", async () => {
     await click(".o_wb_voip_ds_block:eq(0) .o_wb_voip_ds_runter");
     await animationFrame();
     expect(blockArten()).toEqual(["text", "kontaktkopf", "notiz"]);
-    expect(".o_wb_voip_ds_meldung").toHaveText("Block Kontaktkopf an Position 2");
+    expect(".o_wb_voip_ds_meldung").toHaveText("Block Kontaktkopf at position 2");
     expect(vorschauArten()).toEqual(["o_wb_voip_lb_text", "o_wb_voip_lb_kontaktkopf", "o_wb_voip_lb_notiz"]);
     expect(".o_wb_voip_ds_block:eq(1) .o_wb_voip_ds_runter").toBeFocused();
     await click(".o_wb_voip_ds_block:eq(2) .o_wb_voip_ds_hoch");
@@ -338,7 +338,7 @@ test("Speichern sendet die erwarteten Daten und lädt den Stand des Servers", as
         ],
     });
     expect(".o_wb_voip_ds_name").toHaveValue("Vom Server");
-    expect(".o_notification").toHaveText(/gespeichert/);
+    expect(".o_notification").toHaveText(/saved/);
 });
 
 test("Fehler beim Speichern als Meldung, der Entwurf bleibt", async () => {
