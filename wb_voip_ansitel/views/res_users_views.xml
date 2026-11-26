@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Mein Profil: eigenes Handy (nur der Benutzer selbst) -->
+    <!-- Meine Präferenzen: eigenes Handy (nur der Benutzer selbst) -->
     <record id="wb_voip_ansitel_res_users_view_form_simple" model="ir.ui.view">
         <field name="name">res.users.preferences.form.wb_voip_ansitel</field>
         <field name="model">res.users</field>

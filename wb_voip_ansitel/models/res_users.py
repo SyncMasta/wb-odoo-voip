@@ -208,7 +208,7 @@ class ResUsers(models.Model):
         _ = self.env._
         return {
             'allgemein': _("Quick keys are currently unavailable."),
-            'handy': _("Please enter your mobile phone under My Profile › Telephony."),
+            'handy': _("Please enter your mobile phone under My Preferences › Telephony."),
             'ab_token': _("Voicemail needs a personal Ansitel token or approval – "
                           "please ask an administrator."),
             'taste_fehlt': _("This key no longer exists."),

@@ -28,7 +28,7 @@ class TestDeutsch(TransactionCase):
                          'Emergency, short-code and directory-enquiry numbers are not allowed as a call '
                          'forwarding target.')
         texte = self.de['res.users']._wb_voip_tasten_texte()
-        self.assertEqual(texte['handy'], 'Bitte unter Mein Profil › Telefonie Ihr Handy eintragen.')
+        self.assertEqual(texte['handy'], 'Bitte unter Meine Präferenzen › Telefonie Ihr Handy eintragen.')
 
     def test_ansicht_menue(self):
         ansicht = self.env.ref('wb_voip_ansitel.wb_voip_ansitel_res_users_view_form_simple')

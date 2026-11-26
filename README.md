@@ -146,7 +146,7 @@ am richtigen Datensatz.
 | Python | `cryptography` (im offiziellen Odoo-Image enthalten); `phonenumbers` (Pflicht: Rufnummernprüfung und Gebührensperre, ohne das Paket werden alle Zielnummern abgelehnt) |
 | Telefonanlage | SIP über WebSocket mit TLS (`wss://`, RFC 7118), eine Nebenstelle je Benutzer |
 | Browser | aktueller Chrome, Edge oder Firefox; Odoo über HTTPS |
-| Oberfläche | Deutsch (Englisch in Vorbereitung) |
+| Oberfläche | Englisch und Deutsch (Quellsprache Englisch, Deutsch über `i18n/de.po`) |
 | Lizenz | gültiger Lizenzschlüssel für den Produktcode `VOIP` |
 
 ## Installation
@@ -169,7 +169,7 @@ am richtigen Datensatz.
 1. **Telefonanlage** (Einstellungen › Technisch › WB VoIP › Telefonanlagen): WebSocket-URL (`wss://…`), SIP-Domain,
    Land. Modus „test“ simuliert Anrufe ohne Anlage, „prod“ meldet sich an der Anlage an.
 2. **Nebenstellen** (Benutzerformular, Reiter „Telefonie“): Anlage und SIP-Benutzer je Benutzer; jede Nebenstelle
-   gehört genau einem Benutzer. Das SIP-Passwort setzt der Benutzer unter „Mein Profil“ oder der Administrator.
+   gehört genau einem Benutzer. Das SIP-Passwort setzt der Benutzer unter „Meine Präferenzen“ oder der Administrator.
 3. **Rechte**: „WB VoIP: Benutzer“ für alle, die telefonieren; „WB VoIP: Administrator“ für die Pflege von Anlagen
    und Nebenstellen. Systemadministratoren (Gruppe „Administration: Einstellungen“) bekommen die VoIP-Gruppen nicht
    automatisch: Für die VoIP-Menüs brauchen auch sie „WB VoIP: Administrator“. Anlagen anlegen, löschen und ihre Verbindungsdaten ändern (WebSocket-URL, SIP-Domain,
@@ -205,7 +205,6 @@ Details stehen in [`wb_voip/README.rst`](wb_voip/README.rst) und [`wb_voip_crm/R
 - Live-Test von Übergeben, Heranholen und Konferenz gegen verschiedene Telefonanlagen
 - Live-Test der Ansitel-Anbindung gegen eine echte Anlage (Phase 6 ist umgesetzt, bisher nur mit simulierter Anlage getestet);
   Team-Status von der Anlage; Adapter für weitere Telefonanlagen
-- Englische Oberfläche (die Oberfläche ist derzeit deutsch; Übersetzungsvorlagen `i18n/*.pot` liegen bei)
 
 ## Lizenz
 

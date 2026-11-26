@@ -4,6 +4,8 @@ Diese Anleitung führt durch die Einrichtung von `wb_voip`, `wb_voip_crm` und `w
 an die Person, die Odoo betreibt (Zugriff auf Server und Systemverwaltung). Die englische Fassung steht in
 [setup.md](setup.md). Funktionsumfang und Stand: [README](../README.md).
 
+Oberfläche: Englisch und Deutsch (die Bezeichnungen in dieser Anleitung sind die deutschen).
+
 Beispieladressen in dieser Anleitung (`pbx.example.com`, Nummern im Bereich `030 23125 xxx`) sind erfunden.
 
 ## 1. Voraussetzungen
@@ -75,7 +77,7 @@ in Odoo, sondern nur in der Umgebung des Odoo-Prozesses.
 Fehlt der Schlüssel, lässt sich kein Passwort speichern und das Softphone meldet, dass es auf dem Server nicht konfiguriert ist.
 
 **Schlüsselwechsel und Verlust:** Mit einem neuen Schlüssel lassen sich die gespeicherten Chiffrate nicht mehr lesen.
-Alle SIP-Passwörter müssen dann neu eingegeben werden (jeder Benutzer unter Mein Profil › Telefonie oder ein
+Alle SIP-Passwörter müssen dann neu eingegeben werden (jeder Benutzer unter Meine Präferenzen › Telefonie oder ein
 VoIP-Administrator am Benutzer); bei Ansitel auch der zentrale und alle persönlichen Token. Einen Schlüssel also nur
 bewusst wechseln.
 
@@ -106,7 +108,7 @@ erst nach der Einrichtung der Benutzer auf „Produktiv“ stellen.
    automatisch:** Für die VoIP-Menüs und -Einstellungen brauchen auch sie die Gruppe „WB VoIP: Administrator“.
 2. **Nebenstelle:** Benutzerformular, Reiter „Telefonie“ (ändern dürfen nur VoIP-Administratoren, alle anderen sehen die Felder nur schreibgeschützt): Telefonanlage und SIP-Benutzer (die Nebenstelle auf
    der Anlage) wählen. Jede Nebenstelle gehört genau einem Benutzer und einer Anlage.
-3. **SIP-Passwort:** setzt der Benutzer selbst unter Mein Profil › **Telefonie** (Feld „SIP-Passwort“) oder ein
+3. **SIP-Passwort:** setzt der Benutzer selbst unter Meine Präferenzen › **Telefonie** (Feld „SIP-Passwort“) oder ein
    VoIP-Administrator im Benutzerformular. Das Feld ist nur schreibbar, nie lesbar; die Anzeige „Gespeichert – zum Ändern
    neu eingeben“ zeigt, dass eines vorliegt. Entschlüsselt wird es nur bei der Anmeldung des Benutzers selbst.
 4. Der Benutzer lädt Odoo neu. Das Telefonsymbol in der Kopfzeile zeigt den Zustand: grün verbunden, grau aus, gelb in
@@ -219,7 +221,7 @@ und Abgleich mit der Anrufliste. Alle Schritte außer dem Test macht die Systemv
 4. **Geräte:** An der Anlage „Geräte aus Anlage laden“ (legt fehlende Geräte aus der Geräteliste an) und die Zuordnung zu
    den Benutzern prüfen (Einstellungen › Technisch › WB VoIP › Geräte). **Die Amtsleitung nie als Gerät eintragen.**
 5. **Tasten:** Einstellungen › Technisch › WB VoIP › Softphone-Tasten. Mitgeliefert sind „→ Handy“, „Nicht stören“ und
-   „AB“. Jeder Benutzer trägt unter Mein Profil › Telefonie „Mein Handy“ ein. Anzeige je Benutzer (Einstellung
+   „AB“. Jeder Benutzer trägt unter Meine Präferenzen › Telefonie „Mein Handy“ ein. Anzeige je Benutzer (Einstellung
    „Schnelltasten“): im Softphone, als schmale Leiste am Rand oder beides; die Änderung wirkt nach dem Neuladen. AB,
    Weiterleitung und Nicht stören schließen sich aus.
 
@@ -279,7 +281,7 @@ Gerät und Dauer).
 | Mikrofon wird nicht gefragt oder „Browser unterstützt das Softphone nicht“ | Odoo läuft nicht über HTTPS (kein sicherer Kontext) oder der Browser ist zu alt. |
 | „Lizenz fehlt oder abgelaufen“ | Lizenz nicht aktiviert, abgelaufen oder die Datenbank passt nicht zur lizenzierten Instanz (Abschnitt 3). Anrufen und Anmelden sind gesperrt, Protokolle bleiben les- und bearbeitbar. Schalter der Ansitel-Tasten bleiben grau. Der Lizenz-Status unter Einstellungen › WB Lizenzen zeigt die Meldung des Lizenzservers. |
 | Ansitel: Tasten grau, Hinweis, dass die Anlage nicht erreichbar ist | URL und Token an der Anlage prüfen, „Verbindung testen“. Nur `https` mit gültigem Zertifikat; Zeitlimit 10 s, keine Weiterleitungen, keine Proxys. Bei Anlagenfehlern entfallen weitere Aufrufe, bis die Anlage antwortet. |
-| Ansitel: Taste grau mit Hinweis „Bitte unter Mein Profil › Telefonie Ihr Handy eintragen.“ | „Mein Handy“ fehlt oder besteht die Zielprüfung nicht (Mehrwert-, Notruf-, Auslandsnummer, Abschnitt 10). |
+| Ansitel: Taste grau mit Hinweis „Bitte unter Meine Präferenzen › Telefonie Ihr Handy eintragen.“ | „Mein Handy“ fehlt oder besteht die Zielprüfung nicht (Mehrwert-, Notruf-, Auslandsnummer, Abschnitt 10). |
 | Ansitel: AB-Taste grau | Kein persönlicher Token und keine Freigabe für den zentralen Token (Abschnitt 10, Punkt 3). |
 | Ansitel: Anrufe fehlen im Abgleich | Cron aktiv? Nebenstelle und Gerätezuordnung am Benutzer prüfen; Zeitzone der Anrufliste; Log nach übersprungenen Fenstern durchsuchen. |
 | Team zeigt „Die Team-Übersicht ist ausgeschaltet.“ | Schalter je Firma unter Einstellungen › WB VoIP (aktive Firma beachten). |

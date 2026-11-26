@@ -319,8 +319,8 @@ msgstr "Feste Nummer"
 
 #. module: wb_voip_ansitel
 #: model:ir.model.fields,help:wb_voip_ansitel.field_wb_voip_taste__ziel_art
-msgid "Fixed number: applies to all users. Own mobile phone: each user enters their number under My Profile › Telephony (field \"My mobile phone\"). Internal extension: extension or ring group of the user's PBX (2 to 6 digits)."
-msgstr "Feste Nummer: gilt für alle Benutzer. Eigenes Handy: jeder Benutzer trägt seine Nummer unter Mein Profil › Telefonie ein (Feld „Mein Handy“). Interne Nebenstelle: Nebenstelle oder Rufgruppe der Anlage des Benutzers (2 bis 6 Ziffern)."
+msgid "Fixed number: applies to all users. Own mobile phone: each user enters their number under My Preferences › Telephony (field \"My mobile phone\"). Internal extension: extension or ring group of the user's PBX (2 to 6 digits)."
+msgstr "Feste Nummer: gilt für alle Benutzer. Eigenes Handy: jeder Benutzer trägt seine Nummer unter Meine Präferenzen › Telefonie ein (Feld „Mein Handy“). Interne Nebenstelle: Nebenstelle oder Rufgruppe der Anlage des Benutzers (2 bis 6 Ziffern)."
 
 #. module: wb_voip_ansitel
 #: model:ir.model.fields,help:wb_voip_ansitel.field_wb_voip_taste__icon
@@ -535,8 +535,8 @@ msgstr "Rufnummer, z. B. +49 152 28817386, bei „Interne Nebenstelle“ die Neb
 #. module: wb_voip_ansitel
 #. odoo-python
 #: code:addons/wb_voip_ansitel/models/res_users.py:0
-msgid "Please enter your mobile phone under My Profile › Telephony."
-msgstr "Bitte unter Mein Profil › Telefonie Ihr Handy eintragen."
+msgid "Please enter your mobile phone under My Preferences › Telephony."
+msgstr "Bitte unter Meine Präferenzen › Telefonie Ihr Handy eintragen."
 
 #. module: wb_voip_ansitel
 #. odoo-python

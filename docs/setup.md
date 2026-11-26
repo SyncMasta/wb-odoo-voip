@@ -4,6 +4,8 @@ This guide covers the setup of `wb_voip`, `wb_voip_crm` and `wb_voip_ansitel` in
 runs Odoo (access to the server and to system administration). The German version is
 [einrichtung.md](einrichtung.md). Features and status: [README](../README.md) (German).
 
+User interface: English and German (the labels in this guide are the English ones).
+
 Example addresses in this guide (`pbx.example.com`, numbers in the range `030 23125 xxx`) are fictitious.
 
 ## 1. Requirements
@@ -71,7 +73,7 @@ in the environment of the Odoo process.
 If the key is missing, no password can be saved and the softphone reports that it is not configured on the server.
 
 **Changing or losing the key:** stored ciphertext cannot be read with a new key. All SIP passwords must then be entered
-again (each user under My Profile › Telephony, or a VoIP administrator on the user); for Ansitel also the central token and
+again (each user under My Preferences › Telephony, or a VoIP administrator on the user); for Ansitel also the central token and
 all personal tokens. Only change the key deliberately.
 
 ## 5. Create the PBX
@@ -100,7 +102,7 @@ after the users are set up.
 2. **Extension:** user form, tab "Telephony" (only VoIP administrators may change it; everyone else sees the fields
    read-only): choose the PBX and the SIP user (the extension on the PBX). Each extension belongs to exactly one user and
    one PBX.
-3. **SIP password:** the user sets it under My Profile › **Telephony** ("SIP password"), or a VoIP administrator on the
+3. **SIP password:** the user sets it under My Preferences › **Telephony** ("SIP password"), or a VoIP administrator on the
    user form. The field is write-only, never readable; "Saved – enter again to change" shows that one exists. It is
    decrypted only when the user logs in to the PBX.
 4. The user reloads Odoo. The phone icon in the top bar shows the state: green connected, grey off, yellow in another tab,
@@ -210,7 +212,7 @@ PBX call list. System administrators do all steps except the test.
 4. **Devices:** on the PBX press "Load devices from PBX" (creates missing devices from the device list) and check the
    assignment to users (Settings › Technical › WB VoIP › Devices). **Never enter the trunk as a device.**
 5. **Keys:** Settings › Technical › WB VoIP › Softphone keys. Shipped: "→ Handy" (to mobile), "Do not disturb" and
-   voicemail. Each user enters "My mobile phone" under My Profile › Telephony. Display per user ("Quick keys" setting): in
+   voicemail. Each user enters "My mobile phone" under My Preferences › Telephony. Display per user ("Quick keys" setting): in
    the softphone, as a narrow bar on the edge, or both; the change takes effect after a reload. Voicemail, forwarding and
    Do not disturb are mutually exclusive.
 
@@ -266,7 +268,7 @@ answered on a desk phone or through forwarding appear as "answered elsewhere" wi
 | No microphone prompt, or "browser does not support the softphone" | Odoo is not served over HTTPS (no secure context) or the browser is too old. |
 | "License missing or expired" | License not activated, expired, or the database does not match the licensed instance (section 3). Calling and registering are blocked, call logs stay readable and editable. Ansitel keys stay grey. License status under Settings › WB Lizenzen shows the license server's message. |
 | Ansitel: keys grey, hint that the PBX is unreachable | Check URL and token on the PBX, "Test connection". `https` only with a valid certificate; 10 s timeout, no redirects, no proxies. After PBX errors no further calls are made until the PBX answers. |
-| Ansitel: key grey with "Please enter your mobile phone under My Profile › Telephony." | "My mobile phone" is missing or fails the target check (premium, emergency, foreign number; section 10). |
+| Ansitel: key grey with "Please enter your mobile phone under My Preferences › Telephony." | "My mobile phone" is missing or fails the target check (premium, emergency, foreign number; section 10). |
 | Ansitel: voicemail key grey | No personal token and no release for the central token (section 10, step 3). |
 | Ansitel: calls missing from the sync | Is the cron active? Check extension and device assignment on the user, the call-list time zone, and search the log for skipped windows. |
 | Team shows "The team overview is switched off." | Switch per company under Settings › WB VoIP (mind the active company). |

@@ -17,7 +17,7 @@ Einrichtung
    fremden STUN-Server (keine Daten an Dritte).
 2. **Nebenstelle**: Im Benutzerformular (Reiter „Telefonie“; Anlage und Nebenstelle nur durch Administratoren) Anlage und Nebenstelle
    (SIP-Benutzer) wählen; jede Nebenstelle gehört genau einem Benutzer. Das SIP-Passwort setzt der
-   Benutzer selbst (Mein Profil) oder der Administrator; es ist nur schreibbar, nie lesbar.
+   Benutzer selbst (Meine Präferenzen) oder der Administrator; es ist nur schreibbar, nie lesbar.
 3. **Rechte**: Gruppe „WB VoIP: Benutzer“ erlaubt Softphone und eigene Protokolle (jeder sieht nur seine
    eigenen); „WB VoIP: Administrator“ sieht alle Anrufe und Protokolle und pflegt Anlagen und Nebenstellen.
    Systemadministratoren (Gruppe „Administration: Einstellungen“) bekommen die VoIP-Gruppen nicht automatisch: Für

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Mein Profil (Einstellungen des Benutzers) -->
+    <!-- Meine Präferenzen (Einstellungen des Benutzers) -->
     <record id="wb_voip_res_users_view_form_simple" model="ir.ui.view">
         <field name="name">res.users.preferences.form.wb_voip</field>
         <field name="model">res.users</field>

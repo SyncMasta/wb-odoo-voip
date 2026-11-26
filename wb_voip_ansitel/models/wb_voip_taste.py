@@ -89,7 +89,7 @@ class WbVoipTaste(models.Model):
          ('intern', 'Internal extension')],
         string='Target', default='fest', required=True,
         help="Fixed number: applies to all users. Own mobile phone: each user enters their number under My "
-             'Profile › Telephony (field "My mobile phone"). Internal extension: extension or ring group of '
+             'Preferences › Telephony (field "My mobile phone"). Internal extension: extension or ring group of '
              "the user's PBX (2 to 6 digits).")
     ziel = fields.Char(
         string='Call forwarding target',

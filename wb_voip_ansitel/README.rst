@@ -26,7 +26,7 @@ Einrichtung
 4. Systemverwaltung: an der Anlage „Geräte aus Anlage laden“, Zuordnung der Geräte zu Benutzern prüfen
    (Amtsleitung nie als Gerät führen).
 5. Tasten unter Einstellungen › Technisch › WB VoIP › Softphone-Tasten prüfen (feste und interne Ziele setzt nur die
-   Systemverwaltung; Rufgruppen als Ziel vorher unter „Weitere interne Ziele“ an der Anlage eintragen). Jeder Benutzer trägt unter „Mein Profil“ › Telefonie „Mein Handy“ ein.
+   Systemverwaltung; Rufgruppen als Ziel vorher unter „Weitere interne Ziele“ an der Anlage eintragen). Jeder Benutzer trägt unter „Meine Präferenzen“ › Telefonie „Mein Handy“ ein.
 6. Anzeige der Tastenleiste je Benutzer (Einstellung „Schnelltasten“: Softphone, Rand oder beide); die Änderung
    wirkt nach dem Neuladen der Seite. Die Rand-Leiste ist 2,75 rem breit; die Seite rückt dafür nach links.
 
@@ -98,7 +98,7 @@ Schnelltasten
   persönlicher Token und „AB über zentralen Token schalten“ (nur Systemverwaltung, Token nur als Chiffrat).
   Der Benutzer selbst sieht davon nichts. Wechselt jemand ohne Systemrecht die Anlage, wird der persönliche
   Token gelöscht; ebenso alle persönlichen Token einer Anlage, deren URL ohne Systemrecht geändert wird.
-* „Mein Handy“ (Mein Profil › Telefonie) liest und schreibt nur der Benutzer selbst (und die Systemverwaltung).
+* „Mein Handy“ (Meine Präferenzen › Telefonie) liest und schreibt nur der Benutzer selbst (und die Systemverwaltung).
   Gewählt wird nur mit Ziffern, „+“ wird zu „00“.
 * Tasten unter Einstellungen › Technisch › WB VoIP › Softphone-Tasten: Arten Weiterleitung (feste Nummer,
   eigenes Handy oder interne Nebenstelle), Anrufschutz und Anrufbeantworter (sofort oder nach Rufzeit). Standardtasten „AB“, „→ Handy“,

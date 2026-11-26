@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0-20261112\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-26 10:24+0000\n"
-"PO-Revision-Date: 2026-11-26 10:24+0000\n"
+"POT-Creation-Date: 2026-11-26 10:43+0000\n"
+"PO-Revision-Date: 2026-11-26 10:43+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -325,8 +325,9 @@ msgstr ""
 #: model:ir.model.fields,help:wb_voip_ansitel.field_wb_voip_taste__ziel_art
 msgid ""
 "Fixed number: applies to all users. Own mobile phone: each user enters their"
-" number under My Profile › Telephony (field \"My mobile phone\"). Internal "
-"extension: extension or ring group of the user's PBX (2 to 6 digits)."
+" number under My Preferences › Telephony (field \"My mobile phone\"). "
+"Internal extension: extension or ring group of the user's PBX (2 to 6 "
+"digits)."
 msgstr ""
 
 #. module: wb_voip_ansitel
@@ -555,7 +556,7 @@ msgstr ""
 #. module: wb_voip_ansitel
 #. odoo-python
 #: code:addons/wb_voip_ansitel/models/res_users.py:0
-msgid "Please enter your mobile phone under My Profile › Telephony."
+msgid "Please enter your mobile phone under My Preferences › Telephony."
 msgstr ""
 
 #. module: wb_voip_ansitel

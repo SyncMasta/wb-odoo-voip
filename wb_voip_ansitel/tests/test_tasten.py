@@ -13,7 +13,7 @@ from .common import PEERS, TOKEN, URL, AnsitelCase, antwort
 
 TOKEN_A = 'persoenlicher-token-a-456'
 HINWEIS_AB = 'Voicemail needs a personal Ansitel token or approval – please ask an administrator.'
-HINWEIS_HANDY = 'Please enter your mobile phone under My Profile › Telephony.'
+HINWEIS_HANDY = 'Please enter your mobile phone under My Preferences › Telephony.'
 NICHT_ERREICHBAR = 'Ansitel is unreachable.'
 LOGGER_USERS = 'odoo.addons.wb_voip_ansitel.models.res_users'
 LOGGER_API = 'odoo.addons.wb_voip_ansitel.models.ansitel_api'

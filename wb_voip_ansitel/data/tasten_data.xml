@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <!-- Standardtasten, noupdate: Änderungen in der Oberfläche bleiben. „→ Handy“ leitet auf das
-         Handy des jeweiligen Benutzers (Mein Profil › Telefonie); ohne Nummer ist die Taste grau. -->
+         Handy des jeweiligen Benutzers (Meine Präferenzen › Telefonie); ohne Nummer ist die Taste grau. -->
     <data noupdate="1">
         <record id="taste_ab" model="wb.voip.taste">
             <field name="name">VM</field>
