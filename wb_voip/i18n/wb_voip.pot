@@ -2832,6 +2832,12 @@ msgstr ""
 
 #. module: wb_voip
 #. odoo-python
+#: code:addons/wb_voip/models/wb_voip_layout.py:0
+msgid "The layout was changed in the meantime. Please reload the designer."
+msgstr ""
+
+#. module: wb_voip
+#. odoo-python
 #: code:addons/wb_voip/models/res_users.py:0
 msgid "The license could not be checked."
 msgstr ""

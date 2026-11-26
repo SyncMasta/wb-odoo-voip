@@ -402,9 +402,16 @@ class WbVoipLayout(models.Model):
                     or not set(block) <= _DESIGNER_BLOCK_SCHLUESSEL:
                 raise ungueltig(self.env._("Block"))
             block_id = block.get('id') or False
-            if block_id is not False and (type(block_id) is not int
-                                          or block_id not in eigene_bloecke):
-                raise ungueltig(self.env._("Block"))
+            if block_id is not False:
+                if type(block_id) is not int or block_id <= 0:
+                    raise ungueltig(self.env._("Block"))
+                if block_id not in eigene_bloecke:
+                    # inzwischen gelöscht (z. B. von einem zweiten Manager): neu laden lassen, nie
+                    # still neu anlegen; fremde oder doppelte Kennungen bleiben „ungültig“
+                    if not self.env['wb.voip.layout.block'].sudo().browse(block_id).exists():
+                        raise UserError(self.env._(
+                            "The layout was changed in the meantime. Please reload the designer."))
+                    raise ungueltig(self.env._("Block"))
             eigene_bloecke.discard(block_id)
             art = block['art']
             if not isinstance(art, str) or art not in erlaubte_arten[ort]:

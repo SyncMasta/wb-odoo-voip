@@ -720,16 +720,31 @@ class TestLayoutDesigner(WbVoipCase):
             'doppelt': [{'id': block.id, 'art': 'text'}, {'id': block.id, 'art': 'text'}],
             'kein int': [{'id': str(block.id), 'art': 'text'}],
             'bool': [{'id': True, 'art': 'text'}],
-            'unbekannt': [{'id': 99999999, 'art': 'text'}],
+            'negativ': [{'id': -1, 'art': 'text'}],
         }
         for name, bloecke in schlechte.items():
-            with self.assertRaises(UserError, msg=name):
+            with self.assertRaises(UserError, msg=name) as fang:
                 self._als_manager().wb_voip_designer_speichern(layout.id, {
                     'name': 'Uebersetzt', 'ort': 'anrufer_fenster', 'breite': 'normal',
                     'group_ids': [], 'bloecke': bloecke})
+            # Manipulation: allgemeine Meldung, kein Hinweis auf geänderte Daten
+            self.assertIn('Invalid layout data', str(fang.exception), name)
             self.assertEqual(layout.block_ids, block, name)
             self.assertEqual(self._titel(layout, 'en_US'), ('Hint', 'Line'), name)
         self.assertTrue(fremd.exists())
+
+    def test_designer_block_inzwischen_geloescht(self):
+        # zweiter Manager hat den Block gelöscht: eigene Meldung, nichts wird still neu angelegt
+        layout, block = self._uebersetzt()
+        alt = self._als_manager().wb_voip_designer_laden(layout.id)['layout']
+        daten = {k: alt[k] for k in ('name', 'ort', 'breite', 'group_ids', 'bloecke')}
+        block.unlink()
+        for bloecke in (daten['bloecke'], [{'id': 99999999, 'art': 'text'}]):
+            with self.assertRaises(UserError) as fang:
+                self._als_manager().wb_voip_designer_speichern(layout.id, dict(daten, bloecke=bloecke))
+            self.assertIn('The layout was changed in the meantime. Please reload the designer.',
+                          str(fang.exception))
+            self.assertFalse(layout.block_ids)
 
 
 @tagged('wb_voip', 'post_install', '-at_install')

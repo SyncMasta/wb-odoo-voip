@@ -2803,6 +2803,12 @@ msgstr "Die Änderungen am Layout sind nicht gespeichert. Verwerfen?"
 
 #. module: wb_voip
 #. odoo-python
+#: code:addons/wb_voip/models/wb_voip_layout.py:0
+msgid "The layout was changed in the meantime. Please reload the designer."
+msgstr "Das Layout wurde inzwischen geändert. Bitte laden Sie den Designer neu."
+
+#. module: wb_voip
+#. odoo-python
 #: code:addons/wb_voip/models/res_users.py:0
 msgid "The license could not be checked."
 msgstr "Lizenz konnte nicht geprüft werden."
