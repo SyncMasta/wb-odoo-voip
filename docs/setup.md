@@ -211,8 +211,8 @@ PBX call list. System administrators do all steps except the test.
    token if it has exactly one extension and it is the user's. Otherwise the voicemail key stays grey with a hint.
 4. **Devices:** on the PBX press "Load devices from PBX" (creates missing devices from the device list) and check the
    assignment to users (Settings › Technical › WB VoIP › Devices). **Never enter the trunk as a device.**
-5. **Keys:** Settings › Technical › WB VoIP › Softphone keys. Shipped: "→ Handy" (to mobile), "Do not disturb" and
-   voicemail. Each user enters "My mobile phone" under My Preferences › Telephony. Display per user ("Quick keys" setting): in
+5. **Keys:** Settings › Technical › WB VoIP › Softphone keys. Shipped: "→ Mobile" (forward to the user's mobile), "Do not disturb" and
+   "VM" (voicemail). Each user enters "My mobile phone" under My Preferences › Telephony. Display per user ("Quick keys" setting): in
    the softphone, as a narrow bar on the edge, or both; the change takes effect after a reload. Voicemail, forwarding and
    Do not disturb are mutually exclusive.
 

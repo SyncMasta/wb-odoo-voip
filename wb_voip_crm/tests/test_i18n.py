@@ -16,7 +16,7 @@ def _platzhalter(text):
     return sorted(PLATZHALTER.findall(text))
 
 
-@tagged('wb_voip', 'post_install', '-at_install')
+@tagged('wb_voip_crm', 'post_install', '-at_install')
 class TestI18n(TransactionCase):
     """Source language is English; German ships as de.po with identical placeholders."""
 

@@ -2,12 +2,12 @@
     'name': 'WB VoIP CRM',
     'version': '19.0.2.0.1',
     'category': 'Productivity/VoIP',
-    'summary': 'Anrufe und Anrufprotokolle am CRM-Vorgang',
+    'summary': 'Calls and call logs on the CRM opportunity',
     'description': """
 WB VoIP CRM
 ===========
-Brücke zwischen WB VoIP und CRM: Anrufe werden dem offenen Vorgang des Kontakts
-zugeordnet, am Vorgang erscheinen Anrufe und Anrufprotokolle.
+Bridge between WB VoIP and CRM: calls are assigned to the contact's open opportunity;
+the opportunity shows its calls and call logs.
 """,
     'images': ['static/description/banner.png', 'static/description/vorgaenge-block.png'],
     'author': 'WISSEN BERATUNG (Tobias Wissen)',
