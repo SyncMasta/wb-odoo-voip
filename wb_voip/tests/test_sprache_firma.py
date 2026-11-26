@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from odoo.tests import freeze_time, tagged
 
 from .common import WbVoipCase
@@ -71,6 +73,31 @@ class TestSpracheFirma(WbVoipCase):
         self.env.company.partner_id.lang = 'de_DE'
         Anruf = self.env['wb.voip.anruf'].sudo().with_env(self.env(context={}))
         self.assertEqual(Anruf._wb_voip_sprache(), 'de_DE')
+
+    def test_mehrere_eintraege_einer_firma(self):
+        # mehrere Einträge derselben (zweiten) Firma: deren Sprache, nicht die der Hauptfirma
+        self.env.company.partner_id.lang = 'en_US'
+        eintraege = self._anruf(self.firma_de) | self._anruf(self.firma_de)
+        self.assertEqual(self._cron(eintraege)._wb_voip_sprache(self.user_a), 'de_DE')
+        # Einträge verschiedener Firmen: aktuelle Firma
+        gemischt = eintraege | self._anruf(self.firma_en)
+        self.assertEqual(self._cron(gemischt)._wb_voip_sprache(self.user_a), 'en_US')
+
+    def test_geteilte_rueckruf_aktivitaet_in_sprache_der_firma(self):
+        # zwei verpasste Anrufe derselben Nummer an einer Rückruf-Aktivität, erledigt im Serverlauf
+        self.env.company.partner_id.lang = 'en_US'
+        with freeze_time(START) as zeit:
+            e1 = self._anruf(self.firma_de)
+            e1.wb_voip_beendet(False, '487')
+            zeit.tick(timedelta(minutes=1))
+            e2 = self._anruf(self.firma_de)
+            e2.wb_voip_beendet(False, '487')
+            aktivitaet = e1.sudo().rueckruf_aktivitaet_id
+            self.assertTrue(aktivitaet)
+            self.assertEqual(aktivitaet, e2.sudo().rueckruf_aktivitaet_id)
+            aktivitaet.with_env(self.env(context={})).action_feedback()
+        self.assertEqual(e1.sudo().erledigt_text, 'Aufgabe erledigt')
+        self.assertEqual(e2.sudo().erledigt_text, 'Aufgabe erledigt')
 
     def test_chatter_text_in_sprache_der_firma(self):
         self.env.company.partner_id.lang = 'en_US'

@@ -42,7 +42,7 @@ class MailActivity(models.Model):
             text = _feedback_text(feedback)[:ERLEDIGT_TEXT_MAX]
             for besitzer in offen.user_id:
                 # gespeicherter Text: in der Sprache des Besitzers (auch aus einem Serverlauf), ohne
-                # Sprache in der Firma des Eintrags (bei genau einem), sonst der aktuellen Firma
+                # Sprache in der Firma der Einträge (wenn alle zu einer gehören), sonst der aktuellen
                 eintraege = offen.filtered(lambda a: a.user_id == besitzer)
                 sprache = eintraege.with_context(lang=eintraege._wb_voip_sprache(besitzer)).env
                 eintraege._wb_voip_durch_aktivitaet_erledigt(text or sprache._("Task done"))
