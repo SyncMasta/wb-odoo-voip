@@ -454,7 +454,9 @@ class TestLayoutDesigner(WbVoipCase):
         self.assertEqual([b['art'] for b in layout['bloecke']],
                          ['kontaktkopf', 'buttons', 'protokolle', 'aufgaben', 'notiz'])
         self.assertEqual(set(layout['bloecke'][0]),
-                         {'art', 'titel', 'spalte', 'anzahl', 'text', 'feld_ids'})
+                         {'id', 'art', 'titel', 'spalte', 'anzahl', 'text', 'feld_ids'})
+        self.assertEqual([b['id'] for b in layout['bloecke']],
+                         self.std_fenster.block_ids.sorted(lambda b: (b.sequence, b.id)).ids)
         self.assertEqual([a['art'] for a in daten['arten']['protokoll_popup']],
                          ['kontaktkopf', 'felder', 'protokolle', 'text'])
         # die sieben Arten des Kerns, Brückenmodule dürfen weitere ergänzen
@@ -627,6 +629,107 @@ class TestLayoutDesigner(WbVoipCase):
         self.assertFalse(text.titel)
         self.assertFalse(text.text)
         self.assertEqual(kopf.titel, 'Kunde')
+
+    # --- Übersetzungen ---
+
+    def _uebersetzt(self):
+        """Layout with a block whose title and text exist in English and German."""
+        self.env['res.lang']._activate_lang('de_DE')
+        layout = self.Layout.create({'name': 'Uebersetzt', 'ort': 'anrufer_fenster', 'sequence': 91})
+        block = self.env['wb.voip.layout.block'].with_context(lang='en_US').create(
+            {'layout_id': layout.id, 'art': 'text', 'titel': 'Hint', 'text': 'Line'})
+        block.with_context(lang='de_DE').write({'titel': 'Hinweis', 'text': 'Zeile'})
+        return layout, block
+
+    def _speichern_in(self, lang, layout, bearbeiten=None):
+        """Load and save ``layout`` through the designer in ``lang`` (optionally changed)."""
+        Layout = self._als_manager().with_context(lang=lang)
+        daten = Layout.wb_voip_designer_laden(layout.id)['layout']
+        daten = {k: daten[k] for k in ('name', 'ort', 'breite', 'group_ids', 'bloecke')}
+        if bearbeiten:
+            bearbeiten(daten)
+        return Layout.wb_voip_designer_speichern(layout.id, daten)
+
+    def _titel(self, layout, lang):
+        block = layout.block_ids.with_context(lang=lang)
+        return block.titel, block.text
+
+    def test_designer_behaelt_uebersetzungen_unveraendert(self):
+        layout, _block = self._uebersetzt()
+        for lang in ('de_DE', 'en_US'):
+            self._speichern_in(lang, layout)
+            self.assertEqual(self._titel(layout, 'en_US'), ('Hint', 'Line'), lang)
+            self.assertEqual(self._titel(layout, 'de_DE'), ('Hinweis', 'Zeile'), lang)
+
+    def test_designer_aendert_nur_eigene_sprache(self):
+        layout, block = self._uebersetzt()
+
+        def neu_de(daten):
+            daten['bloecke'][0].update(titel='Wichtig', text='Neue Zeile')
+
+        self._speichern_in('de_DE', layout, neu_de)
+        self.assertEqual(layout.block_ids, block, "Block bleibt derselbe Datensatz")
+        self.assertEqual(self._titel(layout, 'de_DE'), ('Wichtig', 'Neue Zeile'))
+        self.assertEqual(self._titel(layout, 'en_US'), ('Hint', 'Line'))
+
+        def neu_en(daten):
+            daten['bloecke'][0].update(titel='Important')
+
+        self._speichern_in('en_US', layout, neu_en)
+        self.assertEqual(self._titel(layout, 'en_US'), ('Important', 'Line'))
+        self.assertEqual(self._titel(layout, 'de_DE'), ('Wichtig', 'Neue Zeile'))
+
+    def test_designer_verschieben_behaelt_uebersetzungen(self):
+        layout, block = self._uebersetzt()
+        zweiter = self.env['wb.voip.layout.block'].with_context(lang='en_US').create(
+            {'layout_id': layout.id, 'art': 'kontaktkopf', 'titel': 'Customer', 'sequence': 20})
+        zweiter.with_context(lang='de_DE').titel = 'Kunde'
+
+        def tauschen(daten):
+            daten['bloecke'].reverse()
+
+        self._speichern_in('de_DE', layout, tauschen)
+        reihe = layout.block_ids.sorted(lambda b: (b.sequence, b.id))
+        self.assertEqual(reihe, zweiter | block)
+        self.assertEqual(reihe[0].with_context(lang='en_US').titel, 'Customer')
+        self.assertEqual(reihe[1].with_context(lang='en_US').titel, 'Hint')
+
+    def test_designer_artwechsel_raeumt_auf(self):
+        layout, block = self._uebersetzt()
+
+        def zu_felder(daten):
+            daten['bloecke'][0].update(art='felder', text=False, feld_ids=[self.feld_email.id])
+
+        self._speichern_in('de_DE', layout, zu_felder)
+        self.assertEqual(block.art, 'felder')
+        self.assertFalse(block.text)
+        self.assertEqual(block.feld_ids, self.feld_email)
+
+        def zu_text(daten):
+            daten['bloecke'][0].update(art='text', text='Neu', feld_ids=[])
+
+        self._speichern_in('de_DE', layout, zu_text)
+        self.assertEqual(block.art, 'text')
+        self.assertFalse(block.feld_ids)
+
+    def test_designer_block_id_streng(self):
+        layout, block = self._uebersetzt()
+        fremd = self.std_fenster.block_ids[:1]
+        schlechte = {
+            'fremder Block': [{'id': fremd.id, 'art': 'text'}],
+            'doppelt': [{'id': block.id, 'art': 'text'}, {'id': block.id, 'art': 'text'}],
+            'kein int': [{'id': str(block.id), 'art': 'text'}],
+            'bool': [{'id': True, 'art': 'text'}],
+            'unbekannt': [{'id': 99999999, 'art': 'text'}],
+        }
+        for name, bloecke in schlechte.items():
+            with self.assertRaises(UserError, msg=name):
+                self._als_manager().wb_voip_designer_speichern(layout.id, {
+                    'name': 'Uebersetzt', 'ort': 'anrufer_fenster', 'breite': 'normal',
+                    'group_ids': [], 'bloecke': bloecke})
+            self.assertEqual(layout.block_ids, block, name)
+            self.assertEqual(self._titel(layout, 'en_US'), ('Hint', 'Line'), name)
+        self.assertTrue(fremd.exists())
 
 
 @tagged('wb_voip', 'post_install', '-at_install')

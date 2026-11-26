@@ -43,6 +43,9 @@ function blockAusServer(b, gezaehlt) {
     naechsteUid += 1;
     return {
         uid: naechsteUid,
+        // Kennung des gespeicherten Blocks: beim Speichern wird er geändert statt neu angelegt,
+        // damit Übersetzungen von Titel und Text in anderen Sprachen erhalten bleiben
+        id: Number.isInteger(b.id) && b.id > 0 ? b.id : false,
         art: b.art,
         titel: typeof b.titel === "string" ? b.titel : "",
         spalte: b.spalte === "2" ? "2" : "1",
@@ -55,6 +58,7 @@ function blockAusServer(b, gezaehlt) {
 /** Block so, wie ``wb_voip_designer_speichern`` ihn erwartet. */
 function blockDaten(b, gezaehlt) {
     return {
+        id: b.id || false,
         art: b.art,
         titel: b.titel ? b.titel : false,
         spalte: b.spalte === "2" ? "2" : "1",

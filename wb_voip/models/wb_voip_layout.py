@@ -44,7 +44,7 @@ DESIGNER_MAX_LAYOUTS = 200
 NAME_MAX = 200
 TITEL_MAX = 200
 _DESIGNER_LAYOUT_SCHLUESSEL = frozenset({'name', 'ort', 'breite', 'group_ids', 'bloecke'})
-_DESIGNER_BLOCK_SCHLUESSEL = frozenset({'art', 'titel', 'spalte', 'anzahl', 'text', 'feld_ids'})
+_DESIGNER_BLOCK_SCHLUESSEL = frozenset({'id', 'art', 'titel', 'spalte', 'anzahl', 'text', 'feld_ids'})
 
 # Delivered blocks (art, anzahl) per place; anzahl only for counted blocks
 STANDARD_BLOECKE = {
@@ -344,6 +344,7 @@ class WbVoipLayout(models.Model):
         bloecke = []
         for block in self.sudo().block_ids.sorted(lambda b: (b.sequence, b.id)):
             bloecke.append({
+                'id': block.id,
                 'art': block.art,
                 'titel': block.titel or False,
                 'spalte': block.spalte,
@@ -393,11 +394,18 @@ class WbVoipLayout(models.Model):
         if not isinstance(bloecke, list) or len(bloecke) > DESIGNER_MAX_BLOECKE:
             raise ungueltig(self.env._("Blocks"))
         erlaubte_felder = set(self._wb_voip_designer_felder().ids)
+        # nur Blöcke dieses Layouts, jeder höchstens einmal
+        eigene_bloecke = set(self.sudo().block_ids.ids)
         block_vals = []
         for nr, block in enumerate(bloecke, start=1):
             if not isinstance(block, dict) or 'art' not in block \
                     or not set(block) <= _DESIGNER_BLOCK_SCHLUESSEL:
                 raise ungueltig(self.env._("Block"))
+            block_id = block.get('id') or False
+            if block_id is not False and (type(block_id) is not int
+                                          or block_id not in eigene_bloecke):
+                raise ungueltig(self.env._("Block"))
+            eigene_bloecke.discard(block_id)
             art = block['art']
             if not isinstance(art, str) or art not in erlaubte_arten[ort]:
                 raise ungueltig(self.env._("Block type"))
@@ -429,11 +437,12 @@ class WbVoipLayout(models.Model):
                 if not ANZAHL_MIN <= anzahl <= ANZAHL_MAX:
                     raise ungueltig(self.env._("Count"))
                 vals['anzahl'] = anzahl
-            if art == 'text':
-                vals['text'] = text
-            if art == 'felder':
-                # Reihenfolge wie gewählt, doppelte einmal
-                vals['feld_ids'] = [Command.set(list(dict.fromkeys(feld_ids)))]
+            # Text und Felder immer setzen: ein vorhandener Block kann die Art gewechselt haben
+            vals['text'] = text if art == 'text' else False
+            # Reihenfolge wie gewählt, doppelte einmal
+            vals['feld_ids'] = [Command.set(list(dict.fromkeys(feld_ids)) if art == 'felder' else [])]
+            # Kennung des vorhandenen Blocks (False: neu); nur für das Speichern, nie ein Feldwert
+            vals['id'] = block_id
             block_vals.append(vals)
         if [b['art'] for b in block_vals].count('notiz') > 1:
             raise ungueltig(self.env._("Note"))
@@ -476,14 +485,24 @@ class WbVoipLayout(models.Model):
     def wb_voip_designer_speichern(self, layout_id, daten):
         """Replace name, place, width, groups and all blocks of ``layout_id`` at once.
 
-        Everything is checked first; any invalid part changes nothing. Returns the new
-        state as ``wb_voip_designer_laden`` does.
+        Everything is checked first; any invalid part changes nothing. Blocks with an ``id``
+        (from ``wb_voip_designer_laden``) are updated in place, so translations of title and
+        text in other languages stay; blocks without ``id`` are created, missing ones deleted.
+        Returns the new state as ``wb_voip_designer_laden`` does.
         """
         layout = self._wb_voip_designer_layout(layout_id, leer_erlaubt=False)
         layout_vals, block_vals = layout._wb_voip_designer_pruefen(daten)
+        befehle = []
+        for vals in block_vals:
+            vals = dict(vals)
+            block_id = vals.pop('id')
+            # vorhandener Block: schreiben statt neu anlegen, sonst gingen die Übersetzungen der
+            # anderen Sprachen verloren (ein neuer Datensatz kennt nur die aktuelle Sprache)
+            befehle.append(Command.update(block_id, vals) if block_id else Command.create(vals))
+        behalten = {vals['id'] for vals in block_vals if vals['id']}
         with self.env.cr.savepoint():
-            layout.block_ids.unlink()
-            layout.write({**layout_vals, 'block_ids': [Command.create(v) for v in block_vals]})
+            layout.block_ids.filtered(lambda b: b.id not in behalten).unlink()
+            layout.write({**layout_vals, 'block_ids': befehle})
         return self.wb_voip_designer_laden(layout.id)
 
     @api.model

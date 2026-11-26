@@ -46,9 +46,9 @@ function ladeDaten({ layout = {}, bloecke } = {}) {
             ist_standard: false,
             group_ids: [],
             bloecke: bloecke || [
-                block("kontaktkopf"),
-                block("text", { titel: "Hinweis", text: "Erst fragen" }),
-                block("notiz"),
+                block("kontaktkopf", { id: 21 }),
+                block("text", { id: 22, titel: "Hinweis", text: "Erst fragen" }),
+                block("notiz", { id: 23 }),
             ],
             ...layout,
         },
@@ -260,10 +260,10 @@ test("Verschieben per Maus, auch in die zweite Spalte", async () => {
             ladeDaten({
                 layout: { breite: "breit" },
                 bloecke: [
-                    block("kontaktkopf"),
-                    block("text", { text: "Erst fragen" }),
-                    block("notiz"),
-                    block("protokolle", { spalte: "2", anzahl: 5 }),
+                    block("kontaktkopf", { id: 31 }),
+                    block("text", { id: 32, text: "Erst fragen" }),
+                    block("notiz", { id: 33 }),
+                    block("protokolle", { id: 34, spalte: "2", anzahl: 5 }),
                 ],
             }),
         speichern: ({ args }) => {
@@ -288,11 +288,12 @@ test("Verschieben per Maus, auch in die zweite Spalte", async () => {
     expect(blockArten(".o_wb_voip_ds_spalte:eq(1)")).toEqual(["text", "protokolle"]);
     await click(".o_wb_voip_ds_speichern");
     await animationFrame();
-    expect(gesendet.bloecke.map((b) => [b.art, b.spalte])).toEqual([
-        ["notiz", "1"],
-        ["kontaktkopf", "1"],
-        ["text", "2"],
-        ["protokolle", "2"],
+    // die Kennung wandert mit dem Block (Übersetzungen bleiben am richtigen Block)
+    expect(gesendet.bloecke.map((b) => [b.id, b.art, b.spalte])).toEqual([
+        [33, "notiz", "1"],
+        [31, "kontaktkopf", "1"],
+        [32, "text", "2"],
+        [34, "protokolle", "2"],
     ]);
 });
 
@@ -331,10 +332,11 @@ test("Speichern sendet die erwarteten Daten und lädt den Stand des Servers", as
         breite: "breit",
         group_ids: [],
         bloecke: [
-            { art: "kontaktkopf", titel: false, spalte: "1", anzahl: false, text: false, feld_ids: [] },
-            { art: "text", titel: false, spalte: "1", anzahl: false, text: "Erst fragen", feld_ids: [] },
-            { art: "notiz", titel: false, spalte: "1", anzahl: false, text: false, feld_ids: [] },
-            { art: "protokolle", titel: false, spalte: "2", anzahl: 3, text: false, feld_ids: [] },
+            // geladene Blöcke mit Kennung (werden geändert), der neue ohne (wird angelegt)
+            { id: 21, art: "kontaktkopf", titel: false, spalte: "1", anzahl: false, text: false, feld_ids: [] },
+            { id: 22, art: "text", titel: false, spalte: "1", anzahl: false, text: "Erst fragen", feld_ids: [] },
+            { id: 23, art: "notiz", titel: false, spalte: "1", anzahl: false, text: false, feld_ids: [] },
+            { id: false, art: "protokolle", titel: false, spalte: "2", anzahl: 3, text: false, feld_ids: [] },
         ],
     });
     expect(".o_wb_voip_ds_name").toHaveValue("Vom Server");
@@ -495,6 +497,7 @@ test("Designer: Blockarten und Zählung kommen vom Server, Vorschau mit Block-Da
     await click(".o_wb_voip_ds_speichern");
     await animationFrame();
     expect(gesendet.bloecke[3]).toEqual({
+        id: false,
         art: "fremd_test",
         titel: false,
         spalte: "1",
