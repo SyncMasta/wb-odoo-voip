@@ -30,3 +30,4 @@ from . import test_i18n
 from . import test_de
 from . import test_migration_quellsprache
 from . import test_sprache_gespeichert
+from . import test_benutzergrenze

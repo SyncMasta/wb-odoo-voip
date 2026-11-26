@@ -147,7 +147,7 @@ am richtigen Datensatz.
 | Telefonanlage | SIP über WebSocket mit TLS (`wss://`, RFC 7118), eine Nebenstelle je Benutzer |
 | Browser | aktueller Chrome, Edge oder Firefox; Odoo über HTTPS |
 | Oberfläche | Englisch und Deutsch (Quellsprache Englisch, Deutsch über `i18n/de.po`) |
-| Lizenz | gültiger Lizenzschlüssel für den Produktcode `VOIP` |
+| Lizenz | gültiger Lizenzschlüssel für den Produktcode `VOIP`; das Paket begrenzt die Zahl der VoIP-Benutzer (aktive interne Benutzer mit Gruppe und SIP-Benutzer), nur neue Benutzer werden blockiert. Braucht `wb_license_client` ab 19.0.2.7.0 (`_wb_license_max_users`) |
 
 ## Installation
 

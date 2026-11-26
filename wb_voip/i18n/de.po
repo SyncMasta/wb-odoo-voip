@@ -114,6 +114,11 @@ msgid "Active"
 msgstr "Aktiv"
 
 #. module: wb_voip
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_res_config_settings_view_form
+msgid "Active internal users in the WB VoIP group with an SIP user, compared to the user limit of the licence."
+msgstr "Aktive interne Benutzer in der Gruppe WB VoIP mit SIP-Benutzer, verglichen mit der Benutzergrenze der Lizenz."
+
+#. module: wb_voip
 #: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__activity_ids
 msgid "Activities"
 msgstr "Aktivitäten"
@@ -1461,6 +1466,11 @@ msgstr "Layout gespeichert."
 #: code:addons/wb_voip/static/src/softphone/status.js:0
 msgid "License missing or expired"
 msgstr "Lizenz fehlt oder abgelaufen"
+
+#. module: wb_voip
+#: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_res_config_settings_view_form
+msgid "Licensed users"
+msgstr "Lizenzierte Benutzer"
 
 #. module: wb_voip
 #. odoo-javascript
@@ -3073,6 +3083,29 @@ msgid "Very wide"
 msgstr "Sehr breit"
 
 #. module: wb_voip
+#: model:ir.model.fields,field_description:wb_voip.field_res_config_settings__wb_voip_benutzer_info
+msgid "VoIP users"
+msgstr "VoIP-Benutzer"
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/res_config_settings.py:0
+msgid "VoIP users: %(anzahl)s of %(grenze)s"
+msgstr "VoIP-Benutzer: %(anzahl)s von %(grenze)s"
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/res_config_settings.py:0
+msgid "VoIP users: %s (no valid licence)"
+msgstr "VoIP-Benutzer: %s (keine gültige Lizenz)"
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/res_config_settings.py:0
+msgid "VoIP users: %s (unlimited)"
+msgstr "VoIP-Benutzer: %s (unbegrenzt)"
+
+#. module: wb_voip
 #: model:ir.model.fields,field_description:wb_voip.field_res_users__wb_voip_lebenszeichen
 msgid "VoIP: last heartbeat"
 msgstr "VoIP: letztes Lebenszeichen"
@@ -3317,6 +3350,12 @@ msgstr "Sie dürfen diesen Kontakt nicht lesen."
 #: code:addons/wb_voip/models/wb_voip_anruf.py:0
 msgid "You are not allowed to run this server action."
 msgstr "Sie dürfen diese Serveraktion nicht ausführen."
+
+#. module: wb_voip
+#. odoo-python
+#: code:addons/wb_voip/models/res_users.py:0
+msgid "Your WB VoIP package allows %s users. Please upgrade your licence."
+msgstr "Ihr WB-VoIP-Paket erlaubt %s Benutzer. Bitte Lizenz erweitern."
 
 #. module: wb_voip
 #: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_aktion_view_form

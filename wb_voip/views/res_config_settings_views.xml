@@ -9,6 +9,10 @@
                 <app data-string="WB VoIP" string="WB VoIP" name="wb_voip"
                      groups="wb_voip.group_wb_voip_manager">
                     <block title="WB VoIP" name="wb_voip_block">
+                        <setting string="Licensed users"
+                                 help="Active internal users in the WB VoIP group with an SIP user, compared to the user limit of the licence.">
+                            <field name="wb_voip_benutzer_info"/>
+                        </setting>
                         <setting string="Retention period for call data"
                                  help="Delete ended calls after this number of months (0 = never). Call logs are kept.">
                             <field name="wb_voip_aufbewahrung_monate"/>

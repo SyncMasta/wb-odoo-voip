@@ -69,7 +69,7 @@ class WbVoipCase(TransactionCase):
     def _lizenz_stellen(self, gueltig):
         """Patch check_license so that license_required sees (in)valid info."""
         info = SimpleNamespace(
-            is_valid=gueltig,
+            is_valid=gueltig, max_users=0,
             user_message='' if gueltig else 'Lizenz fehlt oder abgelaufen',
         )
         patcher = patch.object(

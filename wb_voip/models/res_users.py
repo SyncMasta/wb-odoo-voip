@@ -22,6 +22,10 @@ TEAM_HOECHSTENS = 200
 # Nebenstelle und Anlage setzen nur VoIP-Administratoren
 _NUR_MANAGER = ('wb_voip_sip_benutzer', 'wb_voip_anlage_id')
 
+# Felder, die die Zahl der VoIP-Benutzer erhöhen können: Gruppen, Nebenstelle, Reaktivieren,
+# intern/Portal
+_GRENZE_FELDER = ('group_ids', 'wb_voip_sip_benutzer', 'active', 'share')
+
 
 class ResUsers(models.Model):
     _inherit = 'res.users'
@@ -91,15 +95,71 @@ class ResUsers(models.Model):
             wert = wert.id
         return wert or False
 
+    @api.model
+    def _wb_voip_benutzer_zaehlen(self):
+        """Count the active VoIP users: internal, in the VoIP group (also implied) and with an SIP user.
+
+        Only these can phone; users without an SIP user do not use up a seat.
+        """
+        gruppe = self.env.ref('wb_voip.group_wb_voip_user')
+        return self.sudo().with_context(active_test=True).search_count([
+            ('active', '=', True), ('share', '=', False),
+            ('all_group_ids', 'in', gruppe.ids), ('wb_voip_sip_benutzer', '!=', False)])
+
+    @api.model
+    def _wb_voip_benutzer_grenze(self):
+        """Return the user limit of the licence: ``None`` = no licence, ``0`` = unlimited."""
+        try:
+            return self.env['wb.license.client']._wb_license_max_users(PRODUKT_CODE)
+        except Exception:  # noqa: BLE001 - ohne erreichbare Lizenzprüfung nie Benutzerpflege sperren
+            _logger.warning("WB VoIP: user limit could not be determined", exc_info=True)
+            return None
+
+    @api.model
+    def _wb_voip_grenze_betroffen(self, vals_list):
+        """Return True if one of ``vals_list`` can raise the number of VoIP users."""
+        if self.env.context.get('install_mode'):
+            return False  # Moduldaten, Installation: nie sperren
+        return any(
+            feld in _GRENZE_FELDER
+            for vals in vals_list for feld in vals)
+
+    @api.model
+    def _wb_voip_grenze_pruefen(self, vorher, grenze):
+        """Raise if the count grew beyond the limit; existing users above it stay usable."""
+        nachher = self._wb_voip_benutzer_zaehlen()
+        if nachher > vorher and nachher > grenze:
+            raise UserError(self.env._(
+                "Your WB VoIP package allows %s users. Please upgrade your licence.") % grenze)
+
     @api.model_create_multi
     def create(self, vals_list):
+        grenze = self._wb_voip_benutzer_grenze() if self._wb_voip_grenze_betroffen(vals_list) else None
+        if grenze:
+            vorher = self._wb_voip_benutzer_zaehlen()
+            benutzer = self._wb_voip_create(vals_list)
+            self._wb_voip_grenze_pruefen(vorher, grenze)
+            return benutzer
+        return self._wb_voip_create(vals_list)
+
+    def write(self, vals):
+        grenze = self._wb_voip_benutzer_grenze() if self._wb_voip_grenze_betroffen([vals]) else None
+        if grenze:
+            vorher = self._wb_voip_benutzer_zaehlen()
+            ergebnis = self._wb_voip_write(vals)
+            self._wb_voip_grenze_pruefen(vorher, grenze)
+            return ergebnis
+        return self._wb_voip_write(vals)
+
+    @api.model
+    def _wb_voip_create(self, vals_list):
         # Leere Werte (z. B. aus copy_data oder dem Formular) sind erlaubt
         if not self._wb_voip_ist_manager() and any(
                 self._wb_voip_wert(vals.get(feld)) for vals in vals_list for feld in _NUR_MANAGER):
             raise self._wb_voip_manager_fehler()
         return super().create(vals_list)
 
-    def write(self, vals):
+    def _wb_voip_write(self, vals):
         # Nur echte Änderungen zählen: das Formular schickt unveränderte Werte nicht,
         # andere Aufrufer evtl. schon
         if not self._wb_voip_ist_manager() and set(vals) & set(_NUR_MANAGER):
