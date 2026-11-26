@@ -1,19 +1,22 @@
 from psycopg2.extras import Json
 
-# Ausgelieferte noupdate-Daten mit übersetzbaren Feldern: (Tabelle, XML-ID, Feld, bisher deutsch, neu englisch).
+# Ausgelieferte noupdate-Daten mit übersetzbaren Feldern:
+# (Tabelle, Modell, XML-ID, Feld, bisher deutsch, neu englisch).
 # Ein Update schreibt sie nicht neu; die Quellsprache ist seit 19.0.5.0.0 Englisch.
 AUSLIEFERUNG = [
-    ('mail_activity_type', 'wb_voip_activity_type_rueckruf', 'name', 'Rückruf', 'Callback'),
-    ('mail_activity_type', 'wb_voip_activity_type_rueckruf', 'summary',
+    ('mail_activity_type', 'mail.activity.type', 'wb_voip_activity_type_rueckruf', 'name',
+     'Rückruf', 'Callback'),
+    ('mail_activity_type', 'mail.activity.type', 'wb_voip_activity_type_rueckruf', 'summary',
      'Rückruf: verpasster Anruf', 'Callback: missed call'),
-    ('wb_voip_aktion', 'wb_voip_aktion_neuer_kontakt', 'name', 'Neuer Kontakt', 'New contact'),
-    ('wb_voip_layout', 'wb_voip_layout_anrufer_fenster_standard', 'name',
+    ('wb_voip_aktion', 'wb.voip.aktion', 'wb_voip_aktion_neuer_kontakt', 'name',
+     'Neuer Kontakt', 'New contact'),
+    ('wb_voip_layout', 'wb.voip.layout', 'wb_voip_layout_anrufer_fenster_standard', 'name',
      'Standard Anrufer-Fenster', 'Default caller window'),
-    ('wb_voip_layout', 'wb_voip_layout_protokoll_popup_standard', 'name',
+    ('wb_voip_layout', 'wb.voip.layout', 'wb_voip_layout_protokoll_popup_standard', 'name',
      'Standard Protokoll-Popup', 'Default call log popup'),
-    ('ir_act_server', 'ir_cron_voip_aufraeumen_ir_actions_server', 'name',
+    ('ir_act_server', 'ir.actions.server', 'ir_cron_voip_aufraeumen_ir_actions_server', 'name',
      'WB VoIP: verwaiste Anrufe aufräumen', 'WB VoIP: Clean up orphaned calls'),
-    ('ir_act_server', 'ir_cron_voip_loeschfrist_ir_actions_server', 'name',
+    ('ir_act_server', 'ir.actions.server', 'ir_cron_voip_loeschfrist_ir_actions_server', 'name',
      'WB VoIP: Löschfrist für Anrufdaten', 'WB VoIP: Retention period for call data'),
 ]
 
@@ -26,13 +29,13 @@ def auslieferungstexte_umstellen(cr):
     Values changed by the customer stay as they are. Returns the number of changed values.
     """
     geaendert = 0
-    for tabelle, xmlid, feld, alt, neu in AUSLIEFERUNG:
+    for tabelle, modell, xmlid, feld, alt, neu in AUSLIEFERUNG:
         cr.execute(f'''
             SELECT t.id, t."{feld}"
               FROM "{tabelle}" t
               JOIN ir_model_data d ON d.res_id = t.id
-             WHERE d.module = 'wb_voip' AND d.name = %s
-        ''', [xmlid])
+             WHERE d.module = 'wb_voip' AND d.name = %s AND d.model = %s
+        ''', [xmlid, modell])
         zeile = cr.fetchone()
         if not zeile or not zeile[1]:
             continue

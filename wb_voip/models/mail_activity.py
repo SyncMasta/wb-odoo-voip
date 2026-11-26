@@ -31,7 +31,7 @@ class MailActivity(models.Model):
 
         The open entries are collected before (the activity is archived by the standard
         method); text = feedback of the activity as plain text (HTML, i.e. ``Markup`` or a string
-        starting with ``<``, is converted; other text stays as typed), else "Aufgabe erledigt".
+        starting with ``<``, is converted; other text stays as typed), else "Task done".
         Entries closed by ``_wb_voip_nummer_erreicht`` are already done and not touched again.
         """
         offen = self.env['wb.voip.anruf'].sudo().search([

@@ -8,6 +8,12 @@ from odoo.tools import file_path
 
 MODUL = 'wb_voip'
 PLATZHALTER = re.compile(r'%\([a-z_]+\)[sd]|%[sd]|\{[a-z_0-9]+\}')
+# Begriffe, die auf Deutsch gleich lauten, und technische Werte (Domain, Feldname, Symbol)
+GLEICH_IN_DE = {
+    '%(art)s: %(fehler)s', 'Block', 'Button', 'Buttons', 'E-Mail', 'ID', 'Info', 'Layout', 'Name', 'Normal',
+    'Option', 'SIP', 'Softphone', 'Status', 'Team', 'Test', 'Text', 'URL', 'WB VoIP', 'WB VoIP: Administrator',
+    "[('is_company', '=', True)]", 'fa-user', 'partner_id', 'vorlage',
+}
 
 
 def _platzhalter(text):
@@ -43,3 +49,11 @@ class TestI18n(TransactionCase):
         for eintrag in self._pot():
             with self.subTest(msgid=eintrag.msgid):
                 self.assertTrue(deutsch.get(eintrag.msgid))
+
+    def test_de_po_ohne_englische_reste(self):
+        """German differs from the English source, except for terms that are the same in both."""
+        for eintrag in self._de():
+            if not re.search(r'[A-Za-z]', eintrag.msgid) or eintrag.msgid in GLEICH_IN_DE:
+                continue
+            with self.subTest(msgid=eintrag.msgid):
+                self.assertNotEqual(eintrag.msgstr, eintrag.msgid)

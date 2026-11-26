@@ -333,7 +333,7 @@ msgstr "Besetzt"
 #: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__aktion_id
 #: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_aktion_assistent__schritt__button
 msgid "Button"
-msgstr "Schaltfläche"
+msgstr "Button"
 
 #. module: wb_voip
 #. odoo-python
@@ -1632,7 +1632,7 @@ msgstr "Weiter"
 #. module: wb_voip
 #: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__activity_calendar_event_id
 msgid "Next Activity Calendar Event"
-msgstr "Next Activity Calendar Event"
+msgstr "Nächstes Aktivitätskalenderereignis"
 
 #. module: wb_voip
 #: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__activity_date_deadline
@@ -2331,7 +2331,7 @@ msgstr "SIP-Benutzer"
 #. module: wb_voip
 #: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__message_has_sms_error
 msgid "SMS Delivery error"
-msgstr "SMS Delivery error"
+msgstr "SMS-Zustellungsfehler"
 
 #. module: wb_voip
 #. odoo-javascript
@@ -3065,7 +3065,7 @@ msgstr "Wert"
 #. module: wb_voip
 #: model:ir.model.fields,field_description:wb_voip.field_wb_voip_aktion_assistent__wert_res_model
 msgid "Value model"
-msgstr "Wert Res Model"
+msgstr "Wertmodell"
 
 #. module: wb_voip
 #: model:ir.model.fields.selection,name:wb_voip.selection__wb_voip_layout__breite__sehr_breit
@@ -3189,12 +3189,12 @@ msgstr "WebSocket-URL"
 #. module: wb_voip
 #: model:ir.model.fields,field_description:wb_voip.field_wb_voip_protokoll__website_message_ids
 msgid "Website Messages"
-msgstr "Website Messages"
+msgstr "Website-Nachrichten"
 
 #. module: wb_voip
 #: model:ir.model.fields,help:wb_voip.field_wb_voip_protokoll__website_message_ids
 msgid "Website communication history"
-msgstr "Website communication history"
+msgstr "Website-Kommunikationsverlauf"
 
 #. module: wb_voip
 #: model_terms:ir.ui.view,arch_db:wb_voip.wb_voip_aktion_view_form
