@@ -3,7 +3,6 @@ from psycopg2.extras import Json
 # Ausgelieferte noupdate-Daten mit übersetzbaren Feldern:
 # (Tabelle, Modell, XML-ID, Feld, bisher deutsch, neu englisch).
 # Ein Update schreibt sie nicht neu; die Quellsprache ist seit 19.0.2.0.0 Englisch.
-# titel_vorlage des Beispiel-Buttons ist nicht übersetzbar und bleibt in bestehenden Datenbanken.
 AUSLIEFERUNG = [
     ('wb_voip_aktion', 'wb.voip.aktion', 'wb_voip_aktion_vorgang', 'name',
      'Vorgang anlegen', 'Create opportunity'),

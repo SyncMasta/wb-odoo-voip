@@ -26,7 +26,7 @@ class WbVoipAktion(models.Model):
         groups='wb_voip.group_wb_voip_manager',
         help="Team of the new opportunity. Empty = the user's default team.")
     titel_vorlage = fields.Char(
-        string='Opportunity title', groups='wb_voip.group_wb_voip_manager',
+        string='Opportunity title', translate=True, groups='wb_voip.group_wb_voip_manager',
         help='Plain text, at most 200 characters. Placeholders: {kontakt}, {nummer}, {datum}. '
              'Empty = "Call from {kontakt}".')
 

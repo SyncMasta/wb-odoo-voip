@@ -39,3 +39,8 @@ class TestDeutsch(TransactionCase):
         button = self.env.ref('wb_voip_crm.wb_voip_aktion_vorgang')
         self.assertEqual(button.with_context(lang='de_DE').name, 'Vorgang anlegen')
         self.assertEqual(button.with_context(lang='en_US').name, 'Create opportunity')
+
+    def test_titelvorlage_uebersetzt(self):
+        button = self.env.ref('wb_voip_crm.wb_voip_aktion_vorgang')
+        self.assertEqual(button.with_context(lang='de_DE').titel_vorlage, 'Anruf von {kontakt} ({datum})')
+        self.assertEqual(button.with_context(lang='en_US').titel_vorlage, 'Call from {kontakt} ({datum})')

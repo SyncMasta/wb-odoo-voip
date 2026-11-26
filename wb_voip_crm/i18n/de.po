@@ -48,6 +48,11 @@ msgid "Call from {kontakt}"
 msgstr "Anruf von {kontakt}"
 
 #. module: wb_voip_crm
+#: model:wb.voip.aktion,titel_vorlage:wb_voip_crm.wb_voip_aktion_vorgang
+msgid "Call from {kontakt} ({datum})"
+msgstr "Anruf von {kontakt} ({datum})"
+
+#. module: wb_voip_crm
 #: model:ir.model.fields,field_description:wb_voip_crm.field_crm_lead__wb_voip_protokoll_ids
 #: model_terms:ir.ui.view,arch_db:wb_voip_crm.wb_voip_crm_lead_view_form
 msgid "Call logs"

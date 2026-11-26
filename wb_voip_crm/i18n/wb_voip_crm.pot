@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0-20261112\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-26 10:21+0000\n"
-"PO-Revision-Date: 2026-11-26 10:21+0000\n"
+"POT-Creation-Date: 2026-11-26 10:43+0000\n"
+"PO-Revision-Date: 2026-11-26 10:43+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -44,6 +44,11 @@ msgstr ""
 #: code:addons/wb_voip_crm/models/wb_voip_aktion.py:0
 #: model_terms:ir.ui.view,arch_db:wb_voip_crm.wb_voip_aktion_view_form_crm
 msgid "Call from {kontakt}"
+msgstr ""
+
+#. module: wb_voip_crm
+#: model:wb.voip.aktion,titel_vorlage:wb_voip_crm.wb_voip_aktion_vorgang
+msgid "Call from {kontakt} ({datum})"
 msgstr ""
 
 #. module: wb_voip_crm
