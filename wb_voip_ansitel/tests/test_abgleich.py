@@ -1053,3 +1053,40 @@ class TestGeraete(AbgleichCase):
             Geraet.create({'name': 'Leer', 'peer_name': '   ', 'anlage_id': self.anlage.id})
         neu = Geraet.create({'name': 'Neu', 'peer_name': ' Neu1 ', 'anlage_id': self.anlage.id})
         self.assertEqual(neu.peer_name, 'Neu1')
+
+
+@tagged('wb_voip_ansitel', 'post_install', '-at_install')
+class TestSpracheGespeichert(AbgleichCase):
+    """The reconciliation runs as a cron (no ``lang``): stored texts use owner and company language."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.env['res.lang']._activate_lang('de_DE')
+        cls.env['ir.module.module']._load_module_terms(
+            ['wb_voip', 'wb_voip_ansitel'], ['de_DE'], overwrite=True)
+        cls.user_a.lang = 'en_US'
+        cls.user_b.lang = 'de_DE'
+        cls.env.company.partner_id.lang = 'de_DE'
+
+    def test_erledigt_text_in_besitzersprache(self):
+        # (Besitzer des alten Eintrags, Beteiligter der Gruppe, Nebenstelle, Gerät des Beteiligten, Text)
+        for besitzer, beteiligt, ext, peer, erwartet in (
+                (self.user_b, self.user_a, '10', 'TelA-00000f', 'Angenommen auf Empfang'),
+                (self.user_a, self.user_b, '20', 'TelB-00000e', 'Answered on Empfang')):
+            with self.subTest(besitzer=besitzer.lang):
+                kunde = 11 if besitzer == self.user_b else 12
+                alt = self.verpasst(besitzer, kunde, BASIS - timedelta(minutes=30))
+                self.verpasst(beteiligt, kunde, BASIS)
+                self.lauf([cdr(f'L{kunde}', BASIS, ext, f'PJSIP/{peer}', 'NO ANSWER', nummer(kunde)),
+                           cdr(f'L{kunde}', BASIS, '30', 'PJSIP/Empfang-000010', 'ANSWERED',
+                               nummer(kunde), billsec=50)])
+                self.assertEqual(alt.erledigt_text, erwartet)
+
+    def test_weiterleitung_in_firmensprache(self):
+        alt = self.verpasst(self.user_a, 29, BASIS - timedelta(minutes=30))
+        self.lauf([cdr('L29', BASIS, '10', 'Local/03023125999@default-0009;1', 'NO ANSWER', nummer(29)),
+                   cdr('L29', BASIS, ZIEL, f'PJSIP/{TRUNK}-000009', 'ANSWERED', nummer(29),
+                       billsec=30, direction='outgoing')])
+        self.assertEqual(self.von_gruppe('L29', self.user_a).wb_voip_geraet, 'Weiterleitung')
+        self.assertEqual(alt.erledigt_text, 'Answered on Weiterleitung')

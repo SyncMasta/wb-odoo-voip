@@ -29,3 +29,4 @@ from . import test_anlage_verbindung
 from . import test_i18n
 from . import test_de
 from . import test_migration_quellsprache
+from . import test_sprache_gespeichert

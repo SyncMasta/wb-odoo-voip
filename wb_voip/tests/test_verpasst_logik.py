@@ -28,13 +28,13 @@ class TestVerpasstLogik(WbVoipCase):
         # Zweite Firma: Benutzer C gehört nur ihr an
         cls.firma2 = cls.env['res.company'].create({'name': 'Zweitfirma'})
         cls.user_c = Users.create({
-            'name': 'VoIP Benutzer C', 'login': 'wb_voip_c', 'email': 'wb_voip_c@example.com',
+            'name': 'VoIP Benutzer C', 'login': 'wb_voip_c', 'lang': 'en_US', 'email': 'wb_voip_c@example.com',
             'company_id': cls.firma2.id, 'company_ids': [(6, 0, [cls.firma2.id])],
             'group_ids': [(6, 0, gruppen)],
         })
         # D darf Kontakte lesen, aber nicht ändern
         cls.user_d = Users.create({
-            'name': 'VoIP Benutzer D', 'login': 'wb_voip_d', 'email': 'wb_voip_d@example.com',
+            'name': 'VoIP Benutzer D', 'login': 'wb_voip_d', 'lang': 'en_US', 'email': 'wb_voip_d@example.com',
             'group_ids': [(6, 0, gruppen[:2])],
         })
 

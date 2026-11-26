@@ -1,6 +1,7 @@
 import ast
 import logging
 from datetime import datetime, timedelta
+from itertools import groupby
 from urllib.parse import quote, urlsplit
 
 from dateutil.relativedelta import relativedelta
@@ -800,7 +801,8 @@ class WbVoipAnruf(models.Model):
         Entries: state ``verpasst``, not done, same E.164 number, same company, started before
         this call (with ``bis``: started at the latest at ``bis``, e.g. the end of a call that
         a late synchronisation with the PBX found). ``text`` replaces the closing text (e.g. when
-        no user answered, only a device). Text "Zurückgerufen von <name>" (outgoing) or
+        no user answered, only a device); it is a string or a function of the environment in the
+        language of each entry's owner. Text "Zurückgerufen von <name>" (outgoing) or
         "Angenommen von <name>"; with ``protokoll`` (callback log) the entry remembers it.
         With ``protokoll`` also the open entries that this log closed before and that were
         reopened (``erledigt_durch_protokoll_id``, state in ``_wb_voip_wieder_oeffnen_zustaende``)
@@ -831,17 +833,42 @@ class WbVoipAnruf(models.Model):
         if not offen:
             return offen
         name = anruf.user_id.name
-        if not text:
-            text = (self.env._("Called back by %s", name) if anruf.richtung == 'ausgehend'
-                    else self.env._("Answered by %s", name))
-        werte = {'erledigt': True, 'erledigt_am': fields.Datetime.now(), 'erledigt_text': text}
+        # Der Text wird gespeichert: je Besitzer des Eintrags in dessen Sprache erzeugen (ein Serverlauf
+        # hat keine Sprache im Kontext), nicht in der des Anrufers.
+        texte = {}
+        for besitzer in offen.user_id:
+            sprache = self.with_context(lang=self._wb_voip_sprache(besitzer)).env
+            if callable(text):
+                texte[besitzer] = text(sprache)
+            elif text:
+                texte[besitzer] = text
+            elif anruf.richtung == 'ausgehend':
+                texte[besitzer] = sprache._("Called back by %s", name)
+            else:
+                texte[besitzer] = sprache._("Answered by %s", name)
         # Verknüpfung stets neu setzen, damit ein früheres Protokoll den Eintrag nicht mehr berührt
-        werte['erledigt_durch_protokoll_id'] = protokoll.id if protokoll else False
-        aktivitaeten = offen.rueckruf_aktivitaet_id
-        offen.write(werte)
-        anruf._wb_voip_aktivitaeten_abschliessen(aktivitaeten, text)
+        durch = protokoll.id if protokoll else False
+        gruppen = []
+        for besitzer, eintraege in groupby(offen.sorted(lambda a: a.user_id.id), key=lambda a: a.user_id):
+            eintraege = anruf.browse([e.id for e in eintraege])
+            eintraege.write({'erledigt': True, 'erledigt_am': fields.Datetime.now(),
+                             'erledigt_text': texte[besitzer], 'erledigt_durch_protokoll_id': durch})
+            gruppen.append((eintraege.rueckruf_aktivitaet_id, texte[besitzer]))
+        # erst nach dem Schließen aller Einträge: eine Aktivität, die noch ein offener Eintrag nutzt, bleibt
+        for aktivitaeten, gruppentext in gruppen:
+            anruf._wb_voip_aktivitaeten_abschliessen(aktivitaeten, gruppentext)
         offen._wb_voip_verpasst_melden()
         return offen
+
+    @api.model
+    def _wb_voip_sprache(self, benutzer=None):
+        """Return the language for texts that are stored (not shown): user, else company, else English.
+
+        Server jobs (cron) have no language in the context, so ``env._`` would return the English
+        source for everybody.
+        """
+        sprache = benutzer.sudo().lang if benutzer else False
+        return sprache or self.env.company.sudo().partner_id.lang or 'en_US'
 
     def _wb_voip_aktivitaeten_abschliessen(self, aktivitaeten, text):
         """Mark active callback activities done with ``text`` (plain text; Odoo escapes it in the chatter).
@@ -1046,6 +1073,9 @@ class WbVoipAnruf(models.Model):
     def _wb_voip_protokollieren(self):
         """Create the log entry of a finished call exactly once and post to the chatter."""
         self.ensure_one()
+        # Die Texte werden gespeichert (Beschreibung, Chatter): in der Sprache des Benutzers des Anrufs,
+        # auch wenn ein Serverlauf ohne Sprache im Kontext beendet.
+        self = self.with_context(lang=self._wb_voip_sprache(self.sudo().user_id))
         anruf = self.sudo()
         if anruf.protokoll_id:
             return anruf.protokoll_id

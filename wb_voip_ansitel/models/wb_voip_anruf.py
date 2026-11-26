@@ -239,7 +239,8 @@ class WbVoipAnruf(models.Model):
         geraet, dauer, annahme = self._wb_voip_cdr_annahme(anlage, zweige)
         besitzer, geraet_name = Users, False
         if geraet == WEITERLEITUNG:
-            geraet_name = self.env._("Call forwarding")
+            # gespeichert (am Anruf aller Beteiligten): in der Sprache der Firma, ein Serverlauf hat keine
+            geraet_name = self.with_context(lang=self._wb_voip_sprache()).env._("Call forwarding")
         elif geraet:
             eintrag = Geraet._fuer(anlage, geraet)
             geraet_name = (eintrag.name or geraet)[:MAX_GERAET]
@@ -275,7 +276,7 @@ class WbVoipAnruf(models.Model):
             erreicht = annehmer or geaendert[0]
             if erreicht.nummer_e164:
                 # ohne Besitzer (gemeinsames Gerät, Weiterleitung) neutral: kein Benutzername
-                text = None if annehmer else self.env._("Answered on %s", geraet_name)
+                text = None if annehmer else (lambda sprache: sprache._("Answered on %s", geraet_name))
                 erreicht._wb_voip_nummer_erreicht(bis=ende, text=text)
         return bool(geaendert)
 

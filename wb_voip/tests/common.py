@@ -28,9 +28,12 @@ class WbVoipCase(TransactionCase):
         gruppe_manager = cls.env.ref('wb_voip.group_wb_voip_manager')
         # A und B dürfen Kontakte ändern (wie Mitarbeitende im Standard), damit die
         # Chatter-Notiz am Kontakt möglich ist (verlangt Schreibrecht).
-        Users = cls.env['res.users'].with_context(no_reset_password=True)
+        # Gespeicherte Texte entstehen in der Sprache des Benutzers: die Tests laufen auf Englisch
+        cls.env['res.lang']._activate_lang('en_US')
+        cls.env.company.partner_id.lang = 'en_US'
+        Users = cls.env['res.users'].with_context(no_reset_password=True, lang='en_US')
         cls.user_a = Users.create({
-            'name': 'VoIP Benutzer A', 'login': 'wb_voip_a',
+            'name': 'VoIP Benutzer A', 'login': 'wb_voip_a', 'lang': 'en_US',
             'email': 'wb_voip_a@example.com',
             'group_ids': [(6, 0, [cls.env.ref('base.group_user').id, gruppe_benutzer.id,
                                   cls.env.ref('base.group_partner_manager').id])],
@@ -45,13 +48,13 @@ class WbVoipCase(TransactionCase):
             'wb_voip_sip_passwort': 'geheim',
         })
         cls.user_b = Users.create({
-            'name': 'VoIP Benutzer B', 'login': 'wb_voip_b',
+            'name': 'VoIP Benutzer B', 'login': 'wb_voip_b', 'lang': 'en_US',
             'email': 'wb_voip_b@example.com',
             'group_ids': [(6, 0, [cls.env.ref('base.group_user').id, gruppe_benutzer.id,
                                   cls.env.ref('base.group_partner_manager').id])],
         })
         cls.user_manager = Users.create({
-            'name': 'VoIP Manager', 'login': 'wb_voip_manager',
+            'name': 'VoIP Manager', 'login': 'wb_voip_manager', 'lang': 'en_US',
             'email': 'wb_voip_manager@example.com',
             'group_ids': [(6, 0, [cls.env.ref('base.group_user').id, gruppe_manager.id])],
         })
