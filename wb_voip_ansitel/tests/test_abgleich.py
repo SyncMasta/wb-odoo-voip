@@ -1090,3 +1090,19 @@ class TestSpracheGespeichert(AbgleichCase):
                        billsec=30, direction='outgoing')])
         self.assertEqual(self.von_gruppe('L29', self.user_a).wb_voip_geraet, 'Weiterleitung')
         self.assertEqual(alt.erledigt_text, 'Answered on Weiterleitung')
+
+    def test_weiterleitung_in_sprache_der_firma_des_anrufs(self):
+        # B arbeitet in einer zweiten Firma (Englisch), die Hauptfirma ist deutsch: jeder Anruf der Gruppe
+        # bekommt den Gerätenamen in der Sprache seiner Firma, nicht der des Serverlaufs
+        firma_en = self.env['res.company'].create({'name': 'Second company EN'})
+        firma_en.partner_id.lang = 'en_US'
+        self.user_b.write({'company_ids': [(4, firma_en.id)], 'company_id': firma_en.id})
+        self.lauf([cdr('L28', BASIS, '10', 'Local/03023125999@default-0008;1', 'NO ANSWER', nummer(28)),
+                   cdr('L28', BASIS, '20', 'Local/03023125999@default-0018;1', 'NO ANSWER', nummer(28)),
+                   cdr('L28', BASIS, ZIEL, f'PJSIP/{TRUNK}-000008', 'ANSWERED', nummer(28),
+                       billsec=30, direction='outgoing')])
+        anruf_a = self.von_gruppe('L28', self.user_a)
+        anruf_b = self.von_gruppe('L28', self.user_b)
+        self.assertEqual(anruf_b.company_id, firma_en)
+        self.assertEqual(anruf_a.wb_voip_geraet, 'Weiterleitung')
+        self.assertEqual(anruf_b.wb_voip_geraet, 'Call forwarding')
